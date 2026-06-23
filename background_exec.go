@@ -1,0 +1,100 @@
+package run9
+
+import (
+	"context"
+	"io"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+)
+
+const idleDeadlineAtHeader = "X-Run9-Idle-Deadline-At"
+
+type backgroundExecPullOutputRequest struct {
+	Cursor string `json:"cursor,omitempty"`
+	WaitMS int64  `json:"wait_ms,omitempty"`
+}
+
+func (c *Client) BackgroundExec(ctx context.Context, creds Credentials, boxID string, req ExecBoxRequest) (ExecView, error) {
+	var view ExecView
+	err := c.do(ctx, http.MethodPost, c.workspacePath("/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/background-execs"), creds, requestOptions{
+		body:   req,
+		result: &view,
+	})
+	return view, err
+}
+
+func (c *Client) PullBackgroundExecOutput(ctx context.Context, creds Credentials, execID string, cursor string, wait time.Duration) (BackgroundExecPullOutput, error) {
+	var result BackgroundExecPullOutput
+	request := backgroundExecPullOutputRequest{
+		Cursor: strings.TrimSpace(cursor),
+	}
+	if wait > 0 {
+		request.WaitMS = wait.Milliseconds()
+	}
+	resp, err := c.doRaw(ctx, http.MethodPost, c.workspacePath("/execs/"+url.PathEscape(strings.TrimSpace(execID))+"/pull-output"), creds, requestOptions{
+		body: request,
+	})
+	if err != nil {
+		return result, err
+	}
+	defer resp.Body.Close()
+
+	result.Body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return result, err
+	}
+	result.NextCursor = strings.TrimSpace(resp.Header.Get("X-Run9-Next-Cursor"))
+	result.State = strings.TrimSpace(resp.Header.Get("X-Run9-Exec-State"))
+	if raw := strings.TrimSpace(resp.Header.Get("X-Run9-Exit-Code")); raw != "" {
+		value, err := strconv.Atoi(raw)
+		if err != nil {
+			return result, err
+		}
+		result.ExitCode = &value
+	}
+	result.Reason = strings.TrimSpace(resp.Header.Get("X-Run9-Reason"))
+	result.IdleDeadlineAt, err = parseOptionalIdleDeadlineAt(resp.Header)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+func (c *Client) WriteBackgroundExecStdin(ctx context.Context, creds Credentials, execID string, data []byte, closeStdin bool) (*time.Time, error) {
+	resp, err := c.doRaw(ctx, http.MethodPost, c.workspacePath("/execs/"+url.PathEscape(strings.TrimSpace(execID))+"/write-stdin"), creds, requestOptions{
+		body: data,
+		headers: map[string]string{
+			"Content-Type":       "application/octet-stream",
+			"X-Run9-Close-Stdin": strconv.FormatBool(closeStdin),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	idleDeadlineAt, err := parseOptionalIdleDeadlineAt(resp.Header)
+	if err != nil {
+		return nil, err
+	}
+	return idleDeadlineAt, nil
+}
+
+func (c *Client) KillBackgroundExec(ctx context.Context, creds Credentials, execID string) error {
+	return c.do(ctx, http.MethodPost, c.workspacePath("/execs/"+url.PathEscape(strings.TrimSpace(execID))+"/kill"), creds, requestOptions{})
+}
+
+func parseOptionalIdleDeadlineAt(headers http.Header) (*time.Time, error) {
+	raw := strings.TrimSpace(headers.Get(idleDeadlineAtHeader))
+	if raw == "" {
+		return nil, nil
+	}
+	value, err := time.Parse(time.RFC3339Nano, raw)
+	if err != nil {
+		return nil, err
+	}
+	return &value, nil
+}
