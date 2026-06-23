@@ -2,48 +2,73 @@ package run9
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
-// UpdateProject updates mutable fields on one project.
-func (c *Client) UpdateProject(ctx context.Context, creds Credentials, projectCID string, req UpdateProjectRequest) (ProjectView, error) {
+// UpdateProject updates mutable fields on the current project.
+func (c *Client) UpdateProject(ctx context.Context, req UpdateProjectRequest) (ProjectView, error) {
 	var view ProjectView
-	err := c.do(ctx, http.MethodPatch, projectPath(projectCID, ""), creds, requestOptions{body: req, result: &view})
+	path, err := projectPath(c.projectCID, "")
+	if err != nil {
+		return view, err
+	}
+	err = c.do(ctx, http.MethodPatch, path, requestOptions{body: req, result: &view})
 	return view, err
 }
 
-// DeleteProject deletes one project.
-func (c *Client) DeleteProject(ctx context.Context, creds Credentials, projectCID string) (DeleteProjectResult, error) {
+// DeleteProject deletes the current project.
+func (c *Client) DeleteProject(ctx context.Context) (DeleteProjectResult, error) {
 	var view DeleteProjectResult
-	err := c.do(ctx, http.MethodDelete, projectPath(projectCID, ""), creds, requestOptions{result: &view})
+	path, err := projectPath(c.projectCID, "")
+	if err != nil {
+		return view, err
+	}
+	err = c.do(ctx, http.MethodDelete, path, requestOptions{result: &view})
 	return view, err
 }
 
-// ProjectMembers lists members in one project.
-func (c *Client) ProjectMembers(ctx context.Context, creds Credentials, projectCID string) ([]ProjectMembershipView, error) {
+// ListProjectMembers lists members in the current project.
+func (c *Client) ListProjectMembers(ctx context.Context) ([]ProjectMembershipView, error) {
 	var views []ProjectMembershipView
-	err := c.do(ctx, http.MethodGet, projectPath(projectCID, "/members"), creds, requestOptions{result: &views})
+	path, err := projectPath(c.projectCID, "/members")
+	if err != nil {
+		return nil, err
+	}
+	err = c.do(ctx, http.MethodGet, path, requestOptions{result: &views})
 	return views, err
 }
 
-// UpdateProjectMember updates one project member.
-func (c *Client) UpdateProjectMember(ctx context.Context, creds Credentials, projectCID string, userID string, req UpdateProjectMembershipRequest) (ProjectMembershipView, error) {
+// UpdateProjectMember updates one member in the current project.
+func (c *Client) UpdateProjectMember(ctx context.Context, userID string, req UpdateProjectMembershipRequest) (ProjectMembershipView, error) {
 	var view ProjectMembershipView
-	err := c.do(ctx, http.MethodPatch, projectPath(projectCID, "/members/"+url.PathEscape(strings.TrimSpace(userID))), creds, requestOptions{body: req, result: &view})
+	path, err := projectPath(c.projectCID, "/members/"+url.PathEscape(strings.TrimSpace(userID)))
+	if err != nil {
+		return view, err
+	}
+	err = c.do(ctx, http.MethodPatch, path, requestOptions{body: req, result: &view})
 	return view, err
 }
 
-// RemoveProjectMember removes one member from a project.
-func (c *Client) RemoveProjectMember(ctx context.Context, creds Credentials, projectCID string, userID string) error {
-	return c.do(ctx, http.MethodDelete, projectPath(projectCID, "/members/"+url.PathEscape(strings.TrimSpace(userID))), creds, requestOptions{})
+// DeleteProjectMember removes one member from the current project.
+func (c *Client) DeleteProjectMember(ctx context.Context, userID string) error {
+	path, err := projectPath(c.projectCID, "/members/"+url.PathEscape(strings.TrimSpace(userID)))
+	if err != nil {
+		return err
+	}
+	return c.do(ctx, http.MethodDelete, path, requestOptions{})
 }
 
-func projectPath(projectCID string, suffix string) string {
+func projectPath(projectCID string, suffix string) (string, error) {
+	projectCID = strings.TrimSpace(projectCID)
+	if projectCID == "" {
+		return "", errors.New("missing project cid: use client.WithProject(...) for project-scoped APIs")
+	}
 	base := "/projects/" + url.PathEscape(strings.TrimSpace(projectCID))
 	if strings.TrimSpace(suffix) == "" {
-		return base
+		return base, nil
 	}
-	return base + "/" + strings.TrimLeft(strings.TrimSpace(suffix), "/")
+	return base + "/" + strings.TrimLeft(strings.TrimSpace(suffix), "/"), nil
 }

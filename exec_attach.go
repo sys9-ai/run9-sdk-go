@@ -41,8 +41,8 @@ func (s *ExecAttachSocket) Close() error {
 	return s.conn.Close()
 }
 
-// ExecAttachURL dials one exec attach websocket returned by the control plane.
-func (c *Client) ExecAttachURL(ctx context.Context, attachURL string) (*ExecAttachSocket, error) {
+// OpenExecAttach dials one exec attach websocket returned by the control plane.
+func (c *Client) OpenExecAttach(ctx context.Context, attachURL string) (*ExecAttachSocket, error) {
 	resolvedURL, err := resolveHTTPURL(c.baseURL, attachURL)
 	if err != nil {
 		return nil, err
