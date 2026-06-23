@@ -18,7 +18,7 @@ If the public API changes, README, doc comments, and examples are updated in the
 go get github.com/sys9-ai/run9-sdk-go@v0.1.0
 ```
 
-The SDK uses semantic version tags. `run9-cli` main must always depend on the latest released SDK tag.
+The SDK uses semantic version tags. Depend on one released tag instead of an unpublished commit.
 
 ## Quick Start
 
@@ -61,7 +61,7 @@ This SDK is intentionally opinionated. It uses one stable calling style across t
 4. Keep simple identity inputs positional, and use request structs for optional filters or mutable payloads.
 5. Use typed streaming helpers instead of raw NDJSON bodies or websocket frames.
 
-The SDK models the public control-plane contract. It does not include CLI-only concerns such as config files, terminal rendering, shell completion, or local cursor persistence.
+The SDK models the public control-plane contract. It does not include local config persistence, terminal rendering, shell completion, or local cursor persistence.
 
 ## Common Workflows
 
@@ -176,4 +176,3 @@ Before `v1.0.0`, breaking API cleanup is allowed when it materially improves cla
 - updated doc comments
 - updated README examples
 - passing `go test ./...`
-- matching `run9-cli` integration updates when CLI behavior depends on it
