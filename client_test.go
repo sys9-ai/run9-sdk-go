@@ -14,30 +14,40 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewClientNormalizesBaseURLAndUsesCallerContextOnly(t *testing.T) {
-	client := NewClient(" http://example.com/ ")
-
-	require.Equal(t, "http://example.com", client.baseURL)
-	require.Zero(t, client.http.Timeout)
-}
-
-func TestClientBoxesPreservesBaseURLPathPrefix(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, "/api/boxes", r.URL.Path)
-		require.Equal(t, http.MethodGet, r.Method)
-		writeJSONResponse(t, w, http.StatusOK, []BoxView{})
-	}))
-	defer server.Close()
-
-	views, err := NewClient(server.URL+"/api").Boxes(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "", "", "")
+func TestNewClientValidatesAndNormalizesEndpointAndCredentials(t *testing.T) {
+	client, err := NewClient(" http://example.com/api/ ", Credentials{
+		AK: " ak-1 ",
+		SK: " sk-1 ",
+	})
 	require.NoError(t, err)
-	require.Empty(t, views)
+	require.Equal(t, "http://example.com/api", client.baseURL)
+	require.Equal(t, Credentials{AK: "ak-1", SK: "sk-1"}, client.creds)
+	require.Zero(t, client.http.Timeout)
+
+	_, err = NewClient("", Credentials{AK: "ak-1", SK: "sk-1"})
+	require.EqualError(t, err, "missing run9 endpoint")
+
+	_, err = NewClient("example.com", Credentials{AK: "ak-1", SK: "sk-1"})
+	require.EqualError(t, err, `invalid endpoint: "example.com"`)
+
+	_, err = NewClient("https://api.run.sys9.ai?debug=true", Credentials{AK: "ak-1", SK: "sk-1"})
+	require.EqualError(t, err, `invalid endpoint: must not contain query or fragment: "https://api.run.sys9.ai?debug=true"`)
+
+	_, err = NewClient("https://api.run.sys9.ai", Credentials{SK: "sk-1"})
+	require.EqualError(t, err, "missing run9 access key")
+
+	_, err = NewClient("https://api.run.sys9.ai", Credentials{AK: "ak-1"})
+	require.EqualError(t, err, "missing run9 secret key")
 }
 
-func TestClientWithProjectBoxesUsesWorkspacePath(t *testing.T) {
+func TestClientListBoxesRequiresProject(t *testing.T) {
+	client := newTestClient(t, "https://api.run.sys9.ai")
+
+	_, err := client.ListBoxes(context.Background(), ListBoxesRequest{})
+	require.EqualError(t, err, "missing project cid: use client.WithProject(...) for project-scoped APIs")
+}
+
+func TestClientWithProjectListBoxesUsesWorkspacePath(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/api/projects/default/workspace/boxes", r.URL.Path)
 		require.Equal(t, http.MethodGet, r.Method)
@@ -45,10 +55,7 @@ func TestClientWithProjectBoxesUsesWorkspacePath(t *testing.T) {
 	}))
 	defer server.Close()
 
-	views, err := NewClient(server.URL+"/api").WithProject("default").Boxes(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "", "", "")
+	views, err := newProjectTestClient(t, server.URL+"/api", "default").ListBoxes(context.Background(), ListBoxesRequest{})
 	require.NoError(t, err)
 	require.Empty(t, views)
 }
@@ -76,10 +83,7 @@ func TestClientCreateProjectPostsCanonicalPayload(t *testing.T) {
 	}))
 	defer server.Close()
 
-	view, err := NewClient(server.URL).CreateProject(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, CreateProjectRequest{
+	view, err := newTestClient(t, server.URL).CreateProject(context.Background(), CreateProjectRequest{
 		DisplayName: "Sandbox",
 		Description: "Isolated experiments",
 	})
@@ -107,10 +111,7 @@ func TestClientUpdateAccountUsesAccountRoute(t *testing.T) {
 	defer server.Close()
 
 	name := "Alice CLI"
-	view, err := NewClient(server.URL).UpdateAccount(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, UpdateMeRequest{DisplayName: &name})
+	view, err := newTestClient(t, server.URL).UpdateAccount(context.Background(), UpdateMeRequest{DisplayName: &name})
 	require.NoError(t, err)
 	require.Equal(t, "Alice CLI", view.DisplayName)
 }
@@ -136,10 +137,7 @@ func TestClientUpdateBoxCanClearLabelsWithoutSendingNull(t *testing.T) {
 	shape := "2c4g"
 	networkMode := BoxNetworkModeManaged
 	securityMode := BoxSecurityModeRestricted
-	view, err := NewClient(server.URL).WithProject("default").UpdateBox(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "box-1", UpdateBoxRequest{
+	view, err := newProjectTestClient(t, server.URL, "default").UpdateBox(context.Background(), "box-1", UpdateBoxRequest{
 		Labels:       &labels,
 		DesiredShape: &shape,
 		NetworkMode:  &networkMode,
@@ -167,10 +165,7 @@ func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 	}))
 	defer server.Close()
 
-	view, err := NewClient(server.URL).WithProject("sandbox").CreateBoxFromSharedSnap(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "python-dev", CreateBoxFromSharedSnapRequest{
+	view, err := newProjectTestClient(t, server.URL, "sandbox").CreateBoxFromSharedSnap(context.Background(), "python-dev", CreateBoxFromSharedSnapRequest{
 		BoxID:        "box-1",
 		DesiredShape: "2c4g",
 	})
@@ -178,7 +173,7 @@ func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 	require.Equal(t, "box-1", view.BoxID)
 }
 
-func TestClientExecsIncludesExtendedFilters(t *testing.T) {
+func TestClientListExecsIncludesExtendedFilters(t *testing.T) {
 	acceptedAfter := time.Unix(1_700_000_000, 123_456_789).UTC()
 	acceptedBefore := time.Unix(1_700_000_000, 987_654_321).UTC()
 
@@ -199,10 +194,7 @@ func TestClientExecsIncludesExtendedFilters(t *testing.T) {
 	defer server.Close()
 
 	limit := 10
-	result, err := NewClient(server.URL).WithProject("default").Execs(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, ExecListRequest{
+	result, err := newProjectTestClient(t, server.URL, "default").ListExecs(context.Background(), ListExecsRequest{
 		BoxID:          "box-1",
 		State:          "running",
 		Creator:        "user-1",
@@ -228,10 +220,7 @@ func TestClientDownloadExecLogReturnsRawBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	body, err := NewClient(server.URL).WithProject("default").DownloadExecLog(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "exec-1")
+	body, err := newProjectTestClient(t, server.URL, "default").DownloadExecLog(context.Background(), "exec-1")
 	require.NoError(t, err)
 	defer body.Close()
 
@@ -240,9 +229,9 @@ func TestClientDownloadExecLogReturnsRawBody(t *testing.T) {
 	require.Equal(t, "line one\nline two\n", string(data))
 }
 
-func TestClientBoxesReturnsJSONErrorMessage(t *testing.T) {
+func TestClientListBoxesReturnsJSONErrorMessage(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, "/boxes", r.URL.Path)
+		require.Equal(t, "/projects/default/workspace/boxes", r.URL.Path)
 		require.Equal(t, http.MethodGet, r.Method)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
@@ -252,10 +241,9 @@ func TestClientBoxesReturnsJSONErrorMessage(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err := NewClient(server.URL).Boxes(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "", "", "broken")
+	_, err := newProjectTestClient(t, server.URL, "default").ListBoxes(context.Background(), ListBoxesRequest{
+		State: BoxState("broken"),
+	})
 	require.Error(t, err)
 
 	var apiErr *Error
@@ -274,16 +262,13 @@ func TestClientWhoAmIReturnsErrorOnEmptyResponseBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err := NewClient(server.URL).WhoAmI(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	})
+	_, err := newTestClient(t, server.URL).WhoAmI(context.Background())
 	require.EqualError(t, err, "portal api returned empty response body")
 }
 
 func TestClientForkSnapPostsToCanonicalEndpoint(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, "/snaps/snap-1/fork", r.URL.Path)
+		require.Equal(t, "/projects/default/workspace/snaps/snap-1/fork", r.URL.Path)
 		require.Equal(t, http.MethodPost, r.Method)
 		ak, sk, ok := r.BasicAuth()
 		require.True(t, ok)
@@ -296,10 +281,7 @@ func TestClientForkSnapPostsToCanonicalEndpoint(t *testing.T) {
 	}))
 	defer server.Close()
 
-	view, err := NewClient(server.URL).ForkSnap(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, " snap-1 ")
+	view, err := newProjectTestClient(t, server.URL, "default").ForkSnap(context.Background(), " snap-1 ")
 	require.NoError(t, err)
 	require.Equal(t, "snap-2", view.SnapID)
 	require.Equal(t, []string{"snap-1"}, view.ParentChain)
@@ -307,7 +289,7 @@ func TestClientForkSnapPostsToCanonicalEndpoint(t *testing.T) {
 
 func TestClientDownloadArchiveFallsBackToRawBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, "/boxes/box-1/files/download", r.URL.Path)
+		require.Equal(t, "/projects/default/workspace/boxes/box-1/files/download", r.URL.Path)
 		require.Equal(t, http.MethodGet, r.Method)
 		w.WriteHeader(http.StatusBadGateway)
 		_, err := w.Write([]byte("gateway overloaded"))
@@ -315,10 +297,7 @@ func TestClientDownloadArchiveFallsBackToRawBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err := NewClient(server.URL).DownloadArchive(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "box-1", "/work/result.txt")
+	_, err := newProjectTestClient(t, server.URL, "default").DownloadArchive(context.Background(), "box-1", "/work/result.txt")
 	require.Error(t, err)
 
 	var apiErr *Error
@@ -329,7 +308,7 @@ func TestClientDownloadArchiveFallsBackToRawBody(t *testing.T) {
 
 func TestClientUploadArchivePreservesExplicitTarContentType(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, "/boxes/box-1/files/upload", r.URL.Path)
+		require.Equal(t, "/projects/default/workspace/boxes/box-1/files/upload", r.URL.Path)
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "/work/result.txt", r.URL.Query().Get("box_abs_path"))
 		require.Equal(t, "application/x-tar", r.Header.Get("Content-Type"))
@@ -345,19 +324,16 @@ func TestClientUploadArchivePreservesExplicitTarContentType(t *testing.T) {
 	}))
 	defer server.Close()
 
-	view, err := NewClient(server.URL).UploadArchive(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "box-1", "/work/result.txt", bytes.NewBufferString("tar-body"))
+	view, err := newProjectTestClient(t, server.URL, "default").UploadArchive(context.Background(), "box-1", "/work/result.txt", bytes.NewBufferString("tar-body"))
 	require.NoError(t, err)
 	require.Equal(t, "runtime-upload-1", view.RuntimeRequestID)
 	require.Equal(t, "prepared", view.State)
 }
 
-func TestClientExecStreamFollowsRedirectAndKeepsFinalExecIDHeader(t *testing.T) {
+func TestClientStartExecStreamFollowsRedirectAndKeepsFinalExecIDHeader(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/boxes/box-1/execs/stream":
+		case "/projects/default/workspace/boxes/box-1/execs/stream":
 			require.Equal(t, http.MethodPost, r.Method)
 			require.Equal(t, "application/x-ndjson", r.Header.Get("Accept"))
 			require.Equal(t, "inline", r.Header.Get("X-Run9-Exec-Stream-Mode"))
@@ -375,21 +351,24 @@ func TestClientExecStreamFollowsRedirectAndKeepsFinalExecIDHeader(t *testing.T) 
 	}))
 	defer server.Close()
 
-	execID, body, err := NewClient(server.URL).ExecStream(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "box-1", ExecBoxRequest{Command: []string{"printf", "hello"}})
+	stream, err := newProjectTestClient(t, server.URL, "default").StartExecStream(context.Background(), "box-1", ExecRequest{
+		Command: []string{"printf", "hello"},
+	})
 	require.NoError(t, err)
-	require.Equal(t, "exec-redirected", execID)
-	defer body.Close()
+	require.Equal(t, "exec-redirected", stream.ExecID)
+	defer stream.Close()
 
-	payload, err := io.ReadAll(body)
+	started, err := stream.ReadEvent()
 	require.NoError(t, err)
-	require.Contains(t, string(payload), `"type":"started"`)
-	require.Contains(t, string(payload), `"type":"exit"`)
+	require.Equal(t, "started", started.Type)
+
+	exited, err := stream.ReadEvent()
+	require.NoError(t, err)
+	require.Equal(t, "exit", exited.Type)
+	require.EqualValues(t, 0, exited.ExitCode)
 }
 
-func TestClientExecAttachURLOverridesDefaultWebsocketHandshakeTimeout(t *testing.T) {
+func TestClientOpenExecAttachOverridesDefaultWebsocketHandshakeTimeout(t *testing.T) {
 	oldTimeout := websocket.DefaultDialer.HandshakeTimeout
 	websocket.DefaultDialer.HandshakeTimeout = time.Millisecond
 	t.Cleanup(func() {
@@ -406,12 +385,12 @@ func TestClientExecAttachURLOverridesDefaultWebsocketHandshakeTimeout(t *testing
 	}))
 	defer server.Close()
 
-	socket, err := NewClient(server.URL).ExecAttachURL(context.Background(), "/foreground-relay/execs/ticket-1/exec-attach")
+	socket, err := newTestClient(t, server.URL).OpenExecAttach(context.Background(), "/foreground-relay/execs/ticket-1/exec-attach")
 	require.NoError(t, err)
 	require.NoError(t, socket.Close())
 }
 
-func TestClientExecAttachURLResolvesRelativePathAgainstBaseURL(t *testing.T) {
+func TestClientOpenExecAttachResolvesRelativePathAgainstBaseURL(t *testing.T) {
 	upgrader := websocket.Upgrader{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/foreground-relay/execs/ticket-1/exec-attach", r.URL.Path)
@@ -421,12 +400,12 @@ func TestClientExecAttachURLResolvesRelativePathAgainstBaseURL(t *testing.T) {
 	}))
 	defer server.Close()
 
-	socket, err := NewClient(server.URL).ExecAttachURL(context.Background(), "foreground-relay/execs/ticket-1/exec-attach")
+	socket, err := newTestClient(t, server.URL).OpenExecAttach(context.Background(), "foreground-relay/execs/ticket-1/exec-attach")
 	require.NoError(t, err)
 	require.NoError(t, socket.Close())
 }
 
-func TestClientExecAttachURLReturnsJSONHandshakeError(t *testing.T) {
+func TestClientOpenExecAttachReturnsJSONHandshakeError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/foreground-relay/execs/ticket-1/exec-attach", r.URL.Path)
 		writeJSONResponse(t, w, http.StatusUnauthorized, map[string]string{
@@ -435,13 +414,28 @@ func TestClientExecAttachURLReturnsJSONHandshakeError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err := NewClient(server.URL).ExecAttachURL(context.Background(), "/foreground-relay/execs/ticket-1/exec-attach")
+	_, err := newTestClient(t, server.URL).OpenExecAttach(context.Background(), "/foreground-relay/execs/ticket-1/exec-attach")
 	require.Error(t, err)
 
 	var apiErr *Error
 	require.ErrorAs(t, err, &apiErr)
 	require.Equal(t, http.StatusUnauthorized, apiErr.StatusCode)
 	require.Equal(t, "invalid API key", apiErr.Message)
+}
+
+func newTestClient(t *testing.T, endpoint string) *Client {
+	t.Helper()
+	client, err := NewClient(endpoint, Credentials{
+		AK: "ak-1",
+		SK: "sk-1",
+	})
+	require.NoError(t, err)
+	return client
+}
+
+func newProjectTestClient(t *testing.T, endpoint string, projectCID string) *Client {
+	t.Helper()
+	return newTestClient(t, endpoint).WithProject(projectCID)
 }
 
 func writeJSONResponse(t *testing.T, w http.ResponseWriter, status int, value any) {

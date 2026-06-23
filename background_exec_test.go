@@ -16,7 +16,7 @@ func TestClientPullBackgroundExecOutputReadsBinaryBodyAndHeaders(t *testing.T) {
 	fixtureTime := time.Date(2026, 3, 28, 12, 0, 0, 0, time.UTC)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, "/execs/exec-1/pull-output", r.URL.Path)
+		require.Equal(t, "/projects/default/workspace/execs/exec-1/pull-output", r.URL.Path)
 		require.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
 		var body map[string]any
@@ -32,10 +32,10 @@ func TestClientPullBackgroundExecOutputReadsBinaryBodyAndHeaders(t *testing.T) {
 	}))
 	defer server.Close()
 
-	result, err := NewClient(server.URL).PullBackgroundExecOutput(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "exec-1", "cursor-1", 2*time.Second)
+	result, err := newProjectTestClient(t, server.URL, "default").PullBackgroundExecOutput(context.Background(), "exec-1", PullBackgroundExecOutputRequest{
+		Cursor: "cursor-1",
+		Wait:   2 * time.Second,
+	})
 	require.NoError(t, err)
 	require.Equal(t, []byte("binary-body"), result.Body)
 	require.Equal(t, "cursor-2", result.NextCursor)
@@ -48,7 +48,7 @@ func TestClientWriteBackgroundExecStdinSendsOctetStreamAndEOFHeader(t *testing.T
 	fixtureTime := time.Date(2026, 3, 28, 12, 5, 0, 0, time.UTC)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, "/execs/exec-1/write-stdin", r.URL.Path)
+		require.Equal(t, "/projects/default/workspace/execs/exec-1/write-stdin", r.URL.Path)
 		require.Equal(t, "application/octet-stream", r.Header.Get("Content-Type"))
 		require.Equal(t, "true", r.Header.Get("X-Run9-Close-Stdin"))
 
@@ -61,10 +61,10 @@ func TestClientWriteBackgroundExecStdinSendsOctetStreamAndEOFHeader(t *testing.T
 	}))
 	defer server.Close()
 
-	idleDeadlineAt, err := NewClient(server.URL).WriteBackgroundExecStdin(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "exec-1", []byte("hello"), true)
+	idleDeadlineAt, err := newProjectTestClient(t, server.URL, "default").WriteBackgroundExecStdin(context.Background(), "exec-1", WriteBackgroundExecStdinRequest{
+		Data:       []byte("hello"),
+		CloseStdin: true,
+	})
 	require.NoError(t, err)
 	require.NotNil(t, idleDeadlineAt)
 	require.True(t, idleDeadlineAt.Equal(fixtureTime))
@@ -73,17 +73,16 @@ func TestClientWriteBackgroundExecStdinSendsOctetStreamAndEOFHeader(t *testing.T
 func TestClientPullBackgroundExecOutputReturnsJSONErrorMessage(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, "/execs/exec-1/pull-output", r.URL.Path)
+		require.Equal(t, "/projects/default/workspace/execs/exec-1/pull-output", r.URL.Path)
 		writeJSONResponse(t, w, http.StatusConflict, map[string]string{
 			"error": "background exec owner is not available",
 		})
 	}))
 	defer server.Close()
 
-	_, err := NewClient(server.URL).PullBackgroundExecOutput(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "exec-1", "", 2*time.Second)
+	_, err := newProjectTestClient(t, server.URL, "default").PullBackgroundExecOutput(context.Background(), "exec-1", PullBackgroundExecOutputRequest{
+		Wait: 2 * time.Second,
+	})
 	require.Error(t, err)
 
 	var apiErr *Error
@@ -95,14 +94,11 @@ func TestClientPullBackgroundExecOutputReturnsJSONErrorMessage(t *testing.T) {
 func TestClientKillBackgroundExecAcceptsEmptyBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
-		require.Equal(t, "/execs/exec-1/kill", r.URL.Path)
+		require.Equal(t, "/projects/default/workspace/execs/exec-1/kill", r.URL.Path)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 
-	err := NewClient(server.URL).KillBackgroundExec(context.Background(), Credentials{
-		AK: "ak-1",
-		SK: "sk-1",
-	}, "exec-1")
+	err := newProjectTestClient(t, server.URL, "default").KillBackgroundExec(context.Background(), "exec-1")
 	require.NoError(t, err)
 }

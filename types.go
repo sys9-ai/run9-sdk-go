@@ -16,14 +16,18 @@ type ProjectSecretScope string
 
 // Organization kinds returned by the control plane.
 const (
+	// OrgKindPersonal identifies one personal organization.
 	OrgKindPersonal OrgKind = "personal"
-	OrgKindShared   OrgKind = "shared"
+	// OrgKindShared identifies one shared organization.
+	OrgKindShared OrgKind = "shared"
 )
 
 // Secret scopes accepted by project and box secret APIs.
 const (
+	// ProjectSecretScopeProject attaches one secret to project scope.
 	ProjectSecretScopeProject ProjectSecretScope = "project"
-	ProjectSecretScopeBox     ProjectSecretScope = "box"
+	// ProjectSecretScopeBox attaches one secret to one box.
+	ProjectSecretScopeBox ProjectSecretScope = "box"
 )
 
 // InvitationState represents one invitation lifecycle state.
@@ -37,7 +41,9 @@ type BoxNetworkMode string
 
 // Box network modes accepted by box create and update APIs.
 const (
-	BoxNetworkModeNormal  BoxNetworkMode = "normal"
+	// BoxNetworkModeNormal requests the default non-managed network path.
+	BoxNetworkModeNormal BoxNetworkMode = "normal"
+	// BoxNetworkModeManaged requests the managed network path.
 	BoxNetworkModeManaged BoxNetworkMode = "managed"
 )
 
@@ -46,8 +52,10 @@ type BoxSecurityMode string
 
 // Box security modes accepted by box create and update APIs.
 const (
+	// BoxSecurityModeRestricted requests the default restricted security mode.
 	BoxSecurityModeRestricted BoxSecurityMode = "restricted"
-	BoxSecurityModeUnsafe     BoxSecurityMode = "unsafe"
+	// BoxSecurityModeUnsafe requests the less restricted unsafe security mode.
+	BoxSecurityModeUnsafe BoxSecurityMode = "unsafe"
 )
 
 // SnapState represents the current snap state.
@@ -217,25 +225,46 @@ type ProjectSecretView struct {
 
 // CreateProjectRequest creates a new project.
 type CreateProjectRequest struct {
+	// DisplayName is the human-readable project name.
 	DisplayName string `json:"display_name"`
+	// Description is optional free-form project text.
 	Description string `json:"description,omitempty"`
 }
 
 // CreateProjectSecretRequest creates a new project or box secret.
 type CreateProjectSecretRequest struct {
-	Name             string   `json:"name,omitempty"`
-	Value            string   `json:"value"`
-	Placeholder      string   `json:"placeholder"`
-	AllowedHosts     []string `json:"allowed_hosts"`
-	InjectHeaderName string   `json:"inject_header_name"`
+	// Name is an optional human-readable secret name.
+	Name string `json:"name,omitempty"`
+	// Value is the raw secret value to store.
+	Value string `json:"value"`
+	// Placeholder is the literal marker that managed egress will replace.
+	Placeholder string `json:"placeholder"`
+	// AllowedHosts lists the destination hosts where placeholder substitution is allowed.
+	AllowedHosts []string `json:"allowed_hosts"`
+	// InjectHeaderName selects which HTTP header names are eligible for substitution.
+	InjectHeaderName string `json:"inject_header_name"`
 }
 
 // UpdateProjectSecretRequest updates one existing project or box secret.
 type UpdateProjectSecretRequest struct {
-	Name             *string   `json:"name,omitempty"`
-	Value            *string   `json:"value,omitempty"`
-	AllowedHosts     *[]string `json:"allowed_hosts,omitempty"`
-	InjectHeaderName *string   `json:"inject_header_name,omitempty"`
+	// Name replaces the stored human-readable secret name when non-nil.
+	Name *string `json:"name,omitempty"`
+	// Value replaces the stored secret value when non-nil.
+	Value *string `json:"value,omitempty"`
+	// AllowedHosts replaces the full allowed-host set when non-nil.
+	AllowedHosts *[]string `json:"allowed_hosts,omitempty"`
+	// InjectHeaderName replaces the header selector when non-nil.
+	InjectHeaderName *string `json:"inject_header_name,omitempty"`
+}
+
+// ListBoxesRequest describes optional filters for ListBoxes.
+type ListBoxesRequest struct {
+	// Creator filters by the creator identifier.
+	Creator string
+	// Label filters by one label selector supported by the control plane.
+	Label string
+	// State filters by the current box state.
+	State BoxState
 }
 
 // BoxView describes one box.
@@ -451,141 +480,229 @@ type OrgHostsView struct {
 
 // TTYSize describes terminal size in rows and columns.
 type TTYSize struct {
+	// Rows is the terminal height in character cells.
 	Rows uint32 `json:"rows,omitempty"`
+	// Cols is the terminal width in character cells.
 	Cols uint32 `json:"cols,omitempty"`
 }
 
 // CreateBoxRequest creates a new box from an image or snap.
 type CreateBoxRequest struct {
-	BoxID          string            `json:"box_id,omitempty"`
-	DesiredShape   string            `json:"desired_shape,omitempty"`
-	NetworkMode    BoxNetworkMode    `json:"network_mode,omitempty"`
-	SecurityMode   BoxSecurityMode   `json:"security_mode,omitempty"`
-	Description    string            `json:"description,omitempty"`
-	Labels         map[string]string `json:"labels,omitempty"`
-	SourceSnapID   string            `json:"source_snap_id,omitempty"`
-	SourceImageRef string            `json:"source_image_ref,omitempty"`
+	// BoxID requests one specific box identifier. When empty, the control plane generates one.
+	BoxID string `json:"box_id,omitempty"`
+	// DesiredShape requests the compute shape for the box.
+	DesiredShape string `json:"desired_shape,omitempty"`
+	// NetworkMode requests the durable network mode for the box.
+	NetworkMode BoxNetworkMode `json:"network_mode,omitempty"`
+	// SecurityMode requests the durable security mode for the box.
+	SecurityMode BoxSecurityMode `json:"security_mode,omitempty"`
+	// Description is optional free-form box text.
+	Description string `json:"description,omitempty"`
+	// Labels sets durable box labels.
+	Labels map[string]string `json:"labels,omitempty"`
+	// SourceSnapID creates the box from one existing snap when non-empty.
+	SourceSnapID string `json:"source_snap_id,omitempty"`
+	// SourceImageRef imports directly from one image reference when non-empty.
+	SourceImageRef string `json:"source_image_ref,omitempty"`
 }
 
 // CreateBoxFromSharedSnapRequest creates a box from a published shared snap.
 type CreateBoxFromSharedSnapRequest struct {
-	Version      *int              `json:"version,omitempty"`
-	BoxID        string            `json:"box_id,omitempty"`
-	DesiredShape string            `json:"desired_shape,omitempty"`
-	NetworkMode  BoxNetworkMode    `json:"network_mode,omitempty"`
-	SecurityMode BoxSecurityMode   `json:"security_mode,omitempty"`
-	Description  string            `json:"description,omitempty"`
-	Labels       map[string]string `json:"labels,omitempty"`
+	// Version selects one published version. When nil, the latest version is used.
+	Version *int `json:"version,omitempty"`
+	// BoxID requests one specific box identifier. When empty, the control plane generates one.
+	BoxID string `json:"box_id,omitempty"`
+	// DesiredShape requests the compute shape for the box.
+	DesiredShape string `json:"desired_shape,omitempty"`
+	// NetworkMode requests the durable network mode for the box.
+	NetworkMode BoxNetworkMode `json:"network_mode,omitempty"`
+	// SecurityMode requests the durable security mode for the box.
+	SecurityMode BoxSecurityMode `json:"security_mode,omitempty"`
+	// Description is optional free-form box text.
+	Description string `json:"description,omitempty"`
+	// Labels sets durable box labels.
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // ImportSnapRequest imports a snap from an image reference.
 type ImportSnapRequest struct {
+	// ImageRef is the OCI-style image reference to import.
 	ImageRef string `json:"image_ref"`
+}
+
+// ListSnapsRequest describes optional filters for ListSnaps.
+type ListSnapsRequest struct {
+	// Attached filters by whether a snap is currently attached to a box.
+	Attached *bool
 }
 
 // UpdateMeRequest updates caller profile fields.
 type UpdateMeRequest struct {
+	// DisplayName replaces the current account display name when non-nil.
 	DisplayName *string `json:"display_name,omitempty"`
 }
 
 // CreateSSHKeyRequest creates one account SSH key.
 type CreateSSHKeyRequest struct {
-	Label     string `json:"label"`
+	// Label is the human-readable SSH key label.
+	Label string `json:"label"`
+	// PublicKey is the authorized_keys-formatted SSH public key.
 	PublicKey string `json:"public_key"`
 }
 
 // UpdateOrgRequest updates mutable organization fields.
 type UpdateOrgRequest struct {
+	// DisplayName replaces the current organization display name when non-nil.
 	DisplayName *string `json:"display_name,omitempty"`
-	OrgCID      *string `json:"org_cid,omitempty"`
+	// OrgCID replaces the durable organization CID when non-nil.
+	OrgCID *string `json:"org_cid,omitempty"`
 }
 
 // UpdateMembershipRequest updates one organization membership.
 type UpdateMembershipRequest struct {
+	// Role is the desired organization role.
 	Role MembershipRole `json:"role"`
 }
 
 // CreateInvitationRequest invites one user into an organization.
 type CreateInvitationRequest struct {
-	InviteeEmail string         `json:"invitee_email"`
-	Role         MembershipRole `json:"role"`
+	// InviteeEmail is the target email address.
+	InviteeEmail string `json:"invitee_email"`
+	// Role is the organization role to grant on acceptance.
+	Role MembershipRole `json:"role"`
 }
 
 // CreateAPIKeyRequest creates one API key for the current organization.
 type CreateAPIKeyRequest struct {
-	Description string     `json:"description,omitempty"`
-	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
-	NoExpire    bool       `json:"no_expire"`
+	// Description is optional operator-facing API key text.
+	Description string `json:"description,omitempty"`
+	// ExpiresAt requests one explicit expiry time when non-nil.
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	// NoExpire requests a non-expiring API key.
+	NoExpire bool `json:"no_expire"`
 }
 
 // UpdateProjectRequest updates mutable project fields.
 type UpdateProjectRequest struct {
+	// DisplayName replaces the current project display name when non-nil.
 	DisplayName *string `json:"display_name,omitempty"`
+	// Description replaces the current project description when non-nil.
 	Description *string `json:"description,omitempty"`
 }
 
 // UpdateProjectMembershipRequest updates one project membership.
 type UpdateProjectMembershipRequest struct {
+	// Role is the desired project role.
 	Role ProjectRole `json:"role"`
 }
 
 // UpdateBoxRequest updates mutable box fields.
 type UpdateBoxRequest struct {
-	Description  *string            `json:"description,omitempty"`
-	Labels       *map[string]string `json:"labels,omitempty"`
-	DesiredShape *string            `json:"desired_shape,omitempty"`
-	NetworkMode  *BoxNetworkMode    `json:"network_mode,omitempty"`
-	SecurityMode *BoxSecurityMode   `json:"security_mode,omitempty"`
+	// Description replaces the durable box description when non-nil.
+	Description *string `json:"description,omitempty"`
+	// Labels replaces the full durable label map when non-nil.
+	Labels *map[string]string `json:"labels,omitempty"`
+	// DesiredShape replaces the durable target shape when non-nil.
+	DesiredShape *string `json:"desired_shape,omitempty"`
+	// NetworkMode replaces the durable network mode when non-nil.
+	NetworkMode *BoxNetworkMode `json:"network_mode,omitempty"`
+	// SecurityMode replaces the durable security mode when non-nil.
+	SecurityMode *BoxSecurityMode `json:"security_mode,omitempty"`
 }
 
 // PublishSharedSnapRequest publishes one snap into the shared snap catalog.
 type PublishSharedSnapRequest struct {
-	Name         string `json:"name"`
-	Description  string `json:"description,omitempty"`
+	// Name is the shared snap catalog name.
+	Name string `json:"name"`
+	// Description is optional catalog text for this publication.
+	Description string `json:"description,omitempty"`
+	// SourceSnapID identifies the project-local snap to publish.
 	SourceSnapID string `json:"source_snap_id"`
 }
 
 // CreateSnapFromSharedSnapRequest creates a new snap from a shared snap version.
 type CreateSnapFromSharedSnapRequest struct {
+	// Version selects one published version. When nil, the latest version is used.
 	Version *int `json:"version,omitempty"`
 }
 
-// ExecBoxRequest starts one foreground or background exec in a box.
-type ExecBoxRequest struct {
-	DeadlineAt   *time.Time        `json:"deadline_at,omitempty"`
-	Command      []string          `json:"command"`
+// ExecRequest starts one foreground or background exec in a box.
+type ExecRequest struct {
+	// DeadlineAt requests a hard deadline. When nil, the target exec API applies its default.
+	DeadlineAt *time.Time `json:"deadline_at,omitempty"`
+	// Command is the argv array executed in the target box.
+	Command []string `json:"command"`
+	// EnvOverrides replaces or adds environment variables for this exec.
 	EnvOverrides map[string]string `json:"env_overrides,omitempty"`
-	User         string            `json:"user,omitempty"`
-	Workdir      string            `json:"workdir,omitempty"`
-	StdinEnabled bool              `json:"stdin_enabled,omitempty"`
-	TTY          bool              `json:"tty,omitempty"`
-	TTYSize      *TTYSize          `json:"tty_size,omitempty"`
+	// User selects the target user account inside the box when non-empty.
+	User string `json:"user,omitempty"`
+	// Workdir selects the target working directory when non-empty.
+	Workdir string `json:"workdir,omitempty"`
+	// StdinEnabled keeps stdin available for this exec when true.
+	StdinEnabled bool `json:"stdin_enabled,omitempty"`
+	// TTY requests one PTY-backed exec session.
+	TTY bool `json:"tty,omitempty"`
+	// TTYSize provides the initial PTY size when TTY is true.
+	TTYSize *TTYSize `json:"tty_size,omitempty"`
 }
 
 // ExecStreamEvent describes one event emitted by exec streaming APIs.
 type ExecStreamEvent struct {
-	Type          string `json:"type"`
-	ExecID        string `json:"exec_id,omitempty"`
-	Data          []byte `json:"data,omitempty"`
-	ExitCode      int32  `json:"exit_code,omitempty"`
+	// Type identifies the event kind. Common values include started, keepalive, stdout,
+	// stderr, exit, error, and cancelled.
+	Type string `json:"type"`
+	// ExecID carries the durable exec identifier on events that include it.
+	ExecID string `json:"exec_id,omitempty"`
+	// Data carries stdout or stderr bytes for stream output events.
+	Data []byte `json:"data,omitempty"`
+	// ExitCode is set on terminal exit events.
+	ExitCode int32 `json:"exit_code,omitempty"`
+	// FailureReason is set when the stream terminates with an error event.
 	FailureReason string `json:"failure_reason,omitempty"`
-	CancelReason  string `json:"cancel_reason,omitempty"`
+	// CancelReason is set when the stream terminates with a cancelled event.
+	CancelReason string `json:"cancel_reason,omitempty"`
 }
 
 // ExecAttachInput describes one input message sent over exec attach.
 type ExecAttachInput struct {
+	// Type identifies the input frame kind. Supported values are stdin, close_stdin, and resize.
 	Type string `json:"type"`
+	// Data carries stdin bytes when Type is stdin.
 	Data []byte `json:"data,omitempty"`
+	// Rows carries the new terminal height when Type is resize.
 	Rows uint32 `json:"rows,omitempty"`
+	// Cols carries the new terminal width when Type is resize.
 	Cols uint32 `json:"cols,omitempty"`
+}
+
+// PullBackgroundExecOutputRequest describes one pull-output request.
+type PullBackgroundExecOutputRequest struct {
+	// Cursor resumes from one previously returned cursor. Leave empty to start from the current head.
+	Cursor string
+	// Wait is the maximum total wait before returning when no visible output is ready yet.
+	Wait time.Duration
+}
+
+// WriteBackgroundExecStdinRequest describes one background exec stdin write.
+type WriteBackgroundExecStdinRequest struct {
+	// Data is the raw stdin chunk to send in this request.
+	Data []byte
+	// CloseStdin requests EOF immediately after Data is written.
+	CloseStdin bool
 }
 
 // BackgroundExecPullOutput describes one poll result from PullBackgroundExecOutput.
 type BackgroundExecPullOutput struct {
-	Body           []byte
-	NextCursor     string
-	State          string
-	ExitCode       *int
-	Reason         string
+	// Body is the merged stdout and stderr byte stream returned by this poll.
+	Body []byte
+	// NextCursor is the cursor to use on the next incremental poll.
+	NextCursor string
+	// State is the current durable exec state.
+	State string
+	// ExitCode is set after terminal exit when the exec produced one.
+	ExitCode *int
+	// Reason carries the durable terminal reason when one is available.
+	Reason string
+	// IdleDeadlineAt is the current idle lease deadline when the control plane reports it.
 	IdleDeadlineAt *time.Time
 }

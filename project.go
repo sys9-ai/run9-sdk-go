@@ -7,23 +7,23 @@ import (
 	"strings"
 )
 
-// Projects lists projects visible to the caller.
-func (c *Client) Projects(ctx context.Context, creds Credentials) ([]ProjectView, error) {
+// ListProjects lists projects visible to the caller.
+func (c *Client) ListProjects(ctx context.Context) ([]ProjectView, error) {
 	var views []ProjectView
-	err := c.do(ctx, http.MethodGet, "/projects", creds, requestOptions{result: &views})
+	err := c.do(ctx, http.MethodGet, "/projects", requestOptions{result: &views})
 	return views, err
 }
 
 // CreateProject creates one project.
-func (c *Client) CreateProject(ctx context.Context, creds Credentials, req CreateProjectRequest) (ProjectView, error) {
+func (c *Client) CreateProject(ctx context.Context, req CreateProjectRequest) (ProjectView, error) {
 	var view ProjectView
-	err := c.do(ctx, http.MethodPost, "/projects", creds, requestOptions{body: req, result: &view})
+	err := c.do(ctx, http.MethodPost, "/projects", requestOptions{body: req, result: &view})
 	return view, err
 }
 
-// ProjectByCID loads one project by CID.
-func (c *Client) ProjectByCID(ctx context.Context, creds Credentials, projectCID string) (ProjectView, error) {
+// GetProject loads one project by CID.
+func (c *Client) GetProject(ctx context.Context, projectCID string) (ProjectView, error) {
 	var view ProjectView
-	err := c.do(ctx, http.MethodGet, "/projects/"+url.PathEscape(strings.TrimSpace(projectCID)), creds, requestOptions{result: &view})
+	err := c.do(ctx, http.MethodGet, "/projects/"+url.PathEscape(strings.TrimSpace(projectCID)), requestOptions{result: &view})
 	return view, err
 }

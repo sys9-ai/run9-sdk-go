@@ -12,8 +12,8 @@ import (
 	"time"
 )
 
-// ExecListRequest describes filters for Execs.
-type ExecListRequest struct {
+// ListExecsRequest describes optional filters for ListExecs.
+type ListExecsRequest struct {
 	BoxID          string
 	State          string
 	Creator        string
@@ -25,14 +25,14 @@ type ExecListRequest struct {
 	Cursor         string
 }
 
-// ExecListResult describes the response returned by Execs.
-type ExecListResult struct {
+// ListExecsResult describes the response returned by ListExecs.
+type ListExecsResult struct {
 	Execs      []ExecView `json:"items"`
 	NextCursor string     `json:"next_cursor"`
 }
 
-// Execs lists execs in the current project with optional filters.
-func (c *Client) Execs(ctx context.Context, creds Credentials, req ExecListRequest) (ExecListResult, error) {
+// ListExecs lists execs in the current project with optional filters.
+func (c *Client) ListExecs(ctx context.Context, req ListExecsRequest) (ListExecsResult, error) {
 	query := map[string]string{}
 	if strings.TrimSpace(req.BoxID) != "" {
 		query["box_id"] = strings.TrimSpace(req.BoxID)
@@ -62,25 +62,25 @@ func (c *Client) Execs(ctx context.Context, creds Credentials, req ExecListReque
 		query["cursor"] = strings.TrimSpace(req.Cursor)
 	}
 
-	resp, err := c.doRaw(ctx, http.MethodGet, c.workspacePath("/execs"), creds, requestOptions{query: query})
+	resp, err := c.doWorkspaceRaw(ctx, http.MethodGet, "/execs", requestOptions{query: query})
 	if err != nil {
-		return ExecListResult{}, err
+		return ListExecsResult{}, err
 	}
 	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return ExecListResult{}, err
+		return ListExecsResult{}, err
 	}
 	if len(bytes.TrimSpace(data)) == 0 {
-		return ExecListResult{}, fmt.Errorf("portal api returned empty response body")
+		return ListExecsResult{}, fmt.Errorf("portal api returned empty response body")
 	}
 
 	var views []ExecView
 	if err := json.Unmarshal(data, &views); err != nil {
-		return ExecListResult{}, err
+		return ListExecsResult{}, err
 	}
-	return ExecListResult{
+	return ListExecsResult{
 		Execs:      views,
 		NextCursor: strings.TrimSpace(resp.Header.Get("X-Run9-Next-Cursor")),
 	}, nil

@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-// ExecByID loads one exec by ID from the current project.
-func (c *Client) ExecByID(ctx context.Context, creds Credentials, execID string) (ExecView, error) {
+// GetExec loads one exec by ID from the current project.
+func (c *Client) GetExec(ctx context.Context, execID string) (ExecView, error) {
 	var view ExecView
-	err := c.do(ctx, http.MethodGet, c.workspacePath("/execs/"+url.PathEscape(strings.TrimSpace(execID))), creds, requestOptions{result: &view})
+	err := c.doWorkspace(ctx, http.MethodGet, "/execs/"+url.PathEscape(strings.TrimSpace(execID)), requestOptions{result: &view})
 	return view, err
 }
