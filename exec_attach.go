@@ -11,11 +11,13 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// ExecAttachSocket wraps one exec attach websocket connection.
 type ExecAttachSocket struct {
 	mu   sync.Mutex
 	conn *websocket.Conn
 }
 
+// ReadEvent reads the next exec stream event from the websocket.
 func (s *ExecAttachSocket) ReadEvent() (ExecStreamEvent, error) {
 	var event ExecStreamEvent
 	if err := s.conn.ReadJSON(&event); err != nil {
@@ -24,12 +26,14 @@ func (s *ExecAttachSocket) ReadEvent() (ExecStreamEvent, error) {
 	return event, nil
 }
 
+// WriteInput writes one exec attach input frame to the websocket.
 func (s *ExecAttachSocket) WriteInput(input ExecAttachInput) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.conn.WriteJSON(input)
 }
 
+// Close closes the underlying websocket connection.
 func (s *ExecAttachSocket) Close() error {
 	if s == nil || s.conn == nil {
 		return nil
@@ -37,6 +41,7 @@ func (s *ExecAttachSocket) Close() error {
 	return s.conn.Close()
 }
 
+// ExecAttachURL dials one exec attach websocket returned by the control plane.
 func (c *Client) ExecAttachURL(ctx context.Context, attachURL string) (*ExecAttachSocket, error) {
 	resolvedURL, err := resolveHTTPURL(c.baseURL, attachURL)
 	if err != nil {

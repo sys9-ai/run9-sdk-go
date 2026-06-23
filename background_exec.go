@@ -17,6 +17,7 @@ type backgroundExecPullOutputRequest struct {
 	WaitMS int64  `json:"wait_ms,omitempty"`
 }
 
+// BackgroundExec starts one background exec in a box.
 func (c *Client) BackgroundExec(ctx context.Context, creds Credentials, boxID string, req ExecBoxRequest) (ExecView, error) {
 	var view ExecView
 	err := c.do(ctx, http.MethodPost, c.workspacePath("/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/background-execs"), creds, requestOptions{
@@ -26,6 +27,7 @@ func (c *Client) BackgroundExec(ctx context.Context, creds Credentials, boxID st
 	return view, err
 }
 
+// PullBackgroundExecOutput polls output and state transitions for one background exec.
 func (c *Client) PullBackgroundExecOutput(ctx context.Context, creds Credentials, execID string, cursor string, wait time.Duration) (BackgroundExecPullOutput, error) {
 	var result BackgroundExecPullOutput
 	request := backgroundExecPullOutputRequest{
@@ -63,6 +65,7 @@ func (c *Client) PullBackgroundExecOutput(ctx context.Context, creds Credentials
 	return result, nil
 }
 
+// WriteBackgroundExecStdin writes stdin bytes into one background exec.
 func (c *Client) WriteBackgroundExecStdin(ctx context.Context, creds Credentials, execID string, data []byte, closeStdin bool) (*time.Time, error) {
 	resp, err := c.doRaw(ctx, http.MethodPost, c.workspacePath("/execs/"+url.PathEscape(strings.TrimSpace(execID))+"/write-stdin"), creds, requestOptions{
 		body: data,
@@ -83,6 +86,7 @@ func (c *Client) WriteBackgroundExecStdin(ctx context.Context, creds Credentials
 	return idleDeadlineAt, nil
 }
 
+// KillBackgroundExec requests termination of one background exec.
 func (c *Client) KillBackgroundExec(ctx context.Context, creds Credentials, execID string) error {
 	return c.do(ctx, http.MethodPost, c.workspacePath("/execs/"+url.PathEscape(strings.TrimSpace(execID))+"/kill"), creds, requestOptions{})
 }

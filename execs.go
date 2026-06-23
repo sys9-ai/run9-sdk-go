@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// ExecListRequest describes filters for Execs.
 type ExecListRequest struct {
 	BoxID          string
 	State          string
@@ -24,11 +25,13 @@ type ExecListRequest struct {
 	Cursor         string
 }
 
+// ExecListResult describes the response returned by Execs.
 type ExecListResult struct {
 	Execs      []ExecView `json:"items"`
 	NextCursor string     `json:"next_cursor"`
 }
 
+// Execs lists execs in the current project with optional filters.
 func (c *Client) Execs(ctx context.Context, creds Credentials, req ExecListRequest) (ExecListResult, error) {
 	query := map[string]string{}
 	if strings.TrimSpace(req.BoxID) != "" {

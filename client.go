@@ -27,6 +27,7 @@ type Error struct {
 	Message    string
 }
 
+// Error returns the control-plane message when present.
 func (e *Error) Error() string {
 	if e == nil {
 		return ""
@@ -62,6 +63,7 @@ func NewClient(endpoint string) *Client {
 	}
 }
 
+// WithProject returns a shallow client clone pinned to one project CID.
 func (c *Client) WithProject(projectCID string) *Client {
 	if c == nil {
 		return nil
@@ -71,18 +73,21 @@ func (c *Client) WithProject(projectCID string) *Client {
 	return &clone
 }
 
+// WhoAmI loads the current authenticated user and organization identity.
 func (c *Client) WhoAmI(ctx context.Context, creds Credentials) (CurrentOrgIdentityView, error) {
 	var view CurrentOrgIdentityView
 	err := c.do(ctx, http.MethodGet, "/whoami", creds, requestOptions{result: &view})
 	return view, err
 }
 
+// CreateBox creates one project-scoped box.
 func (c *Client) CreateBox(ctx context.Context, creds Credentials, req CreateBoxRequest) (BoxView, error) {
 	var view BoxView
 	err := c.do(ctx, http.MethodPost, c.workspacePath("/boxes"), creds, requestOptions{body: req, result: &view})
 	return view, err
 }
 
+// Boxes lists project-scoped boxes with optional creator, label, and state filters.
 func (c *Client) Boxes(ctx context.Context, creds Credentials, creator string, label string, state string) ([]BoxView, error) {
 	query := map[string]string{}
 	if strings.TrimSpace(creator) != "" {
@@ -100,24 +105,28 @@ func (c *Client) Boxes(ctx context.Context, creds Credentials, creator string, l
 	return views, err
 }
 
+// Box loads one project-scoped box by ID.
 func (c *Client) Box(ctx context.Context, creds Credentials, boxID string) (BoxView, error) {
 	var view BoxView
 	err := c.do(ctx, http.MethodGet, c.workspacePath("/boxes/"+url.PathEscape(strings.TrimSpace(boxID))), creds, requestOptions{result: &view})
 	return view, err
 }
 
+// StopBox requests a graceful stop for one box.
 func (c *Client) StopBox(ctx context.Context, creds Credentials, boxID string) (BoxView, error) {
 	var view BoxView
 	err := c.do(ctx, http.MethodPost, c.workspacePath("/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/stop"), creds, requestOptions{result: &view})
 	return view, err
 }
 
+// RemoveBox deletes one box.
 func (c *Client) RemoveBox(ctx context.Context, creds Credentials, boxID string) (BoxView, error) {
 	var view BoxView
 	err := c.do(ctx, http.MethodDelete, c.workspacePath("/boxes/"+url.PathEscape(strings.TrimSpace(boxID))), creds, requestOptions{result: &view})
 	return view, err
 }
 
+// ImportSnap imports a snap from an image reference into the current project.
 func (c *Client) ImportSnap(ctx context.Context, creds Credentials, imageRef string) (SnapView, error) {
 	var view SnapView
 	err := c.do(ctx, http.MethodPost, c.workspacePath("/snaps/import"), creds, requestOptions{
@@ -127,6 +136,7 @@ func (c *Client) ImportSnap(ctx context.Context, creds Credentials, imageRef str
 	return view, err
 }
 
+// Snaps lists project-scoped snaps with an optional attached filter.
 func (c *Client) Snaps(ctx context.Context, creds Credentials, attached string) ([]SnapView, error) {
 	query := map[string]string{}
 	if strings.TrimSpace(attached) != "" {
@@ -138,24 +148,28 @@ func (c *Client) Snaps(ctx context.Context, creds Credentials, attached string) 
 	return views, err
 }
 
+// Snap loads one project-scoped snap by ID.
 func (c *Client) Snap(ctx context.Context, creds Credentials, snapID string) (SnapView, error) {
 	var view SnapView
 	err := c.do(ctx, http.MethodGet, c.workspacePath("/snaps/"+url.PathEscape(strings.TrimSpace(snapID))), creds, requestOptions{result: &view})
 	return view, err
 }
 
+// ForkSnap creates a writable child snap from an existing snap.
 func (c *Client) ForkSnap(ctx context.Context, creds Credentials, snapID string) (SnapView, error) {
 	var view SnapView
 	err := c.do(ctx, http.MethodPost, c.workspacePath("/snaps/"+url.PathEscape(strings.TrimSpace(snapID))+"/fork"), creds, requestOptions{result: &view})
 	return view, err
 }
 
+// RemoveSnap deletes one snap.
 func (c *Client) RemoveSnap(ctx context.Context, creds Credentials, snapID string) (SnapView, error) {
 	var view SnapView
 	err := c.do(ctx, http.MethodDelete, c.workspacePath("/snaps/"+url.PathEscape(strings.TrimSpace(snapID))), creds, requestOptions{result: &view})
 	return view, err
 }
 
+// ExecStream starts a streaming exec and returns the exec ID plus NDJSON body.
 func (c *Client) ExecStream(ctx context.Context, creds Credentials, boxID string, req ExecBoxRequest) (string, io.ReadCloser, error) {
 	cleanBoxID := strings.TrimSpace(boxID)
 	resp, err := c.doRaw(ctx, http.MethodPost, c.workspacePath("/boxes/"+url.PathEscape(cleanBoxID)+"/execs/stream"), creds, requestOptions{
@@ -172,6 +186,7 @@ func (c *Client) ExecStream(ctx context.Context, creds Credentials, boxID string
 	return execID, resp.Body, nil
 }
 
+// Exec starts one foreground exec and returns its initial view.
 func (c *Client) Exec(ctx context.Context, creds Credentials, boxID string, req ExecBoxRequest) (ExecView, error) {
 	var view ExecView
 	err := c.do(ctx, http.MethodPost, c.workspacePath("/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/execs"), creds, requestOptions{
@@ -181,6 +196,7 @@ func (c *Client) Exec(ctx context.Context, creds Credentials, boxID string, req 
 	return view, err
 }
 
+// UploadArchive uploads one tar archive into a box path.
 func (c *Client) UploadArchive(ctx context.Context, creds Credentials, boxID string, boxAbsPath string, source io.Reader) (RuntimeRequestView, error) {
 	var view RuntimeRequestView
 	err := c.do(ctx, http.MethodPost, c.workspacePath("/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/files/upload"), creds, requestOptions{
@@ -192,6 +208,7 @@ func (c *Client) UploadArchive(ctx context.Context, creds Credentials, boxID str
 	return view, err
 }
 
+// DownloadArchive downloads one box path as a tar archive.
 func (c *Client) DownloadArchive(ctx context.Context, creds Credentials, boxID string, boxAbsPath string) (io.ReadCloser, error) {
 	resp, err := c.doRaw(ctx, http.MethodGet, c.workspacePath("/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/files/download"), creds, requestOptions{
 		query: map[string]string{

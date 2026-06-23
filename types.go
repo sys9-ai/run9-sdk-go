@@ -2,50 +2,65 @@ package run9
 
 import "time"
 
+// MembershipRole represents one organization membership role.
 type MembershipRole string
 
+// OrgKind represents one organization kind.
 type OrgKind string
 
+// ProjectRole represents one project membership role.
 type ProjectRole string
 
+// ProjectSecretScope represents where a secret is attached.
 type ProjectSecretScope string
 
+// Organization kinds returned by the control plane.
 const (
 	OrgKindPersonal OrgKind = "personal"
 	OrgKindShared   OrgKind = "shared"
 )
 
+// Secret scopes accepted by project and box secret APIs.
 const (
 	ProjectSecretScopeProject ProjectSecretScope = "project"
 	ProjectSecretScopeBox     ProjectSecretScope = "box"
 )
 
+// InvitationState represents one invitation lifecycle state.
 type InvitationState string
 
+// BoxState represents the current box state.
 type BoxState string
 
+// BoxNetworkMode represents the requested networking mode for a box.
 type BoxNetworkMode string
 
+// Box network modes accepted by box create and update APIs.
 const (
 	BoxNetworkModeNormal  BoxNetworkMode = "normal"
 	BoxNetworkModeManaged BoxNetworkMode = "managed"
 )
 
+// BoxSecurityMode represents the requested security mode for a box.
 type BoxSecurityMode string
 
+// Box security modes accepted by box create and update APIs.
 const (
 	BoxSecurityModeRestricted BoxSecurityMode = "restricted"
 	BoxSecurityModeUnsafe     BoxSecurityMode = "unsafe"
 )
 
+// SnapState represents the current snap state.
 type SnapState string
 
+// CurrentSubscriptionView describes the caller's current subscription snapshot.
 type CurrentSubscriptionView struct {
 	Tier      string    `json:"tier"`
 	StartDate time.Time `json:"start_date,omitempty"`
 	EndDate   time.Time `json:"end_date,omitempty"`
 }
 
+// MeView describes one user account.
 type MeView struct {
 	UserID          string    `json:"user_id"`
 	PrimaryEmail    string    `json:"primary_email"`
@@ -54,6 +69,7 @@ type MeView struct {
 	IsSystemManager bool      `json:"is_system_manager"`
 }
 
+// OrgView describes one organization visible to the caller.
 type OrgView struct {
 	OrgID               string                  `json:"org_id"`
 	OrgCID              string                  `json:"org_cid"`
@@ -65,17 +81,20 @@ type OrgView struct {
 	CurrentSubscription CurrentSubscriptionView `json:"current_subscription"`
 }
 
+// CurrentOrgIdentityView describes the current authenticated user and org.
 type CurrentOrgIdentityView struct {
 	User     MeView  `json:"user"`
 	Org      OrgView `json:"org"`
 	AuthKind string  `json:"auth_kind"`
 }
 
+// DeleteOrgResult describes the accepted result of deleting an organization.
 type DeleteOrgResult struct {
 	OrgID  string `json:"org_id"`
 	Status string `json:"status"`
 }
 
+// MembershipView describes one organization member.
 type MembershipView struct {
 	OrgID        string         `json:"org_id"`
 	UserID       string         `json:"user_id"`
@@ -87,6 +106,7 @@ type MembershipView struct {
 	LastLoginAt  time.Time      `json:"last_login_at,omitempty"`
 }
 
+// InvitationView describes one organization invitation.
 type InvitationView struct {
 	InvitationID string          `json:"invitation_id"`
 	OrgID        string          `json:"org_id"`
@@ -100,11 +120,13 @@ type InvitationView struct {
 	UpdatedAt    time.Time       `json:"updated_at"`
 }
 
+// DeleteInvitationResult describes the accepted result of revoking an invitation.
 type DeleteInvitationResult struct {
 	InvitationID string `json:"invitation_id"`
 	Status       string `json:"status"`
 }
 
+// APIKeyView describes one API key without secret key material.
 type APIKeyView struct {
 	APIKeyID          string    `json:"api_key_id"`
 	OrgID             string    `json:"org_id"`
@@ -120,6 +142,7 @@ type APIKeyView struct {
 	NoExpire          bool      `json:"no_expire"`
 }
 
+// CreatedAPIKeyView describes a newly created API key, including its secret key.
 type CreatedAPIKeyView struct {
 	APIKeyID          string    `json:"api_key_id"`
 	OrgID             string    `json:"org_id"`
@@ -136,6 +159,7 @@ type CreatedAPIKeyView struct {
 	NoExpire          bool      `json:"no_expire"`
 }
 
+// SSHKeyView describes one SSH key on the caller's account.
 type SSHKeyView struct {
 	SSHKeyID    string     `json:"ssh_key_id"`
 	Label       string     `json:"label"`
@@ -144,6 +168,7 @@ type SSHKeyView struct {
 	LastUsedAt  *time.Time `json:"last_used_at,omitempty"`
 }
 
+// ProjectView describes one project visible to the caller.
 type ProjectView struct {
 	ProjectID   string      `json:"project_id"`
 	OrgID       string      `json:"org_id"`
@@ -156,11 +181,13 @@ type ProjectView struct {
 	UpdatedAt   time.Time   `json:"updated_at"`
 }
 
+// DeleteProjectResult describes the accepted result of deleting a project.
 type DeleteProjectResult struct {
 	ProjectID string `json:"project_id"`
 	Status    string `json:"status"`
 }
 
+// ProjectMembershipView describes one project member.
 type ProjectMembershipView struct {
 	ProjectID    string      `json:"project_id"`
 	UserID       string      `json:"user_id"`
@@ -171,6 +198,7 @@ type ProjectMembershipView struct {
 	UpdatedAt    time.Time   `json:"updated_at"`
 }
 
+// ProjectSecretView describes one secret attached to project or box scope.
 type ProjectSecretView struct {
 	SecretID         string             `json:"secret_id"`
 	OrgID            string             `json:"org_id"`
@@ -187,11 +215,13 @@ type ProjectSecretView struct {
 	UpdatedAt        time.Time          `json:"updated_at"`
 }
 
+// CreateProjectRequest creates a new project.
 type CreateProjectRequest struct {
 	DisplayName string `json:"display_name"`
 	Description string `json:"description,omitempty"`
 }
 
+// CreateProjectSecretRequest creates a new project or box secret.
 type CreateProjectSecretRequest struct {
 	Name             string   `json:"name,omitempty"`
 	Value            string   `json:"value"`
@@ -200,6 +230,7 @@ type CreateProjectSecretRequest struct {
 	InjectHeaderName string   `json:"inject_header_name"`
 }
 
+// UpdateProjectSecretRequest updates one existing project or box secret.
 type UpdateProjectSecretRequest struct {
 	Name             *string   `json:"name,omitempty"`
 	Value            *string   `json:"value,omitempty"`
@@ -207,6 +238,7 @@ type UpdateProjectSecretRequest struct {
 	InjectHeaderName *string   `json:"inject_header_name,omitempty"`
 }
 
+// BoxView describes one box.
 type BoxView struct {
 	BoxID                      string            `json:"box_id"`
 	OrgID                      string            `json:"org_id"`
@@ -231,6 +263,7 @@ type BoxView struct {
 	PendingSecurityModeChange  bool              `json:"pending_security_mode_change"`
 }
 
+// SnapView describes one snap.
 type SnapView struct {
 	SnapID              string            `json:"snap_id"`
 	OrgID               string            `json:"org_id"`
@@ -251,12 +284,14 @@ type SnapView struct {
 	OwnedStorage        *SnapOwnedStorage `json:"owned_storage,omitempty"`
 }
 
+// SnapTreeView describes the ancestry tree returned for one snap.
 type SnapTreeView struct {
 	Supported  bool               `json:"supported"`
 	RootSnapID string             `json:"root_snap_id,omitempty"`
 	Nodes      []SnapTreeNodeView `json:"nodes,omitempty"`
 }
 
+// SnapTreeNodeView describes one node inside a snap ancestry tree.
 type SnapTreeNodeView struct {
 	SnapID              string                   `json:"snap_id"`
 	ParentSnapID        string                   `json:"parent_snap_id,omitempty"`
@@ -272,6 +307,7 @@ type SnapTreeNodeView struct {
 	AttachedBox         *SnapTreeAttachedBoxView `json:"attached_box,omitempty"`
 }
 
+// SnapTreeAttachedBoxView describes the box attached to one snap tree node.
 type SnapTreeAttachedBoxView struct {
 	BoxID        string   `json:"box_id"`
 	DesiredShape string   `json:"desired_shape"`
@@ -292,6 +328,7 @@ type SnapOwnedStorage struct {
 	MeasuredAt time.Time `json:"measured_at"`
 }
 
+// RuntimeRequestView describes one asynchronous runtime request.
 type RuntimeRequestView struct {
 	RuntimeRequestID string `json:"runtime_request_id"`
 	State            string `json:"state"`
@@ -299,6 +336,7 @@ type RuntimeRequestView struct {
 	HostID           string `json:"host_id,omitempty"`
 }
 
+// ExecView describes one exec request and its current state.
 type ExecView struct {
 	ExecID         string         `json:"exec_id"`
 	BoxID          string         `json:"box_id"`
@@ -321,6 +359,7 @@ type ExecView struct {
 	Diagnostics    map[string]any `json:"diagnostics,omitempty"`
 }
 
+// SharedSnapLineView describes one shared snap in list results.
 type SharedSnapLineView struct {
 	OrgID                    string    `json:"org_id"`
 	Name                     string    `json:"name"`
@@ -334,6 +373,7 @@ type SharedSnapLineView struct {
 	SourceProjectDisplayName string    `json:"source_project_display_name"`
 }
 
+// SharedSnapVersionView describes one published shared snap version.
 type SharedSnapVersionView struct {
 	OrgID                    string    `json:"org_id"`
 	Name                     string    `json:"name"`
@@ -346,6 +386,7 @@ type SharedSnapVersionView struct {
 	SourceProjectDisplayName string    `json:"source_project_display_name"`
 }
 
+// SharedSnapDetailView describes one shared snap and its version history.
 type SharedSnapDetailView struct {
 	OrgID         string                  `json:"org_id"`
 	Name          string                  `json:"name"`
@@ -354,11 +395,13 @@ type SharedSnapDetailView struct {
 	Versions      []SharedSnapVersionView `json:"versions"`
 }
 
+// HostIssue describes one issue reported for a runtime host.
 type HostIssue struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 }
 
+// HostView describes one runtime host assigned to an organization.
 type HostView struct {
 	HostID string `json:"host_id"`
 
@@ -399,17 +442,20 @@ type HostView struct {
 	Issues           []HostIssue `json:"issues,omitempty"`
 }
 
+// OrgHostsView describes runtime host assignment for one organization.
 type OrgHostsView struct {
 	OrgID         string     `json:"org_id"`
 	AssignedHosts int        `json:"assigned_hosts"`
 	Hosts         []HostView `json:"hosts"`
 }
 
+// TTYSize describes terminal size in rows and columns.
 type TTYSize struct {
 	Rows uint32 `json:"rows,omitempty"`
 	Cols uint32 `json:"cols,omitempty"`
 }
 
+// CreateBoxRequest creates a new box from an image or snap.
 type CreateBoxRequest struct {
 	BoxID          string            `json:"box_id,omitempty"`
 	DesiredShape   string            `json:"desired_shape,omitempty"`
@@ -421,6 +467,7 @@ type CreateBoxRequest struct {
 	SourceImageRef string            `json:"source_image_ref,omitempty"`
 }
 
+// CreateBoxFromSharedSnapRequest creates a box from a published shared snap.
 type CreateBoxFromSharedSnapRequest struct {
 	Version      *int              `json:"version,omitempty"`
 	BoxID        string            `json:"box_id,omitempty"`
@@ -431,48 +478,58 @@ type CreateBoxFromSharedSnapRequest struct {
 	Labels       map[string]string `json:"labels,omitempty"`
 }
 
+// ImportSnapRequest imports a snap from an image reference.
 type ImportSnapRequest struct {
 	ImageRef string `json:"image_ref"`
 }
 
+// UpdateMeRequest updates caller profile fields.
 type UpdateMeRequest struct {
 	DisplayName *string `json:"display_name,omitempty"`
 }
 
+// CreateSSHKeyRequest creates one account SSH key.
 type CreateSSHKeyRequest struct {
 	Label     string `json:"label"`
 	PublicKey string `json:"public_key"`
 }
 
+// UpdateOrgRequest updates mutable organization fields.
 type UpdateOrgRequest struct {
 	DisplayName *string `json:"display_name,omitempty"`
 	OrgCID      *string `json:"org_cid,omitempty"`
 }
 
+// UpdateMembershipRequest updates one organization membership.
 type UpdateMembershipRequest struct {
 	Role MembershipRole `json:"role"`
 }
 
+// CreateInvitationRequest invites one user into an organization.
 type CreateInvitationRequest struct {
 	InviteeEmail string         `json:"invitee_email"`
 	Role         MembershipRole `json:"role"`
 }
 
+// CreateAPIKeyRequest creates one API key for the current organization.
 type CreateAPIKeyRequest struct {
 	Description string     `json:"description,omitempty"`
 	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
 	NoExpire    bool       `json:"no_expire"`
 }
 
+// UpdateProjectRequest updates mutable project fields.
 type UpdateProjectRequest struct {
 	DisplayName *string `json:"display_name,omitempty"`
 	Description *string `json:"description,omitempty"`
 }
 
+// UpdateProjectMembershipRequest updates one project membership.
 type UpdateProjectMembershipRequest struct {
 	Role ProjectRole `json:"role"`
 }
 
+// UpdateBoxRequest updates mutable box fields.
 type UpdateBoxRequest struct {
 	Description  *string            `json:"description,omitempty"`
 	Labels       *map[string]string `json:"labels,omitempty"`
@@ -481,16 +538,19 @@ type UpdateBoxRequest struct {
 	SecurityMode *BoxSecurityMode   `json:"security_mode,omitempty"`
 }
 
+// PublishSharedSnapRequest publishes one snap into the shared snap catalog.
 type PublishSharedSnapRequest struct {
 	Name         string `json:"name"`
 	Description  string `json:"description,omitempty"`
 	SourceSnapID string `json:"source_snap_id"`
 }
 
+// CreateSnapFromSharedSnapRequest creates a new snap from a shared snap version.
 type CreateSnapFromSharedSnapRequest struct {
 	Version *int `json:"version,omitempty"`
 }
 
+// ExecBoxRequest starts one foreground or background exec in a box.
 type ExecBoxRequest struct {
 	DeadlineAt   *time.Time        `json:"deadline_at,omitempty"`
 	Command      []string          `json:"command"`
@@ -502,6 +562,7 @@ type ExecBoxRequest struct {
 	TTYSize      *TTYSize          `json:"tty_size,omitempty"`
 }
 
+// ExecStreamEvent describes one event emitted by exec streaming APIs.
 type ExecStreamEvent struct {
 	Type          string `json:"type"`
 	ExecID        string `json:"exec_id,omitempty"`
@@ -511,6 +572,7 @@ type ExecStreamEvent struct {
 	CancelReason  string `json:"cancel_reason,omitempty"`
 }
 
+// ExecAttachInput describes one input message sent over exec attach.
 type ExecAttachInput struct {
 	Type string `json:"type"`
 	Data []byte `json:"data,omitempty"`
@@ -518,6 +580,7 @@ type ExecAttachInput struct {
 	Cols uint32 `json:"cols,omitempty"`
 }
 
+// BackgroundExecPullOutput describes one poll result from PullBackgroundExecOutput.
 type BackgroundExecPullOutput struct {
 	Body           []byte
 	NextCursor     string
