@@ -15,10 +15,10 @@ If the public API changes, README, doc comments, and examples are updated in the
 ## Install
 
 ```bash
-go get github.com/sys9-ai/run9-sdk-go@v0.2.0
+go get github.com/sys9-ai/run9-sdk-go@latest
 ```
 
-The SDK uses semantic version tags. Depend on one released tag instead of an unpublished commit.
+The SDK uses semantic version tags. For reproducible builds, pin one released tag in your `go.mod` instead of an unpublished commit.
 
 ## Quick Start
 
@@ -101,6 +101,23 @@ result, err := project.RunExec(ctx, "devbox", run9.ExecRequest{
 ```
 
 `result` tells you whether the exec exited, was cancelled, or failed. When you need direct event control, `StartExecStream(...)` and `ReadEvent()` are still available.
+
+Run one foreground exec and wait for the final merged transcript:
+
+```go
+capture, err := project.RunExecCapture(ctx, "devbox", run9.ExecRequest{
+	Command: []string{"/bin/sh", "-lc", "echo hello"},
+})
+if err != nil {
+	return err
+}
+if capture.TranscriptUnavailableReason != "" {
+	return fmt.Errorf("exec finished but its final transcript is unavailable: %s", capture.TranscriptUnavailableReason)
+}
+fmt.Printf("exit=%d transcript=%s", *capture.Terminal.ExitCode, capture.Transcript)
+```
+
+`RunExecCapture(...)` is the stable completion helper. It uses the live foreground stream to start the command, then falls back to durable exec truth plus `log-download` when the stream transport breaks near terminal. The returned transcript always follows the merged `log-download` view, so it does not preserve stdout and stderr as separate streams. If the exec finished but the transcript archive is unavailable, the helper still returns the terminal result and reports the transcript problem through `TranscriptUnavailableReason`.
 
 Start one background exec and follow its output with an internal cursor:
 

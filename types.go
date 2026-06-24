@@ -1,6 +1,9 @@
 package run9
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // MembershipRole represents one organization membership role.
 type MembershipRole string
@@ -386,6 +389,47 @@ type ExecView struct {
 	StdinEnabled   bool           `json:"stdin_enabled,omitempty"`
 	AttachURL      string         `json:"attach_url,omitempty"`
 	Diagnostics    map[string]any `json:"diagnostics,omitempty"`
+}
+
+// TerminalResult returns the normalized terminal outcome when this exec view is terminal.
+func (v ExecView) TerminalResult() *ExecTerminalResult {
+	state := strings.TrimSpace(v.State)
+	switch state {
+	case "succeeded":
+		exitCode := 0
+		if v.ExitCode != nil {
+			exitCode = *v.ExitCode
+		}
+		return &ExecTerminalResult{
+			Status:   ExecTerminalStatusExited,
+			ExitCode: &exitCode,
+		}
+	case "failed":
+		if v.ExitCode != nil {
+			return &ExecTerminalResult{
+				Status:   ExecTerminalStatusExited,
+				ExitCode: cloneOptionalInt(v.ExitCode),
+			}
+		}
+		if strings.TrimSpace(v.Reason) != "" {
+			return &ExecTerminalResult{
+				Status: ExecTerminalStatusError,
+				Reason: v.Reason,
+			}
+		}
+	case "cancelled":
+		return &ExecTerminalResult{
+			Status: ExecTerminalStatusCancelled,
+			Reason: v.Reason,
+		}
+	case "error":
+		return &ExecTerminalResult{
+			Status:   ExecTerminalStatusError,
+			ExitCode: cloneOptionalInt(v.ExitCode),
+			Reason:   v.Reason,
+		}
+	}
+	return nil
 }
 
 // SharedSnapLineView describes one shared snap in list results.

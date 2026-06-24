@@ -57,6 +57,26 @@ func ExampleClient_RunExec() {
 	_ = project
 }
 
+func ExampleClient_RunExecCapture() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{
+		AK: "ak-...",
+		SK: "sk-...",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	project := client.WithProject("sandbox")
+	capture, err := project.RunExecCapture(context.Background(), "devbox", run9.ExecRequest{
+		Command: []string{"/bin/sh", "-lc", "echo hello"},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	_, _ = capture.Transcript, capture.Terminal
+}
+
 func ExampleClient_FollowBackgroundExec() {
 	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{
 		AK: "ak-...",

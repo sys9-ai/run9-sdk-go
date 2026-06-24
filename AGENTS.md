@@ -29,8 +29,8 @@ Read this file when a task changes any of these:
 - The SDK must use semantic version tags: `vX.Y.Z`.
 - Tag only commits that are already on `main`.
 - Before tagging, run `go test ./...`.
-- Before releasing `run9-cli`, first release the SDK, then update CLI to that exact latest SDK tag.
-- `run9-cli` main must track the latest released `run9-sdk-go` tag.
+- Keep this repo release-focused: versioning rules here describe the SDK itself.
+- If the same change also requires a `run9-cli` dependency bump or release flow update, follow that policy in the CLI repo or the parent `run9` monorepo instructions instead of documenting CLI policy here.
 
 ## Branch And Integration
 
