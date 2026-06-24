@@ -7,7 +7,8 @@ The package follows one consistent calling model:
   - Use the base client for account, organization, shared-snap, and project-discovery APIs.
   - Use Client.WithProject to derive a project-scoped client for boxes, snaps, execs, archives, and secrets.
   - Pass request structs when a call has optional filters or mutable payload.
-  - Use typed stream helpers such as ExecStream and ExecAttachSocket instead of handling raw NDJSON or websocket frames directly.
+  - Use high-level helpers such as Client.RunExec and Client.FollowBackgroundExec when you want output plus terminal results.
+  - Drop down to typed stream helpers such as ExecStream and ExecAttachSocket only when you need direct event control.
 
 The module path is github.com/sys9-ai/run9-sdk-go, while the package name is run9:
 

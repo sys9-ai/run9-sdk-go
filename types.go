@@ -677,9 +677,9 @@ type ExecAttachInput struct {
 
 // PullBackgroundExecOutputRequest describes one pull-output request.
 type PullBackgroundExecOutputRequest struct {
-	// Cursor resumes from one previously returned cursor. Leave empty to start from the current head.
+	// Cursor resumes from one previously returned cursor. Leave empty to read from the beginning once.
 	Cursor string
-	// Wait is the maximum total wait before returning when no visible output is ready yet.
+	// Wait asks the service to short-poll before returning when the cursor is currently at the live tail.
 	Wait time.Duration
 }
 
@@ -691,10 +691,10 @@ type WriteBackgroundExecStdinRequest struct {
 	CloseStdin bool
 }
 
-// BackgroundExecPullOutput describes one poll result from PullBackgroundExecOutput.
+// BackgroundExecPullOutput describes one decoded background exec output window.
 type BackgroundExecPullOutput struct {
-	// Body is the merged stdout and stderr byte stream returned by this poll.
-	Body []byte
+	// Events carries the decoded output and terminal events returned by this poll.
+	Events []BackgroundExecOutputEvent
 	// NextCursor is the cursor to use on the next incremental poll.
 	NextCursor string
 	// State is the current durable exec state.

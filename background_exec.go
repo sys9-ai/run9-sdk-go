@@ -44,9 +44,15 @@ func (c *Client) PullBackgroundExecOutput(ctx context.Context, execID string, re
 	}
 	defer resp.Body.Close()
 
-	result.Body, err = io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return result, err
+	}
+	if len(body) != 0 {
+		result.Events, err = decodeBackgroundExecOutputEvents(body)
+		if err != nil {
+			return result, err
+		}
 	}
 	result.NextCursor = strings.TrimSpace(resp.Header.Get("X-Run9-Next-Cursor"))
 	result.State = strings.TrimSpace(resp.Header.Get("X-Run9-Exec-State"))

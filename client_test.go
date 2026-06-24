@@ -368,6 +368,41 @@ func TestClientStartExecStreamFollowsRedirectAndKeepsFinalExecIDHeader(t *testin
 	require.EqualValues(t, 0, exited.ExitCode)
 }
 
+func TestClientRunExecWritesOutputAndReturnsTerminalResult(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/projects/default/workspace/boxes/box-1/execs/stream":
+			require.Equal(t, http.MethodPost, r.Method)
+			http.Redirect(w, r, "/foreground-relay/execs/ticket-1/exec-stream", http.StatusSeeOther)
+		case "/foreground-relay/execs/ticket-1/exec-stream":
+			require.Equal(t, http.MethodGet, r.Method)
+			w.Header().Set("Content-Type", "application/x-ndjson")
+			require.NoError(t, json.NewEncoder(w).Encode(ExecStreamEvent{Type: "started"}))
+			require.NoError(t, json.NewEncoder(w).Encode(ExecStreamEvent{Type: "stdout", Data: []byte("hello\n")}))
+			require.NoError(t, json.NewEncoder(w).Encode(ExecStreamEvent{Type: "stderr", Data: []byte("warn\n")}))
+			require.NoError(t, json.NewEncoder(w).Encode(ExecStreamEvent{Type: "exit", ExitCode: 23}))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	result, err := newProjectTestClient(t, server.URL, "default").RunExec(context.Background(), "box-1", ExecRequest{
+		Command: []string{"printf", "hello"},
+	}, ExecOutputWriters{
+		Stdout: &stdout,
+		Stderr: &stderr,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "hello\n", stdout.String())
+	require.Equal(t, "warn\n", stderr.String())
+	require.Equal(t, ExecTerminalStatusExited, result.Status)
+	require.NotNil(t, result.ExitCode)
+	require.Equal(t, 23, *result.ExitCode)
+}
+
 func TestClientOpenExecAttachOverridesDefaultWebsocketHandshakeTimeout(t *testing.T) {
 	oldTimeout := websocket.DefaultDialer.HandshakeTimeout
 	websocket.DefaultDialer.HandshakeTimeout = time.Millisecond
