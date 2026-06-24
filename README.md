@@ -15,7 +15,7 @@ If the public API changes, README, doc comments, and examples are updated in the
 ## Install
 
 ```bash
-go get github.com/sys9-ai/run9-sdk-go@v0.1.0
+go get github.com/sys9-ai/run9-sdk-go@v0.1.1
 ```
 
 The SDK uses semantic version tags. Depend on one released tag instead of an unpublished commit.
