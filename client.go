@@ -210,6 +210,17 @@ func (c *Client) StartExecStream(ctx context.Context, boxID string, req ExecRequ
 	return newExecStream(strings.TrimSpace(resp.Header.Get("X-Run9-Exec-ID")), resp.Body), nil
 }
 
+// RunExec starts one inline foreground exec, pumps its output, and returns the terminal result.
+func (c *Client) RunExec(ctx context.Context, boxID string, req ExecRequest, writers ExecOutputWriters) (ExecTerminalResult, error) {
+	stream, err := c.StartExecStream(ctx, boxID, req)
+	if err != nil {
+		return ExecTerminalResult{}, err
+	}
+	defer stream.Close()
+
+	return stream.Pump(ctx, writers)
+}
+
 // StartExec starts one foreground exec and returns its initial view.
 func (c *Client) StartExec(ctx context.Context, boxID string, req ExecRequest) (ExecView, error) {
 	var view ExecView

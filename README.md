@@ -15,7 +15,7 @@ If the public API changes, README, doc comments, and examples are updated in the
 ## Install
 
 ```bash
-go get github.com/sys9-ai/run9-sdk-go@v0.1.1
+go get github.com/sys9-ai/run9-sdk-go@v0.2.0
 ```
 
 The SDK uses semantic version tags. Depend on one released tag instead of an unpublished commit.
@@ -89,35 +89,20 @@ box, err := project.CreateBox(ctx, run9.CreateBoxRequest{
 })
 ```
 
-Run one foreground exec and read typed events:
+Run one foreground exec and stream its output:
 
 ```go
-stream, err := project.StartExecStream(ctx, "devbox", run9.ExecRequest{
+result, err := project.RunExec(ctx, "devbox", run9.ExecRequest{
 	Command: []string{"/bin/sh", "-lc", "echo hello"},
+}, run9.ExecOutputWriters{
+	Stdout: os.Stdout,
+	Stderr: os.Stderr,
 })
-if err != nil {
-	return err
-}
-defer stream.Close()
-
-for {
-	event, err := stream.ReadEvent()
-	if err != nil {
-		return err
-	}
-
-	switch event.Type {
-	case "stdout":
-		// handle stdout bytes
-	case "stderr":
-		// handle stderr bytes
-	case "exit":
-		return nil
-	}
-}
 ```
 
-Start one background exec and poll merged output:
+`result` tells you whether the exec exited, was cancelled, or failed. When you need direct event control, `StartExecStream(...)` and `ReadEvent()` are still available.
+
+Start one background exec and follow its output with an internal cursor:
 
 ```go
 execView, err := project.StartBackgroundExec(ctx, "devbox", run9.ExecRequest{
@@ -128,9 +113,25 @@ if err != nil {
 	return err
 }
 
-result, err := project.PullBackgroundExecOutput(ctx, execView.ExecID, run9.PullBackgroundExecOutputRequest{
-	Wait: 2 * time.Second,
+follower := project.FollowBackgroundExec(execView.ExecID)
+result, err := follower.Pump(ctx, 2*time.Second, run9.ExecOutputWriters{
+	Stdout: os.Stdout,
+	Stderr: os.Stderr,
 })
+```
+
+`result.NextCursor` is still exposed for explicit replay use cases, but callers that only want to keep tailing can let the follower manage it.
+
+If you want one merged transcript in event order, call `Read(...)` and then `WriteMergedOutput(...)`:
+
+```go
+result, err := follower.Read(ctx, 2*time.Second)
+if err != nil {
+	return err
+}
+if err := result.WriteMergedOutput(os.Stdout, os.Stderr); err != nil {
+	return err
+}
 ```
 
 ## API Surface

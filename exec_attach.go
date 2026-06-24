@@ -33,6 +33,26 @@ func (s *ExecAttachSocket) WriteInput(input ExecAttachInput) error {
 	return s.conn.WriteJSON(input)
 }
 
+// WriteStdin writes one stdin chunk into the attached exec session.
+func (s *ExecAttachSocket) WriteStdin(data []byte) error {
+	return s.WriteInput(ExecAttachInput{Type: "stdin", Data: data})
+}
+
+// CloseStdin closes remote stdin for the attached exec session.
+func (s *ExecAttachSocket) CloseStdin() error {
+	return s.WriteInput(ExecAttachInput{Type: "close_stdin"})
+}
+
+// ResizeTTY sends one terminal resize event for the attached exec session.
+func (s *ExecAttachSocket) ResizeTTY(rows uint32, cols uint32) error {
+	return s.WriteInput(ExecAttachInput{Type: "resize", Rows: rows, Cols: cols})
+}
+
+// Pump writes stdout and stderr events to the given writers until the attached stream reaches a terminal event or ctx ends.
+func (s *ExecAttachSocket) Pump(ctx context.Context, writers ExecOutputWriters) (ExecTerminalResult, error) {
+	return pumpExecEvents(ctx, s, writers)
+}
+
 // Close closes the underlying websocket connection.
 func (s *ExecAttachSocket) Close() error {
 	if s == nil || s.conn == nil {

@@ -2,6 +2,7 @@ package run9
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"io"
 )
@@ -29,6 +30,11 @@ func (s *ExecStream) ReadEvent() (ExecStreamEvent, error) {
 		return ExecStreamEvent{}, err
 	}
 	return event, nil
+}
+
+// Pump writes stdout and stderr events to the given writers until the stream reaches a terminal event or ctx ends.
+func (s *ExecStream) Pump(ctx context.Context, writers ExecOutputWriters) (ExecTerminalResult, error) {
+	return pumpExecEvents(ctx, s, writers)
 }
 
 // Close closes the underlying stream body.
