@@ -13,23 +13,23 @@ import (
 	"github.com/go-openapi/swag/typeutils"
 )
 
-// OrgHostsView org hosts view
+// APIOrgHostsView api org hosts view
 //
-// swagger:model OrgHostsView
-type OrgHostsView struct {
+// swagger:model api.OrgHostsView
+type APIOrgHostsView struct {
 
 	// assigned hosts
 	AssignedHosts int64 `json:"assigned_hosts,omitempty"`
 
 	// hosts
-	Hosts []*APIElasticityHostView `json:"hosts"`
+	Hosts []*APIOrgHostView `json:"hosts"`
 
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 }
 
-// Validate validates this org hosts view
-func (m *OrgHostsView) Validate(formats strfmt.Registry) error {
+// Validate validates this api org hosts view
+func (m *APIOrgHostsView) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateHosts(formats); err != nil {
@@ -42,7 +42,7 @@ func (m *OrgHostsView) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *OrgHostsView) validateHosts(formats strfmt.Registry) error {
+func (m *APIOrgHostsView) validateHosts(formats strfmt.Registry) error {
 	if typeutils.IsZero(m.Hosts) { // not required
 		return nil
 	}
@@ -72,8 +72,8 @@ func (m *OrgHostsView) validateHosts(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validate this org hosts view based on the context it is used
-func (m *OrgHostsView) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this api org hosts view based on the context it is used
+func (m *APIOrgHostsView) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateHosts(ctx, formats); err != nil {
@@ -86,7 +86,7 @@ func (m *OrgHostsView) ContextValidate(ctx context.Context, formats strfmt.Regis
 	return nil
 }
 
-func (m *OrgHostsView) contextValidateHosts(ctx context.Context, formats strfmt.Registry) error {
+func (m *APIOrgHostsView) contextValidateHosts(ctx context.Context, formats strfmt.Registry) error {
 
 	for i := 0; i < len(m.Hosts); i++ {
 
@@ -116,7 +116,7 @@ func (m *OrgHostsView) contextValidateHosts(ctx context.Context, formats strfmt.
 }
 
 // MarshalBinary interface implementation
-func (m *OrgHostsView) MarshalBinary() ([]byte, error) {
+func (m *APIOrgHostsView) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -124,8 +124,8 @@ func (m *OrgHostsView) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *OrgHostsView) UnmarshalBinary(b []byte) error {
-	var res OrgHostsView
+func (m *APIOrgHostsView) UnmarshalBinary(b []byte) error {
+	var res APIOrgHostsView
 	if err := jsonutils.ReadJSON(b, &res); err != nil {
 		return err
 	}

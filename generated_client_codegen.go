@@ -1,7 +1,9 @@
 package run9
 
-// The SDK vendors its own portal Swagger snapshot so the generated layer can be
-// refreshed from the standalone run9-sdk-go repository. A narrow normalization
-// pass patches the snapshot before codegen to preserve PATCH request semantics
-// that go-swagger would otherwise flatten away.
+// The SDK vendors its own portal Swagger snapshot so standalone run9-sdk-go
+// releases can regenerate without the portal source tree. In the monorepo
+// go generate ./portal/api refreshes this snapshot from
+// portal/api/swagger/codegen.yaml. A narrow
+// normalization pass patches only PATCH slice/map fields that go-swagger still
+// flattens away, while enum PATCH semantics stay in the portal doc comments.
 //go:generate ./scripts/generate-swagger-client.sh

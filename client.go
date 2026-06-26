@@ -112,205 +112,129 @@ func (c *Client) WithProject(projectCID string) *Client {
 
 // WhoAmI loads the current authenticated user and organization identity.
 func (c *Client) WhoAmI(ctx context.Context) (CurrentOrgIdentityView, error) {
-	result, err := c.portal.OrgAccess.WhoamiContext(ctx, &org_access.WhoamiParams{}, c.auth)
-	if err != nil {
-		return CurrentOrgIdentityView{}, generatedError(err)
-	}
-	return remarshalJSON[CurrentOrgIdentityView](result.GetPayload())
+	return generatedResult[CurrentOrgIdentityView](c.portal.OrgAccess.WhoamiContext(ctx, &org_access.WhoamiParams{}, c.auth))
 }
 
 // CreateBox creates one project-scoped box.
 func (c *Client) CreateBox(ctx context.Context, req CreateBoxRequest) (BoxView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return BoxView{}, err
-	}
-
 	payload, err := remarshalJSON[*genmodels.CreateBoxPayload](req)
 	if err != nil {
 		return BoxView{}, err
 	}
 
-	result, err := c.portal.Boxes.CreateBoxContext(ctx, &boxes.CreateBoxParams{
-		ProjectCid: projectCID,
-		Request:    payload,
-	}, c.auth)
-	if err != nil {
-		return BoxView{}, generatedError(err)
-	}
-	return remarshalJSON[BoxView](result.GetPayload())
+	return projectGeneratedResult[BoxView](c, func(projectCID string) (any, error) {
+		return c.portal.Boxes.CreateBoxContext(ctx, &boxes.CreateBoxParams{
+			ProjectCid: projectCID,
+			Request:    payload,
+		}, c.auth)
+	})
 }
 
 // ListBoxes lists project-scoped boxes with optional creator, label, and state filters.
 func (c *Client) ListBoxes(ctx context.Context, req ListBoxesRequest) ([]BoxView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return nil, err
-	}
-
-	params := &boxes.ListBoxesParams{
-		ProjectCid: projectCID,
-	}
-	if value := strings.TrimSpace(req.Creator); value != "" {
-		params.Creator = &value
-	}
-	if value := strings.TrimSpace(req.Label); value != "" {
-		params.Label = &value
-	}
-	if value := strings.TrimSpace(string(req.State)); value != "" {
-		params.State = &value
-	}
-
-	result, err := c.portal.Boxes.ListBoxesContext(ctx, params, c.auth)
-	if err != nil {
-		return nil, generatedError(err)
-	}
-	return remarshalJSON[[]BoxView](result.GetPayload())
+	return projectGeneratedResult[[]BoxView](c, func(projectCID string) (any, error) {
+		params := &boxes.ListBoxesParams{
+			ProjectCid: projectCID,
+		}
+		if value := strings.TrimSpace(req.Creator); value != "" {
+			params.Creator = &value
+		}
+		if value := strings.TrimSpace(req.Label); value != "" {
+			params.Label = &value
+		}
+		if value := strings.TrimSpace(string(req.State)); value != "" {
+			params.State = &value
+		}
+		return c.portal.Boxes.ListBoxesContext(ctx, params, c.auth)
+	})
 }
 
 // GetBox loads one project-scoped box by ID.
 func (c *Client) GetBox(ctx context.Context, boxID string) (BoxView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return BoxView{}, err
-	}
-
-	result, err := c.portal.Boxes.GetBoxContext(ctx, &boxes.GetBoxParams{
-		ID:         strings.TrimSpace(boxID),
-		ProjectCid: projectCID,
-	}, c.auth)
-	if err != nil {
-		return BoxView{}, generatedError(err)
-	}
-	return remarshalJSON[BoxView](result.GetPayload())
+	return projectGeneratedResult[BoxView](c, func(projectCID string) (any, error) {
+		return c.portal.Boxes.GetBoxContext(ctx, &boxes.GetBoxParams{
+			ID:         strings.TrimSpace(boxID),
+			ProjectCid: projectCID,
+		}, c.auth)
+	})
 }
 
 // StopBox requests a graceful stop for one box.
 func (c *Client) StopBox(ctx context.Context, boxID string) (BoxView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return BoxView{}, err
-	}
-
-	result, err := c.portal.Boxes.StopBoxContext(ctx, &boxes.StopBoxParams{
-		ID:         strings.TrimSpace(boxID),
-		ProjectCid: projectCID,
-	}, c.auth)
-	if err != nil {
-		return BoxView{}, generatedError(err)
-	}
-	return remarshalJSON[BoxView](result.GetPayload())
+	return projectGeneratedResult[BoxView](c, func(projectCID string) (any, error) {
+		return c.portal.Boxes.StopBoxContext(ctx, &boxes.StopBoxParams{
+			ID:         strings.TrimSpace(boxID),
+			ProjectCid: projectCID,
+		}, c.auth)
+	})
 }
 
 // DeleteBox deletes one box.
 func (c *Client) DeleteBox(ctx context.Context, boxID string) (BoxView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return BoxView{}, err
-	}
-
-	result, err := c.portal.Boxes.DeleteBoxContext(ctx, &boxes.DeleteBoxParams{
-		ID:         strings.TrimSpace(boxID),
-		ProjectCid: projectCID,
-	}, c.auth)
-	if err != nil {
-		return BoxView{}, generatedError(err)
-	}
-	return remarshalJSON[BoxView](result.GetPayload())
+	return projectGeneratedResult[BoxView](c, func(projectCID string) (any, error) {
+		return c.portal.Boxes.DeleteBoxContext(ctx, &boxes.DeleteBoxParams{
+			ID:         strings.TrimSpace(boxID),
+			ProjectCid: projectCID,
+		}, c.auth)
+	})
 }
 
 // ImportSnap imports a snap from an image reference into the current project.
 func (c *Client) ImportSnap(ctx context.Context, req ImportSnapRequest) (SnapView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return SnapView{}, err
-	}
-
 	payload, err := remarshalJSON[*genmodels.ImportSnapPayload](req)
 	if err != nil {
 		return SnapView{}, err
 	}
 
-	result, err := c.portal.Snaps.ImportSnapContext(ctx, &snaps.ImportSnapParams{
-		ProjectCid: projectCID,
-		Request:    payload,
-	}, c.auth)
-	if err != nil {
-		return SnapView{}, generatedError(err)
-	}
-	return remarshalJSON[SnapView](result.GetPayload())
+	return projectGeneratedResult[SnapView](c, func(projectCID string) (any, error) {
+		return c.portal.Snaps.ImportSnapContext(ctx, &snaps.ImportSnapParams{
+			ProjectCid: projectCID,
+			Request:    payload,
+		}, c.auth)
+	})
 }
 
 // ListSnaps lists project-scoped snaps with an optional attached filter.
 func (c *Client) ListSnaps(ctx context.Context, req ListSnapsRequest) ([]SnapView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return nil, err
-	}
-
-	params := &snaps.ListSnapsParams{
-		ProjectCid: projectCID,
-	}
-	if req.Attached != nil {
-		params.Attached = req.Attached
-	}
-
-	result, err := c.portal.Snaps.ListSnapsContext(ctx, params, c.auth)
-	if err != nil {
-		return nil, generatedError(err)
-	}
-	return remarshalJSON[[]SnapView](result.GetPayload())
+	return projectGeneratedResult[[]SnapView](c, func(projectCID string) (any, error) {
+		params := &snaps.ListSnapsParams{
+			ProjectCid: projectCID,
+		}
+		if req.Attached != nil {
+			params.Attached = req.Attached
+		}
+		return c.portal.Snaps.ListSnapsContext(ctx, params, c.auth)
+	})
 }
 
 // GetSnap loads one project-scoped snap by ID.
 func (c *Client) GetSnap(ctx context.Context, snapID string) (SnapView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return SnapView{}, err
-	}
-
-	result, err := c.portal.Snaps.GetSnapContext(ctx, &snaps.GetSnapParams{
-		ProjectCid: projectCID,
-		ID:         strings.TrimSpace(snapID),
-	}, c.auth)
-	if err != nil {
-		return SnapView{}, generatedError(err)
-	}
-	return remarshalJSON[SnapView](result.GetPayload())
+	return projectGeneratedResult[SnapView](c, func(projectCID string) (any, error) {
+		return c.portal.Snaps.GetSnapContext(ctx, &snaps.GetSnapParams{
+			ProjectCid: projectCID,
+			ID:         strings.TrimSpace(snapID),
+		}, c.auth)
+	})
 }
 
 // ForkSnap creates a writable child snap from an existing snap.
 func (c *Client) ForkSnap(ctx context.Context, snapID string) (SnapView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return SnapView{}, err
-	}
-
-	result, err := c.portal.Snaps.ForkSnapContext(ctx, &snaps.ForkSnapParams{
-		ProjectCid: projectCID,
-		ID:         strings.TrimSpace(snapID),
-	}, c.auth)
-	if err != nil {
-		return SnapView{}, generatedError(err)
-	}
-	return remarshalJSON[SnapView](result.GetPayload())
+	return projectGeneratedResult[SnapView](c, func(projectCID string) (any, error) {
+		return c.portal.Snaps.ForkSnapContext(ctx, &snaps.ForkSnapParams{
+			ProjectCid: projectCID,
+			ID:         strings.TrimSpace(snapID),
+		}, c.auth)
+	})
 }
 
 // DeleteSnap deletes one snap.
 func (c *Client) DeleteSnap(ctx context.Context, snapID string) (SnapView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return SnapView{}, err
-	}
-
-	result, err := c.portal.Snaps.DeleteSnapContext(ctx, &snaps.DeleteSnapParams{
-		ProjectCid: projectCID,
-		ID:         strings.TrimSpace(snapID),
-	}, c.auth)
-	if err != nil {
-		return SnapView{}, generatedError(err)
-	}
-	return remarshalJSON[SnapView](result.GetPayload())
+	return projectGeneratedResult[SnapView](c, func(projectCID string) (any, error) {
+		return c.portal.Snaps.DeleteSnapContext(ctx, &snaps.DeleteSnapParams{
+			ProjectCid: projectCID,
+			ID:         strings.TrimSpace(snapID),
+		}, c.auth)
+	})
 }
 
 // StartExecStream starts a streaming exec and returns one event reader.
@@ -342,25 +266,18 @@ func (c *Client) RunExec(ctx context.Context, boxID string, req ExecRequest, wri
 
 // StartExec starts one foreground exec and returns its initial view.
 func (c *Client) StartExec(ctx context.Context, boxID string, req ExecRequest) (ExecView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return ExecView{}, err
-	}
-
 	payload, err := remarshalJSON[*genmodels.ExecBoxPayload](req)
 	if err != nil {
 		return ExecView{}, err
 	}
 
-	result, err := c.portal.Execs.ExecBoxContext(ctx, &execs.ExecBoxParams{
-		ID:         strings.TrimSpace(boxID),
-		ProjectCid: projectCID,
-		Request:    payload,
-	}, c.auth)
-	if err != nil {
-		return ExecView{}, generatedError(err)
-	}
-	return remarshalJSON[ExecView](result.GetPayload())
+	return projectGeneratedResult[ExecView](c, func(projectCID string) (any, error) {
+		return c.portal.Execs.ExecBoxContext(ctx, &execs.ExecBoxParams{
+			ID:         strings.TrimSpace(boxID),
+			ProjectCid: projectCID,
+			Request:    payload,
+		}, c.auth)
+	})
 }
 
 // UploadArchive uploads one tar archive into a box path.

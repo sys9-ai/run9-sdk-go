@@ -10,11 +10,7 @@ import (
 
 // ListProjects lists projects visible to the caller.
 func (c *Client) ListProjects(ctx context.Context) ([]ProjectView, error) {
-	result, err := c.portal.Projects.ListProjectsContext(ctx, &projects.ListProjectsParams{}, c.auth)
-	if err != nil {
-		return nil, generatedError(err)
-	}
-	return remarshalJSON[[]ProjectView](result.GetPayload())
+	return generatedResult[[]ProjectView](c.portal.Projects.ListProjectsContext(ctx, &projects.ListProjectsParams{}, c.auth))
 }
 
 // CreateProject creates one project.
@@ -24,22 +20,14 @@ func (c *Client) CreateProject(ctx context.Context, req CreateProjectRequest) (P
 		return ProjectView{}, err
 	}
 
-	result, err := c.portal.Projects.CreateProjectContext(ctx, &projects.CreateProjectParams{
+	return generatedResult[ProjectView](c.portal.Projects.CreateProjectContext(ctx, &projects.CreateProjectParams{
 		Request: payload,
-	}, c.auth)
-	if err != nil {
-		return ProjectView{}, generatedError(err)
-	}
-	return remarshalJSON[ProjectView](result.GetPayload())
+	}, c.auth))
 }
 
 // GetProject loads one project by CID.
 func (c *Client) GetProject(ctx context.Context, projectCID string) (ProjectView, error) {
-	result, err := c.portal.Projects.GetProjectContext(ctx, &projects.GetProjectParams{
+	return generatedResult[ProjectView](c.portal.Projects.GetProjectContext(ctx, &projects.GetProjectParams{
 		ProjectCid: strings.TrimSpace(projectCID),
-	}, c.auth)
-	if err != nil {
-		return ProjectView{}, generatedError(err)
-	}
-	return remarshalJSON[ProjectView](result.GetPayload())
+	}, c.auth))
 }

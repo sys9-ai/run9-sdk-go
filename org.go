@@ -16,36 +16,24 @@ func (c *Client) UpdateOrg(ctx context.Context, orgID string, req UpdateOrgReque
 		return OrgView{}, err
 	}
 
-	result, err := c.portal.OrgMembers.UpdateOrgContext(ctx, &org_members.UpdateOrgParams{
+	return generatedResult[OrgView](c.portal.OrgMembers.UpdateOrgContext(ctx, &org_members.UpdateOrgParams{
 		ID:      strings.TrimSpace(orgID),
 		Request: payload,
-	}, c.auth)
-	if err != nil {
-		return OrgView{}, generatedError(err)
-	}
-	return remarshalJSON[OrgView](result.GetPayload())
+	}, c.auth))
 }
 
 // DeleteOrg deletes one organization.
 func (c *Client) DeleteOrg(ctx context.Context, orgID string) (DeleteOrgResult, error) {
-	result, err := c.portal.OrgMembers.DeleteOrgContext(ctx, &org_members.DeleteOrgParams{
+	return generatedResult[DeleteOrgResult](c.portal.OrgMembers.DeleteOrgContext(ctx, &org_members.DeleteOrgParams{
 		ID: strings.TrimSpace(orgID),
-	}, c.auth)
-	if err != nil {
-		return DeleteOrgResult{}, generatedError(err)
-	}
-	return remarshalJSON[DeleteOrgResult](result.GetPayload())
+	}, c.auth))
 }
 
 // ListOrgMembers lists members in one organization.
 func (c *Client) ListOrgMembers(ctx context.Context, orgID string) ([]MembershipView, error) {
-	result, err := c.portal.OrgMembers.ListOrgMembersContext(ctx, &org_members.ListOrgMembersParams{
+	return generatedResult[[]MembershipView](c.portal.OrgMembers.ListOrgMembersContext(ctx, &org_members.ListOrgMembersParams{
 		ID: strings.TrimSpace(orgID),
-	}, c.auth)
-	if err != nil {
-		return nil, generatedError(err)
-	}
-	return remarshalJSON[[]MembershipView](result.GetPayload())
+	}, c.auth))
 }
 
 // UpdateOrgMember updates one organization member.
@@ -55,35 +43,26 @@ func (c *Client) UpdateOrgMember(ctx context.Context, orgID string, userID strin
 		return MembershipView{}, err
 	}
 
-	result, err := c.portal.OrgMembers.UpdateOrgMemberContext(ctx, &org_members.UpdateOrgMemberParams{
+	return generatedResult[MembershipView](c.portal.OrgMembers.UpdateOrgMemberContext(ctx, &org_members.UpdateOrgMemberParams{
 		ID:      strings.TrimSpace(orgID),
 		UserID:  strings.TrimSpace(userID),
 		Request: payload,
-	}, c.auth)
-	if err != nil {
-		return MembershipView{}, generatedError(err)
-	}
-	return remarshalJSON[MembershipView](result.GetPayload())
+	}, c.auth))
 }
 
 // DeleteOrgMember removes one member from an organization.
 func (c *Client) DeleteOrgMember(ctx context.Context, orgID string, userID string) error {
-	_, err := c.portal.OrgMembers.RemoveOrgMemberContext(ctx, &org_members.RemoveOrgMemberParams{
+	return generatedAction(c.portal.OrgMembers.RemoveOrgMemberContext(ctx, &org_members.RemoveOrgMemberParams{
 		ID:     strings.TrimSpace(orgID),
 		UserID: strings.TrimSpace(userID),
-	}, c.auth)
-	return generatedError(err)
+	}, c.auth))
 }
 
 // ListInvitations lists invitations in one organization.
 func (c *Client) ListInvitations(ctx context.Context, orgID string) ([]InvitationView, error) {
-	result, err := c.portal.OrgMembers.ListOrgInvitationsContext(ctx, &org_members.ListOrgInvitationsParams{
+	return generatedResult[[]InvitationView](c.portal.OrgMembers.ListOrgInvitationsContext(ctx, &org_members.ListOrgInvitationsParams{
 		ID: strings.TrimSpace(orgID),
-	}, c.auth)
-	if err != nil {
-		return nil, generatedError(err)
-	}
-	return remarshalJSON[[]InvitationView](result.GetPayload())
+	}, c.auth))
 }
 
 // CreateInvitation creates one invitation in an organization.
@@ -93,35 +72,23 @@ func (c *Client) CreateInvitation(ctx context.Context, orgID string, req CreateI
 		return InvitationView{}, err
 	}
 
-	result, err := c.portal.OrgMembers.CreateOrgInvitationContext(ctx, &org_members.CreateOrgInvitationParams{
+	return generatedResult[InvitationView](c.portal.OrgMembers.CreateOrgInvitationContext(ctx, &org_members.CreateOrgInvitationParams{
 		ID:      strings.TrimSpace(orgID),
 		Request: payload,
-	}, c.auth)
-	if err != nil {
-		return InvitationView{}, generatedError(err)
-	}
-	return remarshalJSON[InvitationView](result.GetPayload())
+	}, c.auth))
 }
 
 // RevokeInvitation revokes one organization invitation.
 func (c *Client) RevokeInvitation(ctx context.Context, orgID string, invitationID string) (DeleteInvitationResult, error) {
-	result, err := c.portal.OrgMembers.RevokeOrgInvitationContext(ctx, &org_members.RevokeOrgInvitationParams{
+	return generatedResult[DeleteInvitationResult](c.portal.OrgMembers.RevokeOrgInvitationContext(ctx, &org_members.RevokeOrgInvitationParams{
 		ID:           strings.TrimSpace(orgID),
 		InvitationID: strings.TrimSpace(invitationID),
-	}, c.auth)
-	if err != nil {
-		return DeleteInvitationResult{}, generatedError(err)
-	}
-	return remarshalJSON[DeleteInvitationResult](result.GetPayload())
+	}, c.auth))
 }
 
 // ListAPIKeys lists API keys visible to the caller in the current organization.
 func (c *Client) ListAPIKeys(ctx context.Context) ([]APIKeyView, error) {
-	result, err := c.portal.OrgAccess.ListAPIKeysContext(ctx, &org_access.ListAPIKeysParams{}, c.auth)
-	if err != nil {
-		return nil, generatedError(err)
-	}
-	return remarshalJSON[[]APIKeyView](result.GetPayload())
+	return generatedResult[[]APIKeyView](c.portal.OrgAccess.ListAPIKeysContext(ctx, &org_access.ListAPIKeysParams{}, c.auth))
 }
 
 // CreateAPIKey creates one API key in the current organization.
@@ -131,31 +98,19 @@ func (c *Client) CreateAPIKey(ctx context.Context, req CreateAPIKeyRequest) (Cre
 		return CreatedAPIKeyView{}, err
 	}
 
-	result, err := c.portal.OrgAccess.CreateAPIKeyContext(ctx, &org_access.CreateAPIKeyParams{
+	return generatedResult[CreatedAPIKeyView](c.portal.OrgAccess.CreateAPIKeyContext(ctx, &org_access.CreateAPIKeyParams{
 		Request: payload,
-	}, c.auth)
-	if err != nil {
-		return CreatedAPIKeyView{}, generatedError(err)
-	}
-	return remarshalJSON[CreatedAPIKeyView](result.GetPayload())
+	}, c.auth))
 }
 
 // RevokeAPIKey revokes one API key in the current organization.
 func (c *Client) RevokeAPIKey(ctx context.Context, apiKeyID string) (APIKeyView, error) {
-	result, err := c.portal.OrgAccess.RevokeAPIKeyContext(ctx, &org_access.RevokeAPIKeyParams{
+	return generatedResult[APIKeyView](c.portal.OrgAccess.RevokeAPIKeyContext(ctx, &org_access.RevokeAPIKeyParams{
 		ID: strings.TrimSpace(apiKeyID),
-	}, c.auth)
-	if err != nil {
-		return APIKeyView{}, generatedError(err)
-	}
-	return remarshalJSON[APIKeyView](result.GetPayload())
+	}, c.auth))
 }
 
 // GetOrgHosts loads runtime hosts assigned to the current organization.
 func (c *Client) GetOrgHosts(ctx context.Context) (OrgHostsView, error) {
-	result, err := c.portal.OrgAccess.ListOrgHostsContext(ctx, &org_access.ListOrgHostsParams{}, c.auth)
-	if err != nil {
-		return OrgHostsView{}, generatedError(err)
-	}
-	return remarshalJSON[OrgHostsView](result.GetPayload())
+	return generatedResult[OrgHostsView](c.portal.OrgAccess.ListOrgHostsContext(ctx, &org_access.ListOrgHostsParams{}, c.auth))
 }

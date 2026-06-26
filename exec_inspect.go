@@ -9,17 +9,10 @@ import (
 
 // GetExec loads one exec by ID from the current project.
 func (c *Client) GetExec(ctx context.Context, execID string) (ExecView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return ExecView{}, err
-	}
-
-	result, err := c.portal.Execs.GetExecContext(ctx, &execs.GetExecParams{
-		ID:         strings.TrimSpace(execID),
-		ProjectCid: projectCID,
-	}, c.auth)
-	if err != nil {
-		return ExecView{}, generatedError(err)
-	}
-	return remarshalJSON[ExecView](result.GetPayload())
+	return projectGeneratedResult[ExecView](c, func(projectCID string) (any, error) {
+		return c.portal.Execs.GetExecContext(ctx, &execs.GetExecParams{
+			ID:         strings.TrimSpace(execID),
+			ProjectCid: projectCID,
+		}, c.auth)
+	})
 }

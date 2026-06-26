@@ -43,35 +43,7 @@ func TestNormalizePatchPayloads(t *testing.T) {
 									Extensions: spec.Extensions{"x-nullable": true},
 								},
 							},
-							"network_mode": {
-								SchemaProps: spec.SchemaProps{
-									AllOf: []spec.Schema{{SchemaProps: spec.SchemaProps{Ref: spec.MustCreateRef("#/definitions/api.BoxNetworkMode")}}},
-								},
-								VendorExtensible: spec.VendorExtensible{
-									Extensions: spec.Extensions{"x-nullable": true},
-								},
-							},
-							"security_mode": {
-								SchemaProps: spec.SchemaProps{
-									AllOf: []spec.Schema{{SchemaProps: spec.SchemaProps{Ref: spec.MustCreateRef("#/definitions/api.BoxSecurityMode")}}},
-								},
-								VendorExtensible: spec.VendorExtensible{
-									Extensions: spec.Extensions{"x-nullable": true},
-								},
-							},
 						},
-					},
-				},
-				"api.BoxNetworkMode": {
-					SchemaProps: spec.SchemaProps{
-						Type: []string{"string"},
-						Enum: []any{"normal", "managed"},
-					},
-				},
-				"api.BoxSecurityMode": {
-					SchemaProps: spec.SchemaProps{
-						Type: []string{"string"},
-						Enum: []any{"standard", "restricted"},
 					},
 				},
 			},
@@ -87,20 +59,6 @@ func TestNormalizePatchPayloads(t *testing.T) {
 	labels := swagger.Definitions["UpdateBoxPayload"].Properties["labels"]
 	require.Equal(t, true, labels.Extensions["x-omitempty"])
 	require.Equal(t, "StringMap", xGoTypeName(t, labels))
-
-	networkMode := swagger.Definitions["UpdateBoxPayload"].Properties["network_mode"]
-	require.Empty(t, networkMode.AllOf)
-	require.Equal(t, spec.StringOrArray{"string"}, networkMode.Type)
-	require.Equal(t, []any{"normal", "managed"}, networkMode.Enum)
-	require.Equal(t, true, networkMode.Extensions["x-nullable"])
-	require.Equal(t, "BoxNetworkMode", xGoTypeName(t, networkMode))
-
-	securityMode := swagger.Definitions["UpdateBoxPayload"].Properties["security_mode"]
-	require.Empty(t, securityMode.AllOf)
-	require.Equal(t, spec.StringOrArray{"string"}, securityMode.Type)
-	require.Equal(t, []any{"standard", "restricted"}, securityMode.Enum)
-	require.Equal(t, true, securityMode.Extensions["x-nullable"])
-	require.Equal(t, "BoxSecurityMode", xGoTypeName(t, securityMode))
 }
 
 func TestNormalizeRejectsUnexpectedShapes(t *testing.T) {
@@ -122,17 +80,9 @@ func TestNormalizeRejectsUnexpectedShapes(t *testing.T) {
 							"labels": {
 								SchemaProps: spec.SchemaProps{Type: []string{"object"}},
 							},
-							"network_mode": {
-								SchemaProps: spec.SchemaProps{},
-							},
-							"security_mode": {
-								SchemaProps: spec.SchemaProps{},
-							},
 						},
 					},
 				},
-				"api.BoxNetworkMode":  {},
-				"api.BoxSecurityMode": {},
 			},
 		},
 	}

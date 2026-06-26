@@ -9,9 +9,3 @@ type StringSlice []string
 // StringMap preserves omit-vs-empty semantics for optional string map PATCH
 // fields in generated request models.
 type StringMap map[string]string
-
-// BoxNetworkMode keeps generated PATCH enum fields serialized as plain strings.
-type BoxNetworkMode string
-
-// BoxSecurityMode keeps generated PATCH enum fields serialized as plain strings.
-type BoxSecurityMode string

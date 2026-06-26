@@ -10,91 +10,59 @@ import (
 
 // UpdateProject updates mutable fields on the current project.
 func (c *Client) UpdateProject(ctx context.Context, req UpdateProjectRequest) (ProjectView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return ProjectView{}, err
-	}
-
 	payload, err := remarshalJSON[*genmodels.UpdateProjectPayload](req)
 	if err != nil {
 		return ProjectView{}, err
 	}
 
-	result, err := c.portal.Projects.UpdateProjectContext(ctx, &projects.UpdateProjectParams{
-		ProjectCid: projectCID,
-		Request:    payload,
-	}, c.auth)
-	if err != nil {
-		return ProjectView{}, generatedError(err)
-	}
-	return remarshalJSON[ProjectView](result.GetPayload())
+	return projectGeneratedResult[ProjectView](c, func(projectCID string) (any, error) {
+		return c.portal.Projects.UpdateProjectContext(ctx, &projects.UpdateProjectParams{
+			ProjectCid: projectCID,
+			Request:    payload,
+		}, c.auth)
+	})
 }
 
 // DeleteProject deletes the current project.
 func (c *Client) DeleteProject(ctx context.Context) (DeleteProjectResult, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return DeleteProjectResult{}, err
-	}
-
-	result, err := c.portal.Projects.DeleteProjectContext(ctx, &projects.DeleteProjectParams{
-		ProjectCid: projectCID,
-	}, c.auth)
-	if err != nil {
-		return DeleteProjectResult{}, generatedError(err)
-	}
-	return remarshalJSON[DeleteProjectResult](result.GetPayload())
+	return projectGeneratedResult[DeleteProjectResult](c, func(projectCID string) (any, error) {
+		return c.portal.Projects.DeleteProjectContext(ctx, &projects.DeleteProjectParams{
+			ProjectCid: projectCID,
+		}, c.auth)
+	})
 }
 
 // ListProjectMembers lists members in the current project.
 func (c *Client) ListProjectMembers(ctx context.Context) ([]ProjectMembershipView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := c.portal.Projects.ListProjectMembersContext(ctx, &projects.ListProjectMembersParams{
-		ProjectCid: projectCID,
-	}, c.auth)
-	if err != nil {
-		return nil, generatedError(err)
-	}
-	return remarshalJSON[[]ProjectMembershipView](result.GetPayload())
+	return projectGeneratedResult[[]ProjectMembershipView](c, func(projectCID string) (any, error) {
+		return c.portal.Projects.ListProjectMembersContext(ctx, &projects.ListProjectMembersParams{
+			ProjectCid: projectCID,
+		}, c.auth)
+	})
 }
 
 // UpdateProjectMember updates one member in the current project.
 func (c *Client) UpdateProjectMember(ctx context.Context, userID string, req UpdateProjectMembershipRequest) (ProjectMembershipView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return ProjectMembershipView{}, err
-	}
-
 	payload, err := remarshalJSON[*genmodels.UpdateProjectMembershipPayload](req)
 	if err != nil {
 		return ProjectMembershipView{}, err
 	}
 
-	result, err := c.portal.Projects.UpdateProjectMemberContext(ctx, &projects.UpdateProjectMemberParams{
-		ProjectCid: projectCID,
-		UserID:     strings.TrimSpace(userID),
-		Request:    payload,
-	}, c.auth)
-	if err != nil {
-		return ProjectMembershipView{}, generatedError(err)
-	}
-	return remarshalJSON[ProjectMembershipView](result.GetPayload())
+	return projectGeneratedResult[ProjectMembershipView](c, func(projectCID string) (any, error) {
+		return c.portal.Projects.UpdateProjectMemberContext(ctx, &projects.UpdateProjectMemberParams{
+			ProjectCid: projectCID,
+			UserID:     strings.TrimSpace(userID),
+			Request:    payload,
+		}, c.auth)
+	})
 }
 
 // DeleteProjectMember removes one member from the current project.
 func (c *Client) DeleteProjectMember(ctx context.Context, userID string) error {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return err
-	}
-
-	_, err = c.portal.Projects.RemoveProjectMemberContext(ctx, &projects.RemoveProjectMemberParams{
-		ProjectCid: projectCID,
-		UserID:     strings.TrimSpace(userID),
-	}, c.auth)
-	return generatedError(err)
+	return projectGeneratedAction(c, func(projectCID string) (any, error) {
+		return c.portal.Projects.RemoveProjectMemberContext(ctx, &projects.RemoveProjectMemberParams{
+			ProjectCid: projectCID,
+			UserID:     strings.TrimSpace(userID),
+		}, c.auth)
+	})
 }

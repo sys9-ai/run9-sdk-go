@@ -88,10 +88,10 @@ type ClientService interface {
 	// ListAccountSSHKeysContext list the caller s SSH keys.
 	ListAccountSSHKeysContext(ctx context.Context, params *ListAccountSSHKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAccountSSHKeysOK, error)
 
-	// ListOrgHosts list hosts currently assigned to the org.
+	// ListOrgHosts list host summaries currently assigned to the org.
 	ListOrgHosts(params *ListOrgHostsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOrgHostsOK, error)
 
-	// ListOrgHostsContext list hosts currently assigned to the org.
+	// ListOrgHostsContext list host summaries currently assigned to the org.
 	ListOrgHostsContext(ctx context.Context, params *ListOrgHostsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOrgHostsOK, error)
 
 	// RevokeAPIKey revoke an API key.
@@ -455,7 +455,9 @@ func (a *Client) ListAccountSSHKeysContext(ctx context.Context, params *ListAcco
 }
 
 /*
-ListOrgHostslists hosts currently assigned to the org.
+ListOrgHostslists host summaries currently assigned to the org.
+
+Returns the current org's public runtime host summaries. Low-level infrastructure and runtime diagnostics stay out of this public contract..
 
 This method does not support injected context.
 However, timeout and opentracing contexts are honored whenever enabled.
@@ -474,7 +476,9 @@ func (a *Client) ListOrgHosts(params *ListOrgHostsParams, authInfo runtime.Clien
 }
 
 /*
-ListOrgHostsContextlists hosts currently assigned to the org.
+ListOrgHostsContextlists host summaries currently assigned to the org.
+
+Returns the current org's public runtime host summaries. Low-level infrastructure and runtime diagnostics stay out of this public contract..
 
 Do not use the deprecated [ListOrgHostsParams.Context] with this method: it would be ignored.
 */

@@ -4,10 +4,13 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/jsonutils"
+	"github.com/go-openapi/swag/typeutils"
+	"github.com/go-openapi/validate"
 	"github.com/sys9-ai/run9-sdk-go/internal/codegenpatch"
 )
 
@@ -27,20 +30,112 @@ type UpdateBoxPayload struct {
 
 	// network mode
 	// Enum: ["normal","managed"]
-	NetworkMode *codegenpatch.BoxNetworkMode `json:"network_mode,omitempty"`
+	NetworkMode *string `json:"network_mode,omitempty"`
 
 	// security mode
 	// Enum: ["restricted","unsafe"]
-	SecurityMode *codegenpatch.BoxSecurityMode `json:"security_mode,omitempty"`
+	SecurityMode *string `json:"security_mode,omitempty"`
 }
 
 // Validate validates this update box payload
 func (m *UpdateBoxPayload) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateNetworkMode(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSecurityMode(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+var updateBoxPayloadTypeNetworkModePropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["normal","managed"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		updateBoxPayloadTypeNetworkModePropEnum = append(updateBoxPayloadTypeNetworkModePropEnum, v)
+	}
+}
+
+const (
+
+	// UpdateBoxPayloadNetworkModeNormal captures enum value "normal"
+	UpdateBoxPayloadNetworkModeNormal string = "normal"
+
+	// UpdateBoxPayloadNetworkModeManaged captures enum value "managed"
+	UpdateBoxPayloadNetworkModeManaged string = "managed"
+)
+
+// prop value enum
+func (m *UpdateBoxPayload) validateNetworkModeEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, updateBoxPayloadTypeNetworkModePropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *UpdateBoxPayload) validateNetworkMode(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.NetworkMode) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateNetworkModeEnum("network_mode", "body", *m.NetworkMode); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var updateBoxPayloadTypeSecurityModePropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["restricted","unsafe"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		updateBoxPayloadTypeSecurityModePropEnum = append(updateBoxPayloadTypeSecurityModePropEnum, v)
+	}
+}
+
+const (
+
+	// UpdateBoxPayloadSecurityModeRestricted captures enum value "restricted"
+	UpdateBoxPayloadSecurityModeRestricted string = "restricted"
+
+	// UpdateBoxPayloadSecurityModeUnsafe captures enum value "unsafe"
+	UpdateBoxPayloadSecurityModeUnsafe string = "unsafe"
+)
+
+// prop value enum
+func (m *UpdateBoxPayload) validateSecurityModeEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, updateBoxPayloadTypeSecurityModePropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *UpdateBoxPayload) validateSecurityMode(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.SecurityMode) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateSecurityModeEnum("security_mode", "body", *m.SecurityMode); err != nil {
+		return err
+	}
+
 	return nil
 }
 

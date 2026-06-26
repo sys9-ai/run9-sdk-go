@@ -15,22 +15,14 @@ func (c *Client) UpdateAccount(ctx context.Context, req UpdateMeRequest) (MeView
 		return MeView{}, err
 	}
 
-	result, err := c.portal.OrgAccess.UpdateAccountContext(ctx, &org_access.UpdateAccountParams{
+	return generatedResult[MeView](c.portal.OrgAccess.UpdateAccountContext(ctx, &org_access.UpdateAccountParams{
 		Request: payload,
-	}, c.auth)
-	if err != nil {
-		return MeView{}, generatedError(err)
-	}
-	return remarshalJSON[MeView](result.GetPayload())
+	}, c.auth))
 }
 
 // ListSSHKeys lists SSH keys registered on the caller's account.
 func (c *Client) ListSSHKeys(ctx context.Context) ([]SSHKeyView, error) {
-	result, err := c.portal.OrgAccess.ListAccountSSHKeysContext(ctx, &org_access.ListAccountSSHKeysParams{}, c.auth)
-	if err != nil {
-		return nil, generatedError(err)
-	}
-	return remarshalJSON[[]SSHKeyView](result.GetPayload())
+	return generatedResult[[]SSHKeyView](c.portal.OrgAccess.ListAccountSSHKeysContext(ctx, &org_access.ListAccountSSHKeysParams{}, c.auth))
 }
 
 // CreateSSHKey registers one SSH public key on the caller's account.
@@ -40,22 +32,14 @@ func (c *Client) CreateSSHKey(ctx context.Context, req CreateSSHKeyRequest) (SSH
 		return SSHKeyView{}, err
 	}
 
-	result, err := c.portal.OrgAccess.CreateAccountSSHKeyContext(ctx, &org_access.CreateAccountSSHKeyParams{
+	return generatedResult[SSHKeyView](c.portal.OrgAccess.CreateAccountSSHKeyContext(ctx, &org_access.CreateAccountSSHKeyParams{
 		Request: payload,
-	}, c.auth)
-	if err != nil {
-		return SSHKeyView{}, generatedError(err)
-	}
-	return remarshalJSON[SSHKeyView](result.GetPayload())
+	}, c.auth))
 }
 
 // DeleteSSHKey removes one SSH key from the caller's account.
 func (c *Client) DeleteSSHKey(ctx context.Context, sshKeyID string) (SSHKeyView, error) {
-	result, err := c.portal.OrgAccess.DeleteAccountSSHKeyContext(ctx, &org_access.DeleteAccountSSHKeyParams{
+	return generatedResult[SSHKeyView](c.portal.OrgAccess.DeleteAccountSSHKeyContext(ctx, &org_access.DeleteAccountSSHKeyParams{
 		ID: strings.TrimSpace(sshKeyID),
-	}, c.auth)
-	if err != nil {
-		return SSHKeyView{}, generatedError(err)
-	}
-	return remarshalJSON[SSHKeyView](result.GetPayload())
+	}, c.auth))
 }

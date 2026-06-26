@@ -73,18 +73,6 @@ func normalizePatchPayloads(swagger *spec.Swagger) error {
 	if err := setPropertyCodegenType(swagger, "UpdateBoxPayload", "labels", "StringMap", "object"); err != nil {
 		return err
 	}
-	if err := expectRefAllOfProperty(swagger, "UpdateBoxPayload", "network_mode", "api.BoxNetworkMode"); err != nil {
-		return err
-	}
-	if err := replacePropertyWithDefinition(swagger, "UpdateBoxPayload", "network_mode", "api.BoxNetworkMode", "BoxNetworkMode", "primitive"); err != nil {
-		return err
-	}
-	if err := expectRefAllOfProperty(swagger, "UpdateBoxPayload", "security_mode", "api.BoxSecurityMode"); err != nil {
-		return err
-	}
-	if err := replacePropertyWithDefinition(swagger, "UpdateBoxPayload", "security_mode", "api.BoxSecurityMode", "BoxSecurityMode", "primitive"); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -96,28 +84,6 @@ func setPropertyCodegenType(swagger *spec.Swagger, definitionName string, proper
 
 	applyCodegenType(property, typeName, kind)
 	definition.Properties[propertyName] = *property
-	swagger.Definitions[definitionName] = *definition
-	return nil
-}
-
-func replacePropertyWithDefinition(swagger *spec.Swagger, definitionName string, propertyName string, referencedDefinitionName string, typeName string, kind string) error {
-	definition, property, err := definitionProperty(swagger, definitionName, propertyName)
-	if err != nil {
-		return err
-	}
-
-	referencedDefinition, ok := swagger.Definitions[referencedDefinitionName]
-	if !ok {
-		return fmt.Errorf("missing referenced definition %q", referencedDefinitionName)
-	}
-
-	replacement, err := cloneSchema(referencedDefinition)
-	if err != nil {
-		return err
-	}
-	replacement.Extensions = mergeExtensions(replacement.Extensions, property.Extensions)
-	applyCodegenType(&replacement, typeName, kind)
-	definition.Properties[propertyName] = replacement
 	swagger.Definitions[definitionName] = *definition
 	return nil
 }
@@ -164,20 +130,6 @@ func expectStringMapProperty(swagger *spec.Swagger, definitionName string, prope
 	return nil
 }
 
-func expectRefAllOfProperty(swagger *spec.Swagger, definitionName string, propertyName string, referencedDefinitionName string) error {
-	_, property, err := definitionProperty(swagger, definitionName, propertyName)
-	if err != nil {
-		return err
-	}
-	if len(property.AllOf) != 1 {
-		return fmt.Errorf("unexpected %s.%s allOf length %d", definitionName, propertyName, len(property.AllOf))
-	}
-	if property.AllOf[0].Ref.String() != "#/definitions/"+referencedDefinitionName {
-		return fmt.Errorf("unexpected %s.%s ref %q", definitionName, propertyName, property.AllOf[0].Ref.String())
-	}
-	return nil
-}
-
 func applyCodegenType(schema *spec.Schema, typeName string, kind string) {
 	if schema.Extensions == nil {
 		schema.Extensions = spec.Extensions{}
@@ -193,34 +145,6 @@ func applyCodegenType(schema *spec.Schema, typeName string, kind string) {
 			"noValidation": true,
 		},
 	}
-}
-
-func mergeExtensions(base spec.Extensions, overlay spec.Extensions) spec.Extensions {
-	if len(base) == 0 && len(overlay) == 0 {
-		return nil
-	}
-
-	merged := spec.Extensions{}
-	for key, value := range base {
-		merged[key] = value
-	}
-	for key, value := range overlay {
-		merged[key] = value
-	}
-	return merged
-}
-
-func cloneSchema(schema spec.Schema) (spec.Schema, error) {
-	data, err := json.Marshal(schema)
-	if err != nil {
-		return spec.Schema{}, err
-	}
-
-	var cloned spec.Schema
-	if err := json.Unmarshal(data, &cloned); err != nil {
-		return spec.Schema{}, err
-	}
-	return cloned, nil
 }
 
 func propertyType(schema *spec.Schema) string {

@@ -22,25 +22,18 @@ type backgroundExecPullOutputRequest struct {
 
 // StartBackgroundExec starts one background exec in a box.
 func (c *Client) StartBackgroundExec(ctx context.Context, boxID string, req ExecRequest) (ExecView, error) {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return ExecView{}, err
-	}
-
 	payload, err := remarshalJSON[*genmodels.BackgroundExecBoxPayload](req)
 	if err != nil {
 		return ExecView{}, err
 	}
 
-	result, err := c.portal.Execs.BackgroundExecBoxContext(ctx, &execs.BackgroundExecBoxParams{
-		ID:         strings.TrimSpace(boxID),
-		ProjectCid: projectCID,
-		Request:    payload,
-	}, c.auth)
-	if err != nil {
-		return ExecView{}, generatedError(err)
-	}
-	return remarshalJSON[ExecView](result.GetPayload())
+	return projectGeneratedResult[ExecView](c, func(projectCID string) (any, error) {
+		return c.portal.Execs.BackgroundExecBoxContext(ctx, &execs.BackgroundExecBoxParams{
+			ID:         strings.TrimSpace(boxID),
+			ProjectCid: projectCID,
+			Request:    payload,
+		}, c.auth)
+	})
 }
 
 // PullBackgroundExecOutput polls output and state transitions for one background exec.
@@ -110,16 +103,12 @@ func (c *Client) WriteBackgroundExecStdin(ctx context.Context, execID string, re
 
 // KillBackgroundExec requests termination of one background exec.
 func (c *Client) KillBackgroundExec(ctx context.Context, execID string) error {
-	projectCID, err := c.requireProjectCID()
-	if err != nil {
-		return err
-	}
-
-	_, err = c.portal.Execs.KillBackgroundExecContext(ctx, &execs.KillBackgroundExecParams{
-		ID:         strings.TrimSpace(execID),
-		ProjectCid: projectCID,
-	}, c.auth)
-	return generatedError(err)
+	return projectGeneratedAction(c, func(projectCID string) (any, error) {
+		return c.portal.Execs.KillBackgroundExecContext(ctx, &execs.KillBackgroundExecParams{
+			ID:         strings.TrimSpace(execID),
+			ProjectCid: projectCID,
+		}, c.auth)
+	})
 }
 
 func parseOptionalIdleDeadlineAt(headers http.Header) (*time.Time, error) {

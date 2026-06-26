@@ -224,17 +224,6 @@ definitions:
       primary_email:
         type: string
     type: object
-  OrgHostsView:
-    properties:
-      assigned_hosts:
-        type: integer
-      hosts:
-        items:
-          $ref: '#/definitions/api.elasticityHostView'
-        type: array
-      org_id:
-        type: string
-    type: object
   PublishSharedSnapPayload:
     properties:
       description:
@@ -292,12 +281,16 @@ definitions:
         type: object
         x-nullable: true
       network_mode:
-        allOf:
-        - $ref: '#/definitions/api.BoxNetworkMode'
+        enum:
+        - normal
+        - managed
+        type: string
         x-nullable: true
       security_mode:
-        allOf:
-        - $ref: '#/definitions/api.BoxSecurityMode'
+        enum:
+        - restricted
+        - unsafe
+        type: string
         x-nullable: true
     type: object
   UpdateMePayload:
@@ -820,6 +813,50 @@ definitions:
       updated_at:
         type: string
       user_id:
+        type: string
+    type: object
+  api.OrgHostView:
+    properties:
+      active_boxes:
+        type: integer
+      active_execs:
+        type: integer
+      active_transfers:
+        type: integer
+      connected:
+        type: boolean
+      cpu_total_cores:
+        type: number
+      cpu_used_cores:
+        type: number
+      host_class:
+        type: string
+      host_id:
+        type: string
+      last_heartbeat_at:
+        type: string
+      last_issue_summary:
+        type: string
+      lifecycle_state:
+        type: string
+      memory_total_bytes:
+        type: integer
+      memory_used_bytes:
+        type: integer
+      owner_org_id:
+        type: string
+      ready:
+        type: boolean
+    type: object
+  api.OrgHostsView:
+    properties:
+      assigned_hosts:
+        type: integer
+      hosts:
+        items:
+          $ref: '#/definitions/api.OrgHostView'
+        type: array
+      org_id:
         type: string
     type: object
   api.OrgInvitePageStatus:
@@ -1372,103 +1409,6 @@ definitions:
       path_summary:
         type: string
     type: object
-  api.elasticityHostIssue:
-    properties:
-      code:
-        type: string
-      message:
-        type: string
-    type: object
-  api.elasticityHostView:
-    properties:
-      active_background_owner_execs:
-        type: integer
-      active_boxes:
-        type: integer
-      active_execs:
-        type: integer
-      active_transfers:
-        type: integer
-      boot_id:
-        type: string
-      box_inventory_complete:
-        type: boolean
-      ch_version:
-        type: string
-      connected:
-        type: boolean
-      cpu_total_cores:
-        type: number
-      cpu_used_cores:
-        type: number
-      foreground_relay_configured:
-        type: boolean
-      host_class:
-        type: string
-      host_id:
-        type: string
-      hostname:
-        type: string
-      instance_id:
-        type: string
-      issues:
-        items:
-          $ref: '#/definitions/api.elasticityHostIssue'
-        type: array
-      last_heartbeat_at:
-        type: string
-      last_issue_summary:
-        type: string
-      lifecycle_state:
-        type: string
-      machine_id:
-        type: string
-      maintenance_only:
-        type: boolean
-      memory_total_bytes:
-        type: integer
-      memory_used_bytes:
-        type: integer
-      observed_boxes:
-        items:
-          $ref: '#/definitions/api.elasticityObservedBoxRuntime'
-        type: array
-      owner_org_id:
-        type: string
-      planning_reserved_cpu_millis:
-        type: integer
-      planning_reserved_memory_bytes:
-        type: integer
-      ready:
-        type: boolean
-      rt_version:
-        type: string
-      runtime_reserved_cpu_millis:
-        type: integer
-      runtime_reserved_memory_bytes:
-        type: integer
-      vma_service_restart_preserves_background_owners:
-        type: boolean
-      vma_version:
-        type: string
-    type: object
-  api.elasticityObservedBoxRuntime:
-    properties:
-      active_execs:
-        type: integer
-      active_transfers:
-        type: integer
-      box_id:
-        type: string
-      cpu_millis:
-        type: integer
-      memory_bytes:
-        type: integer
-      network_mode:
-        $ref: '#/definitions/api.BoxNetworkMode'
-      security_mode:
-        $ref: '#/definitions/api.BoxSecurityMode'
-    type: object
   pb.SnapSize:
     properties:
       measured_at_unix_ms:
@@ -1499,7 +1439,8 @@ info:
     name: run9
     url: https://run.sys9.ai
   description: |-
-    The public portal-api HTTP surface for run9.
+    The stable CLI- and SDK-facing portal-api HTTP surface for run9.
+    Browser login, registration and user-session flows stay intentionally outside this public spec.
     JSON request bodies reject unknown fields and errors are returned as {"error":"..."}.
   license:
     name: Proprietary
@@ -2331,6 +2272,8 @@ paths:
       - Authentication
   /org-runtime/hosts:
     get:
+      description: Returns the current org's public runtime host summaries. Low-level
+        infrastructure and runtime diagnostics stay out of this public contract.
       operationId: listOrgHosts
       produces:
       - application/json
@@ -2338,7 +2281,7 @@ paths:
         "200":
           description: Org host capacity.
           schema:
-            $ref: '#/definitions/OrgHostsView'
+            $ref: '#/definitions/api.OrgHostsView'
         "400":
           description: The request was invalid or could not be processed.
           schema:
@@ -2350,7 +2293,7 @@ paths:
       security:
       - BasicAuth: []
       - SessionToken: []
-      summary: List hosts currently assigned to the org
+      summary: List host summaries currently assigned to the org
       tags:
       - Org access
   /orgs:

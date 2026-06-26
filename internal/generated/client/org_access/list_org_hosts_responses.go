@@ -55,7 +55,7 @@ ListOrgHostsOK describes a response with status code 200, with default header va
 Org host capacity.
 */
 type ListOrgHostsOK struct {
-	Payload *models.OrgHostsView
+	Payload *models.APIOrgHostsView
 }
 
 // IsSuccess returns true when this list org hosts o k response has a 2xx status code
@@ -98,13 +98,13 @@ func (o *ListOrgHostsOK) String() string {
 	return fmt.Sprintf("[GET /org-runtime/hosts][%d] listOrgHostsOK %s", 200, payload)
 }
 
-func (o *ListOrgHostsOK) GetPayload() *models.OrgHostsView {
+func (o *ListOrgHostsOK) GetPayload() *models.APIOrgHostsView {
 	return o.Payload
 }
 
 func (o *ListOrgHostsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.OrgHostsView)
+	o.Payload = new(models.APIOrgHostsView)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
