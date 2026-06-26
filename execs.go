@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -73,13 +72,14 @@ func (c *Client) ListExecs(ctx context.Context, req ListExecsRequest) (ListExecs
 		return ListExecsResult{}, err
 	}
 	if len(bytes.TrimSpace(data)) == 0 {
-		return ListExecsResult{}, fmt.Errorf("portal api returned empty response body")
+		return ListExecsResult{}, errEmptyResponseBody
 	}
 
 	var views []ExecView
 	if err := json.Unmarshal(data, &views); err != nil {
 		return ListExecsResult{}, err
 	}
+
 	return ListExecsResult{
 		Execs:      views,
 		NextCursor: strings.TrimSpace(resp.Header.Get("X-Run9-Next-Cursor")),

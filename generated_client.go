@@ -30,7 +30,6 @@ func newGeneratedPortal(baseURL string, creds Credentials, httpClient *http.Clie
 
 	transport := httptransport.NewWithClient(parsed.Host, basePath, []string{parsed.Scheme}, httpClient)
 	auth := httptransport.BasicAuth(creds.AK, creds.SK)
-	transport.DefaultAuthentication = auth
 	transport.Consumers[runtime.JSONMime] = nonEmptyResponseConsumer(transport.Consumers[runtime.JSONMime])
 	transport.Consumers[runtime.TextMime] = nonEmptyResponseConsumer(transport.Consumers[runtime.TextMime])
 	transport.Consumers[runtime.HTMLMime] = nonEmptyResponseConsumer(transport.Consumers[runtime.HTMLMime])

@@ -51,12 +51,16 @@ func (c *Client) CreateProjectSecret(ctx context.Context, req CreateProjectSecre
 
 // UpdateProjectSecret updates one project-scoped secret.
 func (c *Client) UpdateProjectSecret(ctx context.Context, secretID string, req UpdateProjectSecretRequest) (ProjectSecretView, error) {
-	var view ProjectSecretView
-	path, err := projectPath(c.projectCID, "/secrets/"+url.PathEscape(strings.TrimSpace(secretID)))
+	projectCID, err := c.requireProjectCID()
 	if err != nil {
-		return view, err
+		return ProjectSecretView{}, err
 	}
-	err = c.do(ctx, http.MethodPatch, path, requestOptions{body: req, result: &view})
+
+	var view ProjectSecretView
+	err = c.do(ctx, http.MethodPatch, "/projects/"+url.PathEscape(projectCID)+"/secrets/"+url.PathEscape(strings.TrimSpace(secretID)), requestOptions{
+		body:   req,
+		result: &view,
+	})
 	return view, err
 }
 
@@ -117,7 +121,10 @@ func (c *Client) CreateBoxSecret(ctx context.Context, boxID string, req CreatePr
 // UpdateBoxSecret updates one box-scoped secret.
 func (c *Client) UpdateBoxSecret(ctx context.Context, boxID string, secretID string, req UpdateProjectSecretRequest) (ProjectSecretView, error) {
 	var view ProjectSecretView
-	err := c.doWorkspace(ctx, http.MethodPatch, boxSecretPath(boxID, secretID), requestOptions{body: req, result: &view})
+	err := c.doWorkspace(ctx, http.MethodPatch, "/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/secrets/"+url.PathEscape(strings.TrimSpace(secretID)), requestOptions{
+		body:   req,
+		result: &view,
+	})
 	return view, err
 }
 
@@ -134,13 +141,4 @@ func (c *Client) DeleteBoxSecret(ctx context.Context, boxID string, secretID str
 		SecretID:   strings.TrimSpace(secretID),
 	}, c.auth)
 	return generatedError(err)
-}
-
-func boxSecretPath(boxID string, secretID string) string {
-	path := "/boxes/" + url.PathEscape(strings.TrimSpace(boxID)) + "/secrets"
-	secretID = strings.TrimSpace(secretID)
-	if secretID != "" {
-		path += "/" + url.PathEscape(secretID)
-	}
-	return path
 }

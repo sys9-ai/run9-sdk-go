@@ -406,7 +406,7 @@ func (c *Client) do(ctx context.Context, method string, path string, options req
 		return err
 	}
 	if len(bytes.TrimSpace(data)) == 0 {
-		return fmt.Errorf("portal api returned empty response body")
+		return errEmptyResponseBody
 	}
 	return json.Unmarshal(data, options.result)
 }

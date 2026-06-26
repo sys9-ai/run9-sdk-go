@@ -2,8 +2,6 @@ package run9
 
 import (
 	"context"
-	"errors"
-	"net/url"
 	"strings"
 
 	"github.com/sys9-ai/run9-sdk-go/internal/generated/client/projects"
@@ -99,16 +97,4 @@ func (c *Client) DeleteProjectMember(ctx context.Context, userID string) error {
 		UserID:     strings.TrimSpace(userID),
 	}, c.auth)
 	return generatedError(err)
-}
-
-func projectPath(projectCID string, suffix string) (string, error) {
-	projectCID = strings.TrimSpace(projectCID)
-	if projectCID == "" {
-		return "", errors.New("missing project cid: use client.WithProject(...) for project-scoped APIs")
-	}
-	base := "/projects/" + url.PathEscape(strings.TrimSpace(projectCID))
-	if strings.TrimSpace(suffix) == "" {
-		return base, nil
-	}
-	return base + "/" + strings.TrimLeft(strings.TrimSpace(suffix), "/"), nil
 }

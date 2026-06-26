@@ -167,6 +167,55 @@ func TestClientUpdateBoxCanClearLabelsWithoutSendingNull(t *testing.T) {
 	require.Empty(t, view.Labels)
 }
 
+func TestClientUpdateProjectSecretOmitsAllowedHostsWhenUnset(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/projects/default/secrets/secret-1", r.URL.Path)
+		require.Equal(t, http.MethodPatch, r.Method)
+
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		require.JSONEq(t, `{"name":"OPENAI_API_KEY"}`, string(body))
+
+		writeJSONResponse(t, w, http.StatusOK, ProjectSecretView{
+			SecretID: "secret-1",
+			Name:     "OPENAI_API_KEY",
+		})
+	}))
+	defer server.Close()
+
+	name := "OPENAI_API_KEY"
+	view, err := newProjectTestClient(t, server.URL, "default").UpdateProjectSecret(context.Background(), "secret-1", UpdateProjectSecretRequest{
+		Name: &name,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "secret-1", view.SecretID)
+	require.Equal(t, "OPENAI_API_KEY", view.Name)
+}
+
+func TestClientUpdateBoxSecretOmitsAllowedHostsWhenUnset(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/projects/default/workspace/boxes/box-1/secrets/secret-1", r.URL.Path)
+		require.Equal(t, http.MethodPatch, r.Method)
+
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		require.JSONEq(t, `{"value":"next-value"}`, string(body))
+
+		writeJSONResponse(t, w, http.StatusOK, ProjectSecretView{
+			SecretID: "secret-1",
+			Name:     "OPENAI_API_KEY",
+		})
+	}))
+	defer server.Close()
+
+	value := "next-value"
+	view, err := newProjectTestClient(t, server.URL, "default").UpdateBoxSecret(context.Background(), "box-1", "secret-1", UpdateProjectSecretRequest{
+		Value: &value,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "secret-1", view.SecretID)
+}
+
 func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/projects/sandbox/workspace/shared-snaps/python-dev/boxes", r.URL.Path)
