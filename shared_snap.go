@@ -2,53 +2,107 @@ package run9
 
 import (
 	"context"
-	"net/http"
-	"net/url"
-	"strconv"
 	"strings"
+
+	"github.com/sys9-ai/run9-sdk-go/internal/generated/client/shared_snaps"
+	genmodels "github.com/sys9-ai/run9-sdk-go/internal/generated/models"
 )
 
 // ListSharedSnaps lists shared snaps visible to the caller.
 func (c *Client) ListSharedSnaps(ctx context.Context) ([]SharedSnapLineView, error) {
-	var views []SharedSnapLineView
-	err := c.do(ctx, http.MethodGet, "/shared-snaps", requestOptions{result: &views})
-	return views, err
+	result, err := c.portal.SharedSnaps.ListSharedSnapsContext(ctx, &shared_snaps.ListSharedSnapsParams{}, c.auth)
+	if err != nil {
+		return nil, generatedError(err)
+	}
+	return remarshalJSON[[]SharedSnapLineView](result.GetPayload())
 }
 
 // GetSharedSnap loads one shared snap and its versions.
 func (c *Client) GetSharedSnap(ctx context.Context, name string) (SharedSnapDetailView, error) {
-	var view SharedSnapDetailView
-	err := c.do(ctx, http.MethodGet, "/shared-snaps/"+url.PathEscape(strings.TrimSpace(name)), requestOptions{result: &view})
-	return view, err
+	result, err := c.portal.SharedSnaps.GetSharedSnapContext(ctx, &shared_snaps.GetSharedSnapParams{
+		Name: strings.TrimSpace(name),
+	}, c.auth)
+	if err != nil {
+		return SharedSnapDetailView{}, generatedError(err)
+	}
+	return remarshalJSON[SharedSnapDetailView](result.GetPayload())
 }
 
 // PublishSharedSnap publishes one snap into the shared snap catalog.
 func (c *Client) PublishSharedSnap(ctx context.Context, req PublishSharedSnapRequest) (SharedSnapVersionView, error) {
-	var view SharedSnapVersionView
-	err := c.do(ctx, http.MethodPost, "/shared-snaps", requestOptions{body: req, result: &view})
-	return view, err
+	payload, err := remarshalJSON[*genmodels.PublishSharedSnapPayload](req)
+	if err != nil {
+		return SharedSnapVersionView{}, err
+	}
+
+	result, err := c.portal.SharedSnaps.PublishSharedSnapContext(ctx, &shared_snaps.PublishSharedSnapParams{
+		Request: payload,
+	}, c.auth)
+	if err != nil {
+		return SharedSnapVersionView{}, generatedError(err)
+	}
+	return remarshalJSON[SharedSnapVersionView](result.GetPayload())
 }
 
 // DeleteSharedSnap deletes one shared snap name and all of its versions.
 func (c *Client) DeleteSharedSnap(ctx context.Context, name string) error {
-	return c.do(ctx, http.MethodDelete, "/shared-snaps/"+url.PathEscape(strings.TrimSpace(name)), requestOptions{})
+	_, err := c.portal.SharedSnaps.DeleteSharedSnapContext(ctx, &shared_snaps.DeleteSharedSnapParams{
+		Name: strings.TrimSpace(name),
+	}, c.auth)
+	return generatedError(err)
 }
 
 // DeleteSharedSnapVersion deletes one shared snap version.
 func (c *Client) DeleteSharedSnapVersion(ctx context.Context, name string, version int) error {
-	return c.do(ctx, http.MethodDelete, "/shared-snaps/"+url.PathEscape(strings.TrimSpace(name))+"/versions/"+strconv.Itoa(version), requestOptions{})
+	_, err := c.portal.SharedSnaps.DeleteSharedSnapVersionContext(ctx, &shared_snaps.DeleteSharedSnapVersionParams{
+		Name:    strings.TrimSpace(name),
+		Version: int64(version),
+	}, c.auth)
+	return generatedError(err)
 }
 
 // CreateBoxFromSharedSnap creates a box from one shared snap.
 func (c *Client) CreateBoxFromSharedSnap(ctx context.Context, name string, req CreateBoxFromSharedSnapRequest) (BoxView, error) {
-	var view BoxView
-	err := c.doWorkspace(ctx, http.MethodPost, "/shared-snaps/"+url.PathEscape(strings.TrimSpace(name))+"/boxes", requestOptions{body: req, result: &view})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return BoxView{}, err
+	}
+
+	payload, err := remarshalJSON[*genmodels.ConsumeSharedSnapToBoxPayload](req)
+	if err != nil {
+		return BoxView{}, err
+	}
+
+	result, err := c.portal.SharedSnaps.ConsumeSharedSnapToBoxContext(ctx, &shared_snaps.ConsumeSharedSnapToBoxParams{
+		Name:       strings.TrimSpace(name),
+		ProjectCid: projectCID,
+		Request:    payload,
+	}, c.auth)
+	if err != nil {
+		return BoxView{}, generatedError(err)
+	}
+	return remarshalJSON[BoxView](result.GetPayload())
 }
 
 // CreateSnapFromSharedSnap creates a snap from one shared snap.
 func (c *Client) CreateSnapFromSharedSnap(ctx context.Context, name string, req CreateSnapFromSharedSnapRequest) (SnapView, error) {
-	var view SnapView
-	err := c.doWorkspace(ctx, http.MethodPost, "/shared-snaps/"+url.PathEscape(strings.TrimSpace(name))+"/snaps", requestOptions{body: req, result: &view})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return SnapView{}, err
+	}
+
+	payload, err := remarshalJSON[*genmodels.ConsumeSharedSnapToSnapPayload](req)
+	if err != nil {
+		return SnapView{}, err
+	}
+
+	result, err := c.portal.SharedSnaps.ConsumeSharedSnapToSnapContext(ctx, &shared_snaps.ConsumeSharedSnapToSnapParams{
+		Name:       strings.TrimSpace(name),
+		ProjectCid: projectCID,
+		Request:    payload,
+	}, c.auth)
+	if err != nil {
+		return SnapView{}, generatedError(err)
+	}
+	return remarshalJSON[SnapView](result.GetPayload())
 }

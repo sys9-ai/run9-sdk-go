@@ -10,6 +10,14 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/go-openapi/runtime"
+	genclient "github.com/sys9-ai/run9-sdk-go/internal/generated/client"
+	"github.com/sys9-ai/run9-sdk-go/internal/generated/client/boxes"
+	"github.com/sys9-ai/run9-sdk-go/internal/generated/client/execs"
+	"github.com/sys9-ai/run9-sdk-go/internal/generated/client/org_access"
+	"github.com/sys9-ai/run9-sdk-go/internal/generated/client/snaps"
+	genmodels "github.com/sys9-ai/run9-sdk-go/internal/generated/models"
 )
 
 type errorPayload struct {
@@ -48,6 +56,8 @@ type Client struct {
 	baseURL    string
 	creds      Credentials
 	http       *http.Client
+	portal     *genclient.Run9Portal
+	auth       runtime.ClientAuthInfoWriter
 	projectCID string
 }
 
@@ -70,15 +80,23 @@ func NewClient(endpoint string, creds Credentials) (*Client, error) {
 	if strings.TrimSpace(creds.SK) == "" {
 		return nil, errors.New("missing run9 secret key")
 	}
+	httpClient := &http.Client{}
+	trimmedCreds := Credentials{
+		AK: strings.TrimSpace(creds.AK),
+		SK: strings.TrimSpace(creds.SK),
+	}
+	portal, auth, err := newGeneratedPortal(baseURL, trimmedCreds, httpClient)
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
 		// Long-running control requests and streams must be bounded by caller contexts,
 		// not by a shorter transport timeout inside the shared HTTP client.
 		baseURL: baseURL,
-		creds: Credentials{
-			AK: strings.TrimSpace(creds.AK),
-			SK: strings.TrimSpace(creds.SK),
-		},
-		http: &http.Client{},
+		creds:   trimmedCreds,
+		http:    httpClient,
+		portal:  portal,
+		auth:    auth,
 	}, nil
 }
 
@@ -94,104 +112,205 @@ func (c *Client) WithProject(projectCID string) *Client {
 
 // WhoAmI loads the current authenticated user and organization identity.
 func (c *Client) WhoAmI(ctx context.Context) (CurrentOrgIdentityView, error) {
-	var view CurrentOrgIdentityView
-	err := c.do(ctx, http.MethodGet, "/whoami", requestOptions{result: &view})
-	return view, err
+	result, err := c.portal.OrgAccess.WhoamiContext(ctx, &org_access.WhoamiParams{}, c.auth)
+	if err != nil {
+		return CurrentOrgIdentityView{}, generatedError(err)
+	}
+	return remarshalJSON[CurrentOrgIdentityView](result.GetPayload())
 }
 
 // CreateBox creates one project-scoped box.
 func (c *Client) CreateBox(ctx context.Context, req CreateBoxRequest) (BoxView, error) {
-	var view BoxView
-	err := c.doWorkspace(ctx, http.MethodPost, "/boxes", requestOptions{body: req, result: &view})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return BoxView{}, err
+	}
+
+	payload, err := remarshalJSON[*genmodels.CreateBoxPayload](req)
+	if err != nil {
+		return BoxView{}, err
+	}
+
+	result, err := c.portal.Boxes.CreateBoxContext(ctx, &boxes.CreateBoxParams{
+		ProjectCid: projectCID,
+		Request:    payload,
+	}, c.auth)
+	if err != nil {
+		return BoxView{}, generatedError(err)
+	}
+	return remarshalJSON[BoxView](result.GetPayload())
 }
 
 // ListBoxes lists project-scoped boxes with optional creator, label, and state filters.
 func (c *Client) ListBoxes(ctx context.Context, req ListBoxesRequest) ([]BoxView, error) {
-	query := map[string]string{}
-	if strings.TrimSpace(req.Creator) != "" {
-		query["creator"] = strings.TrimSpace(req.Creator)
-	}
-	if strings.TrimSpace(req.Label) != "" {
-		query["label"] = strings.TrimSpace(req.Label)
-	}
-	if strings.TrimSpace(string(req.State)) != "" {
-		query["state"] = strings.TrimSpace(string(req.State))
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return nil, err
 	}
 
-	var views []BoxView
-	err := c.doWorkspace(ctx, http.MethodGet, "/boxes", requestOptions{query: query, result: &views})
-	return views, err
+	params := &boxes.ListBoxesParams{
+		ProjectCid: projectCID,
+	}
+	if value := strings.TrimSpace(req.Creator); value != "" {
+		params.Creator = &value
+	}
+	if value := strings.TrimSpace(req.Label); value != "" {
+		params.Label = &value
+	}
+	if value := strings.TrimSpace(string(req.State)); value != "" {
+		params.State = &value
+	}
+
+	result, err := c.portal.Boxes.ListBoxesContext(ctx, params, c.auth)
+	if err != nil {
+		return nil, generatedError(err)
+	}
+	return remarshalJSON[[]BoxView](result.GetPayload())
 }
 
 // GetBox loads one project-scoped box by ID.
 func (c *Client) GetBox(ctx context.Context, boxID string) (BoxView, error) {
-	var view BoxView
-	err := c.doWorkspace(ctx, http.MethodGet, "/boxes/"+url.PathEscape(strings.TrimSpace(boxID)), requestOptions{result: &view})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return BoxView{}, err
+	}
+
+	result, err := c.portal.Boxes.GetBoxContext(ctx, &boxes.GetBoxParams{
+		ID:         strings.TrimSpace(boxID),
+		ProjectCid: projectCID,
+	}, c.auth)
+	if err != nil {
+		return BoxView{}, generatedError(err)
+	}
+	return remarshalJSON[BoxView](result.GetPayload())
 }
 
 // StopBox requests a graceful stop for one box.
 func (c *Client) StopBox(ctx context.Context, boxID string) (BoxView, error) {
-	var view BoxView
-	err := c.doWorkspace(ctx, http.MethodPost, "/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/stop", requestOptions{result: &view})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return BoxView{}, err
+	}
+
+	result, err := c.portal.Boxes.StopBoxContext(ctx, &boxes.StopBoxParams{
+		ID:         strings.TrimSpace(boxID),
+		ProjectCid: projectCID,
+	}, c.auth)
+	if err != nil {
+		return BoxView{}, generatedError(err)
+	}
+	return remarshalJSON[BoxView](result.GetPayload())
 }
 
 // DeleteBox deletes one box.
 func (c *Client) DeleteBox(ctx context.Context, boxID string) (BoxView, error) {
-	var view BoxView
-	err := c.doWorkspace(ctx, http.MethodDelete, "/boxes/"+url.PathEscape(strings.TrimSpace(boxID)), requestOptions{result: &view})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return BoxView{}, err
+	}
+
+	result, err := c.portal.Boxes.DeleteBoxContext(ctx, &boxes.DeleteBoxParams{
+		ID:         strings.TrimSpace(boxID),
+		ProjectCid: projectCID,
+	}, c.auth)
+	if err != nil {
+		return BoxView{}, generatedError(err)
+	}
+	return remarshalJSON[BoxView](result.GetPayload())
 }
 
 // ImportSnap imports a snap from an image reference into the current project.
 func (c *Client) ImportSnap(ctx context.Context, req ImportSnapRequest) (SnapView, error) {
-	var view SnapView
-	err := c.doWorkspace(ctx, http.MethodPost, "/snaps/import", requestOptions{
-		body: ImportSnapRequest{
-			ImageRef: strings.TrimSpace(req.ImageRef),
-		},
-		result: &view,
-	})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return SnapView{}, err
+	}
+
+	payload, err := remarshalJSON[*genmodels.ImportSnapPayload](req)
+	if err != nil {
+		return SnapView{}, err
+	}
+
+	result, err := c.portal.Snaps.ImportSnapContext(ctx, &snaps.ImportSnapParams{
+		ProjectCid: projectCID,
+		Request:    payload,
+	}, c.auth)
+	if err != nil {
+		return SnapView{}, generatedError(err)
+	}
+	return remarshalJSON[SnapView](result.GetPayload())
 }
 
 // ListSnaps lists project-scoped snaps with an optional attached filter.
 func (c *Client) ListSnaps(ctx context.Context, req ListSnapsRequest) ([]SnapView, error) {
-	query := map[string]string{}
-	if req.Attached != nil {
-		if *req.Attached {
-			query["attached"] = "true"
-		} else {
-			query["attached"] = "false"
-		}
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return nil, err
 	}
 
-	var views []SnapView
-	err := c.doWorkspace(ctx, http.MethodGet, "/snaps", requestOptions{query: query, result: &views})
-	return views, err
+	params := &snaps.ListSnapsParams{
+		ProjectCid: projectCID,
+	}
+	if req.Attached != nil {
+		params.Attached = req.Attached
+	}
+
+	result, err := c.portal.Snaps.ListSnapsContext(ctx, params, c.auth)
+	if err != nil {
+		return nil, generatedError(err)
+	}
+	return remarshalJSON[[]SnapView](result.GetPayload())
 }
 
 // GetSnap loads one project-scoped snap by ID.
 func (c *Client) GetSnap(ctx context.Context, snapID string) (SnapView, error) {
-	var view SnapView
-	err := c.doWorkspace(ctx, http.MethodGet, "/snaps/"+url.PathEscape(strings.TrimSpace(snapID)), requestOptions{result: &view})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return SnapView{}, err
+	}
+
+	result, err := c.portal.Snaps.GetSnapContext(ctx, &snaps.GetSnapParams{
+		ProjectCid: projectCID,
+		ID:         strings.TrimSpace(snapID),
+	}, c.auth)
+	if err != nil {
+		return SnapView{}, generatedError(err)
+	}
+	return remarshalJSON[SnapView](result.GetPayload())
 }
 
 // ForkSnap creates a writable child snap from an existing snap.
 func (c *Client) ForkSnap(ctx context.Context, snapID string) (SnapView, error) {
-	var view SnapView
-	err := c.doWorkspace(ctx, http.MethodPost, "/snaps/"+url.PathEscape(strings.TrimSpace(snapID))+"/fork", requestOptions{result: &view})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return SnapView{}, err
+	}
+
+	result, err := c.portal.Snaps.ForkSnapContext(ctx, &snaps.ForkSnapParams{
+		ProjectCid: projectCID,
+		ID:         strings.TrimSpace(snapID),
+	}, c.auth)
+	if err != nil {
+		return SnapView{}, generatedError(err)
+	}
+	return remarshalJSON[SnapView](result.GetPayload())
 }
 
 // DeleteSnap deletes one snap.
 func (c *Client) DeleteSnap(ctx context.Context, snapID string) (SnapView, error) {
-	var view SnapView
-	err := c.doWorkspace(ctx, http.MethodDelete, "/snaps/"+url.PathEscape(strings.TrimSpace(snapID)), requestOptions{result: &view})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return SnapView{}, err
+	}
+
+	result, err := c.portal.Snaps.DeleteSnapContext(ctx, &snaps.DeleteSnapParams{
+		ProjectCid: projectCID,
+		ID:         strings.TrimSpace(snapID),
+	}, c.auth)
+	if err != nil {
+		return SnapView{}, generatedError(err)
+	}
+	return remarshalJSON[SnapView](result.GetPayload())
 }
 
 // StartExecStream starts a streaming exec and returns one event reader.
@@ -223,12 +342,25 @@ func (c *Client) RunExec(ctx context.Context, boxID string, req ExecRequest, wri
 
 // StartExec starts one foreground exec and returns its initial view.
 func (c *Client) StartExec(ctx context.Context, boxID string, req ExecRequest) (ExecView, error) {
-	var view ExecView
-	err := c.doWorkspace(ctx, http.MethodPost, "/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/execs", requestOptions{
-		body:   req,
-		result: &view,
-	})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return ExecView{}, err
+	}
+
+	payload, err := remarshalJSON[*genmodels.ExecBoxPayload](req)
+	if err != nil {
+		return ExecView{}, err
+	}
+
+	result, err := c.portal.Execs.ExecBoxContext(ctx, &execs.ExecBoxParams{
+		ID:         strings.TrimSpace(boxID),
+		ProjectCid: projectCID,
+		Request:    payload,
+	}, c.auth)
+	if err != nil {
+		return ExecView{}, generatedError(err)
+	}
+	return remarshalJSON[ExecView](result.GetPayload())
 }
 
 // UploadArchive uploads one tar archive into a box path.
@@ -353,10 +485,11 @@ func requestURL(baseURL string, path string, query map[string]string) (string, e
 
 func (c *Client) workspacePath(path string) (string, error) {
 	cleanPath := "/" + strings.TrimLeft(strings.TrimSpace(path), "/")
-	if strings.TrimSpace(c.projectCID) == "" {
-		return "", errors.New("missing project cid: use client.WithProject(...) for project-scoped APIs")
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return "", err
 	}
-	return "/projects/" + url.PathEscape(c.projectCID) + "/workspace" + cleanPath, nil
+	return "/projects/" + url.PathEscape(projectCID) + "/workspace" + cleanPath, nil
 }
 
 func requestBody(body any) (io.Reader, error) {

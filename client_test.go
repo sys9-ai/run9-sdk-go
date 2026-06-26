@@ -116,6 +116,25 @@ func TestClientUpdateAccountUsesAccountRoute(t *testing.T) {
 	require.Equal(t, "Alice CLI", view.DisplayName)
 }
 
+func TestClientRevokeInvitationReturnsDeleteResult(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/orgs/org-1/invitations/invite-1", r.URL.Path)
+		require.Equal(t, http.MethodDelete, r.Method)
+		writeJSONResponse(t, w, http.StatusOK, DeleteInvitationResult{
+			InvitationID: "invite-1",
+			Status:       "revoked",
+		})
+	}))
+	defer server.Close()
+
+	result, err := newTestClient(t, server.URL).RevokeInvitation(context.Background(), "org-1", "invite-1")
+	require.NoError(t, err)
+	require.Equal(t, DeleteInvitationResult{
+		InvitationID: "invite-1",
+		Status:       "revoked",
+	}, result)
+}
+
 func TestClientUpdateBoxCanClearLabelsWithoutSendingNull(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/projects/default/workspace/boxes/box-1", r.URL.Path)

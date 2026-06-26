@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/sys9-ai/run9-sdk-go/internal/generated/client/snaps"
 )
 
 // UpdateBox updates mutable fields on one box.
@@ -20,9 +22,19 @@ func (c *Client) UpdateBox(ctx context.Context, boxID string, req UpdateBoxReque
 
 // GetSnapTree loads the ancestry tree for one snap.
 func (c *Client) GetSnapTree(ctx context.Context, snapID string) (SnapTreeView, error) {
-	var view SnapTreeView
-	err := c.doWorkspace(ctx, http.MethodGet, "/snaps/"+url.PathEscape(strings.TrimSpace(snapID))+"/tree", requestOptions{result: &view})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return SnapTreeView{}, err
+	}
+
+	result, err := c.portal.Snaps.GetSnapTreeContext(ctx, &snaps.GetSnapTreeParams{
+		ProjectCid: projectCID,
+		ID:         strings.TrimSpace(snapID),
+	}, c.auth)
+	if err != nil {
+		return SnapTreeView{}, generatedError(err)
+	}
+	return remarshalJSON[SnapTreeView](result.GetPayload())
 }
 
 // DownloadExecLog downloads the stored log for one exec.

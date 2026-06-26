@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sys9-ai/run9-sdk-go/internal/generated/client/execs"
+	genmodels "github.com/sys9-ai/run9-sdk-go/internal/generated/models"
 )
 
 const idleDeadlineAtHeader = "X-Run9-Idle-Deadline-At"
@@ -19,12 +22,25 @@ type backgroundExecPullOutputRequest struct {
 
 // StartBackgroundExec starts one background exec in a box.
 func (c *Client) StartBackgroundExec(ctx context.Context, boxID string, req ExecRequest) (ExecView, error) {
-	var view ExecView
-	err := c.doWorkspace(ctx, http.MethodPost, "/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/background-execs", requestOptions{
-		body:   req,
-		result: &view,
-	})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return ExecView{}, err
+	}
+
+	payload, err := remarshalJSON[*genmodels.BackgroundExecBoxPayload](req)
+	if err != nil {
+		return ExecView{}, err
+	}
+
+	result, err := c.portal.Execs.BackgroundExecBoxContext(ctx, &execs.BackgroundExecBoxParams{
+		ID:         strings.TrimSpace(boxID),
+		ProjectCid: projectCID,
+		Request:    payload,
+	}, c.auth)
+	if err != nil {
+		return ExecView{}, generatedError(err)
+	}
+	return remarshalJSON[ExecView](result.GetPayload())
 }
 
 // PullBackgroundExecOutput polls output and state transitions for one background exec.
@@ -94,7 +110,16 @@ func (c *Client) WriteBackgroundExecStdin(ctx context.Context, execID string, re
 
 // KillBackgroundExec requests termination of one background exec.
 func (c *Client) KillBackgroundExec(ctx context.Context, execID string) error {
-	return c.doWorkspace(ctx, http.MethodPost, "/execs/"+url.PathEscape(strings.TrimSpace(execID))+"/kill", requestOptions{})
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return err
+	}
+
+	_, err = c.portal.Execs.KillBackgroundExecContext(ctx, &execs.KillBackgroundExecParams{
+		ID:         strings.TrimSpace(execID),
+		ProjectCid: projectCID,
+	}, c.auth)
+	return generatedError(err)
 }
 
 func parseOptionalIdleDeadlineAt(headers http.Header) (*time.Time, error) {

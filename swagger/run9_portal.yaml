@@ -1,0 +1,4982 @@
+basePath: /
+definitions:
+  BackgroundExecBoxPayload:
+    properties:
+      command:
+        items:
+          type: string
+        type: array
+      deadline_at:
+        type: string
+      env_overrides:
+        additionalProperties:
+          type: string
+        type: object
+      stdin_enabled:
+        type: boolean
+      user:
+        type: string
+      workdir:
+        type: string
+    type: object
+  ConfirmSocialAuthPayload:
+    properties:
+      password:
+        type: string
+      pending_password_token:
+        type: string
+    type: object
+  ConsumeSharedSnapToBoxPayload:
+    properties:
+      box_id:
+        type: string
+      description:
+        type: string
+      desired_shape:
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      network_mode:
+        $ref: '#/definitions/api.BoxNetworkMode'
+      security_mode:
+        $ref: '#/definitions/api.BoxSecurityMode'
+      version:
+        type: integer
+        x-nullable: true
+    type: object
+  ConsumeSharedSnapToSnapPayload:
+    properties:
+      version:
+        type: integer
+        x-nullable: true
+    type: object
+  CreateAPIKeyPayload:
+    properties:
+      description:
+        type: string
+      expires_at:
+        type: string
+        x-nullable: true
+      no_expire:
+        type: boolean
+    type: object
+  CreateBoxPayload:
+    properties:
+      box_id:
+        type: string
+      description:
+        type: string
+      desired_shape:
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      network_mode:
+        $ref: '#/definitions/api.BoxNetworkMode'
+      security_mode:
+        $ref: '#/definitions/api.BoxSecurityMode'
+      source_image_digest:
+        type: string
+      source_image_platform:
+        type: string
+      source_image_ref:
+        type: string
+      source_snap_id:
+        type: string
+    type: object
+  CreateInvitationPayload:
+    properties:
+      invitee_email:
+        type: string
+      role:
+        $ref: '#/definitions/api.MembershipRole'
+    type: object
+  CreateOrgPayload:
+    properties:
+      display_name:
+        type: string
+      org_cid:
+        type: string
+    type: object
+  CreateProjectPayload:
+    properties:
+      description:
+        type: string
+      display_name:
+        type: string
+    type: object
+  CreateProjectSecretPayload:
+    properties:
+      allowed_hosts:
+        items:
+          type: string
+        type: array
+      inject_header_name:
+        type: string
+      name:
+        type: string
+      placeholder:
+        type: string
+      value:
+        type: string
+    type: object
+  CreateSSHKeyPayload:
+    properties:
+      label:
+        type: string
+      public_key:
+        type: string
+    type: object
+  DataTransferPrepareView:
+    properties:
+      accepted_at:
+        type: string
+      box_id:
+        type: string
+      data_transfer:
+        $ref: '#/definitions/api.elasticityDataTransfer'
+      deadline_at:
+        type: string
+      failure_code:
+        type: string
+      host_id:
+        type: string
+      kind:
+        type: string
+      org_id:
+        type: string
+      reason:
+        type: string
+      runtime_request_id:
+        type: string
+      session_id:
+        type: string
+      shape:
+        type: string
+      snap_id:
+        type: string
+      state:
+        type: string
+      stop_box:
+        $ref: '#/definitions/pb.StopBoxResult'
+    type: object
+  Error:
+    properties:
+      error:
+        type: string
+    type: object
+  ExecBoxPayload:
+    properties:
+      command:
+        items:
+          type: string
+        type: array
+      deadline_at:
+        type: string
+      env_overrides:
+        additionalProperties:
+          type: string
+        type: object
+      stdin_enabled:
+        type: boolean
+      tty:
+        type: boolean
+      tty_size:
+        $ref: '#/definitions/pb.TTYSize'
+      user:
+        type: string
+      workdir:
+        type: string
+    type: object
+  ExecStreamPayload:
+    properties:
+      command:
+        items:
+          type: string
+        type: array
+      deadline_at:
+        type: string
+      env_overrides:
+        additionalProperties:
+          type: string
+        type: object
+      user:
+        type: string
+      workdir:
+        type: string
+    type: object
+  ImportSnapPayload:
+    properties:
+      image_digest:
+        type: string
+      image_platform:
+        type: string
+      image_ref:
+        type: string
+    type: object
+  LoginUserPayload:
+    properties:
+      password:
+        type: string
+      primary_email:
+        type: string
+    type: object
+  OrgHostsView:
+    properties:
+      assigned_hosts:
+        type: integer
+      hosts:
+        items:
+          $ref: '#/definitions/api.elasticityHostView'
+        type: array
+      org_id:
+        type: string
+    type: object
+  PublishSharedSnapPayload:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      source_snap_id:
+        type: string
+    type: object
+  PullOutputPayload:
+    properties:
+      cursor:
+        type: string
+      wait_ms:
+        type: integer
+    type: object
+  RegisterUserPayload:
+    properties:
+      display_name:
+        type: string
+      invite_token:
+        type: string
+      password:
+        type: string
+      primary_email:
+        type: string
+    type: object
+  SetInitialPasswordPayload:
+    properties:
+      password:
+        type: string
+    type: object
+  SocialAuthExchangePayload:
+    properties:
+      code:
+        type: string
+      code_verifier:
+        type: string
+      invite_token:
+        type: string
+      redirect_uri:
+        type: string
+    type: object
+  UpdateBoxPayload:
+    properties:
+      description:
+        type: string
+        x-nullable: true
+      desired_shape:
+        type: string
+        x-nullable: true
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+        x-nullable: true
+      network_mode:
+        allOf:
+        - $ref: '#/definitions/api.BoxNetworkMode'
+        x-nullable: true
+      security_mode:
+        allOf:
+        - $ref: '#/definitions/api.BoxSecurityMode'
+        x-nullable: true
+    type: object
+  UpdateMePayload:
+    properties:
+      display_name:
+        type: string
+        x-nullable: true
+    type: object
+  UpdateMembershipPayload:
+    properties:
+      role:
+        $ref: '#/definitions/api.MembershipRole'
+    type: object
+  UpdateOrgPayload:
+    properties:
+      display_name:
+        type: string
+        x-nullable: true
+      org_cid:
+        type: string
+        x-nullable: true
+    type: object
+  UpdatePasswordPayload:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        type: string
+    type: object
+  UpdateProjectMembershipPayload:
+    properties:
+      role:
+        $ref: '#/definitions/api.ProjectRole'
+    type: object
+  UpdateProjectPayload:
+    properties:
+      description:
+        type: string
+        x-nullable: true
+      display_name:
+        type: string
+        x-nullable: true
+    type: object
+  UpdateProjectSecretPayload:
+    properties:
+      allowed_hosts:
+        items:
+          type: string
+        type: array
+        x-nullable: true
+      inject_header_name:
+        type: string
+        x-nullable: true
+      name:
+        type: string
+        x-nullable: true
+      value:
+        type: string
+        x-nullable: true
+    type: object
+  VerifyUserEmailPayload:
+    properties:
+      token:
+        type: string
+    type: object
+  api.APIKeyView:
+    properties:
+      ak:
+        type: string
+      api_key_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      display_prefix:
+        type: string
+      display_suffix:
+        type: string
+      expires_at:
+        type: string
+      no_expire:
+        type: boolean
+      org_id:
+        type: string
+      owner_display_name:
+        type: string
+      owner_primary_email:
+        type: string
+      user_id:
+        type: string
+    type: object
+  api.ActiveDataTransferView:
+    properties:
+      accepted_at:
+        type: string
+      box_id:
+        type: string
+      creator:
+        type: string
+      data_transfer_id:
+        type: string
+      direction:
+        $ref: '#/definitions/api.DataTransferDirection'
+      path_summary:
+        type: string
+      project_id:
+        type: string
+      reason:
+        type: string
+      state:
+        $ref: '#/definitions/api.DataTransferState'
+    type: object
+  api.BoxNetworkMode:
+    enum:
+    - normal
+    - managed
+    type: string
+    x-enum-varnames:
+    - BoxNetworkModeNormal
+    - BoxNetworkModeManaged
+  api.BoxSecurityMode:
+    enum:
+    - restricted
+    - unsafe
+    type: string
+    x-enum-varnames:
+    - BoxSecurityModeRestricted
+    - BoxSecurityModeUnsafe
+  api.BoxState:
+    enum:
+    - ready
+    - idle
+    - running
+    - error
+    - deleted
+    type: string
+    x-enum-varnames:
+    - BoxStateReady
+    - BoxStateIdle
+    - BoxStateRunning
+    - BoxStateError
+    - BoxStateDeleted
+  api.BoxView:
+    properties:
+      box_id:
+        type: string
+      box_snap_id:
+        type: string
+      created_at:
+        type: string
+      creator:
+        type: string
+      creator_display_name:
+        type: string
+      creator_primary_email:
+        type: string
+      current_host_id:
+        type: string
+      current_runtime_network_mode:
+        $ref: '#/definitions/api.BoxNetworkMode'
+      current_runtime_security_mode:
+        $ref: '#/definitions/api.BoxSecurityMode'
+      current_runtime_shape:
+        type: string
+      description:
+        type: string
+      desired_shape:
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      last_used_at:
+        type: string
+      latest_exec:
+        $ref: '#/definitions/api.ExecSummary'
+      network_mode:
+        $ref: '#/definitions/api.BoxNetworkMode'
+      org_id:
+        type: string
+      pending_network_mode_change:
+        type: boolean
+      pending_security_mode_change:
+        type: boolean
+      pending_shape_change:
+        type: boolean
+      project_id:
+        type: string
+      reason:
+        type: string
+      security_mode:
+        $ref: '#/definitions/api.BoxSecurityMode'
+      state:
+        $ref: '#/definitions/api.BoxState'
+    type: object
+  api.CreatedAPIKeyView:
+    properties:
+      ak:
+        type: string
+      api_key_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      display_prefix:
+        type: string
+      display_suffix:
+        type: string
+      expires_at:
+        type: string
+      no_expire:
+        type: boolean
+      org_id:
+        type: string
+      owner_display_name:
+        type: string
+      owner_primary_email:
+        type: string
+      sk:
+        type: string
+      user_id:
+        type: string
+    type: object
+  api.CurrentOrgIdentityView:
+    properties:
+      auth_kind:
+        type: string
+      org:
+        $ref: '#/definitions/api.OrgView'
+      user:
+        $ref: '#/definitions/api.MeView'
+    type: object
+  api.CurrentSubscriptionView:
+    properties:
+      end_date:
+        type: string
+      free_quota:
+        $ref: '#/definitions/api.FreeQuotaView'
+      start_date:
+        type: string
+      tier:
+        $ref: '#/definitions/api.SubscriptionTier'
+    type: object
+  api.DataTransferDirection:
+    enum:
+    - upload
+    - download
+    type: string
+    x-enum-varnames:
+    - DataTransferDirectionUpload
+    - DataTransferDirectionDownload
+  api.DataTransferState:
+    enum:
+    - pending
+    - running
+    - succeeded
+    - error
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - DataTransferStatePending
+    - DataTransferStateRunning
+    - DataTransferStateSucceeded
+    - DataTransferStateError
+    - DataTransferStateCancelled
+  api.DeleteInvitationResult:
+    properties:
+      invitation_id:
+        type: string
+      status:
+        type: string
+    type: object
+  api.DeleteOrgResult:
+    properties:
+      org_id:
+        type: string
+      status:
+        type: string
+    type: object
+  api.DeleteProjectResult:
+    properties:
+      project_id:
+        type: string
+      status:
+        type: string
+    type: object
+  api.ExecMode:
+    enum:
+    - foreground
+    - background
+    type: string
+    x-enum-varnames:
+    - ExecModeForeground
+    - ExecModeBackground
+  api.ExecSource:
+    enum:
+    - api
+    - ssh
+    type: string
+    x-enum-varnames:
+    - ExecSourceAPI
+    - ExecSourceSSH
+  api.ExecState:
+    enum:
+    - pending
+    - running
+    - succeeded
+    - failed
+    - error
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - ExecStatePending
+    - ExecStateRunning
+    - ExecStateSucceeded
+    - ExecStateFailed
+    - ExecStateError
+    - ExecStateCancelled
+  api.ExecSummary:
+    properties:
+      accepted_at:
+        type: string
+      command_summary:
+        type: string
+      creator:
+        type: string
+      creator_display_name:
+        type: string
+      creator_primary_email:
+        type: string
+      exec_id:
+        type: string
+      exit_code:
+        type: integer
+      reason:
+        type: string
+      source:
+        $ref: '#/definitions/api.ExecSource'
+      state:
+        $ref: '#/definitions/api.ExecState'
+    type: object
+  api.ExecView:
+    properties:
+      accepted_at:
+        type: string
+      attach_url:
+        type: string
+      box_id:
+        type: string
+      command_summary:
+        type: string
+      creator:
+        type: string
+      diagnostics:
+        additionalProperties: {}
+        type: object
+      exec_id:
+        type: string
+      exit_code:
+        type: integer
+      hard_deadline_at:
+        type: string
+      idle_deadline_at:
+        type: string
+      mode:
+        $ref: '#/definitions/api.ExecMode'
+      org_id:
+        type: string
+      output_summary:
+        type: string
+      project_id:
+        type: string
+      reason:
+        type: string
+      shape_snapshot:
+        type: string
+      source:
+        $ref: '#/definitions/api.ExecSource'
+      state:
+        $ref: '#/definitions/api.ExecState'
+      stdin_enabled:
+        type: boolean
+    type: object
+  api.FreeQuotaView:
+    properties:
+      base_monthly_quota_micros:
+        type: integer
+      current_cycle_carryover_debt_micros:
+        type: integer
+      current_cycle_end_at:
+        type: string
+      current_cycle_host_compute_usage_micros:
+        type: integer
+      current_cycle_raw_box_compute_usage_micros:
+        type: integer
+      current_cycle_reserved_host_compute_usage_micros:
+        type: integer
+      current_cycle_start_at:
+        type: string
+      current_cycle_storage_usage_micros:
+        type: integer
+      current_cycle_top_up_quota_micros:
+        type: integer
+      current_cycle_usage_micros:
+        type: integer
+      grace_deadline_at:
+        type: string
+      grace_started_at:
+        type: string
+      growth_restricted:
+        type: boolean
+      monthly_total_quota_micros:
+        type: integer
+      remaining_quota_micros:
+        type: integer
+      running_host_compute_hourly_micros:
+        type: integer
+      snap_storage_mib:
+        type: integer
+    type: object
+  api.InvitationRegistrationStatus:
+    enum:
+    - ready
+    - expired
+    - invalid
+    - account_exists
+    type: string
+    x-enum-varnames:
+    - InvitationRegistrationStatusReady
+    - InvitationRegistrationStatusExpired
+    - InvitationRegistrationStatusInvalid
+    - InvitationRegistrationStatusAccountExists
+  api.InvitationRegistrationView:
+    properties:
+      expires_at:
+        type: string
+      invitee_email:
+        type: string
+      org:
+        $ref: '#/definitions/api.OrgInviteTargetView'
+      role:
+        $ref: '#/definitions/api.MembershipRole'
+      status:
+        $ref: '#/definitions/api.InvitationRegistrationStatus'
+    type: object
+  api.InvitationState:
+    enum:
+    - pending
+    - accepted
+    - revoked
+    type: string
+    x-enum-varnames:
+    - InvitationStatePending
+    - InvitationStateAccepted
+    - InvitationStateRevoked
+  api.InvitationView:
+    properties:
+      accepted_by:
+        type: string
+      created_at:
+        type: string
+      expires_at:
+        type: string
+      invitation_id:
+        type: string
+      invited_by:
+        type: string
+      invitee_email:
+        type: string
+      org_id:
+        type: string
+      role:
+        $ref: '#/definitions/api.MembershipRole'
+      state:
+        $ref: '#/definitions/api.InvitationState'
+      updated_at:
+        type: string
+    type: object
+  api.MeView:
+    properties:
+      can_create_shared_org:
+        type: boolean
+      created_at:
+        type: string
+      display_name:
+        type: string
+      is_system_manager:
+        type: boolean
+      primary_email:
+        type: string
+      user_id:
+        type: string
+    type: object
+  api.MembershipRole:
+    enum:
+    - owner
+    - manager
+    - member
+    type: string
+    x-enum-varnames:
+    - MembershipRoleOwner
+    - MembershipRoleManager
+    - MembershipRoleMember
+  api.MembershipView:
+    properties:
+      created_at:
+        type: string
+      display_name:
+        type: string
+      last_login_at:
+        type: string
+      org_id:
+        type: string
+      primary_email:
+        type: string
+      role:
+        $ref: '#/definitions/api.MembershipRole'
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  api.OrgInvitePageStatus:
+    enum:
+    - pending
+    - already_member
+    - forbidden
+    - expired
+    type: string
+    x-enum-varnames:
+    - OrgInvitePageStatusPending
+    - OrgInvitePageStatusAlreadyMember
+    - OrgInvitePageStatusForbidden
+    - OrgInvitePageStatusExpired
+  api.OrgInvitePageView:
+    properties:
+      current_role:
+        $ref: '#/definitions/api.MembershipRole'
+      expires_at:
+        type: string
+      invitee_email:
+        type: string
+      org:
+        $ref: '#/definitions/api.OrgInviteTargetView'
+      role:
+        $ref: '#/definitions/api.MembershipRole'
+      status:
+        $ref: '#/definitions/api.OrgInvitePageStatus'
+    type: object
+  api.OrgInviteTargetView:
+    properties:
+      display_name:
+        type: string
+      org_cid:
+        type: string
+      org_id:
+        type: string
+    type: object
+  api.OrgKind:
+    enum:
+    - personal
+    - shared
+    type: string
+    x-enum-varnames:
+    - OrgKindPersonal
+    - OrgKindShared
+  api.OrgSessionView:
+    properties:
+      expires_at:
+        type: string
+      org_id:
+        type: string
+      role:
+        $ref: '#/definitions/api.MembershipRole'
+      session_token:
+        type: string
+      user_id:
+        type: string
+    type: object
+  api.OrgView:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      current_subscription:
+        $ref: '#/definitions/api.CurrentSubscriptionView'
+      display_name:
+        type: string
+      kind:
+        $ref: '#/definitions/api.OrgKind'
+      org_cid:
+        type: string
+      org_id:
+        type: string
+      role:
+        $ref: '#/definitions/api.MembershipRole'
+    type: object
+  api.ProjectMembershipView:
+    properties:
+      created_at:
+        type: string
+      display_name:
+        type: string
+      primary_email:
+        type: string
+      project_id:
+        type: string
+      role:
+        $ref: '#/definitions/api.ProjectRole'
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  api.ProjectRole:
+    enum:
+    - admin
+    - member
+    - viewer
+    type: string
+    x-enum-varnames:
+    - ProjectRoleAdmin
+    - ProjectRoleMember
+    - ProjectRoleViewer
+  api.ProjectSecretScope:
+    enum:
+    - project
+    - box
+    type: string
+    x-enum-varnames:
+    - ProjectSecretScopeProject
+    - ProjectSecretScopeBox
+  api.ProjectSecretView:
+    properties:
+      allowed_hosts:
+        items:
+          type: string
+        type: array
+      box_id:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      inject_header_name:
+        type: string
+      name:
+        type: string
+      org_id:
+        type: string
+      placeholder:
+        type: string
+      project_id:
+        type: string
+      scope:
+        $ref: '#/definitions/api.ProjectSecretScope'
+      secret_id:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  api.ProjectView:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      description:
+        type: string
+      display_name:
+        type: string
+      org_id:
+        type: string
+      project_cid:
+        type: string
+      project_id:
+        type: string
+      role:
+        $ref: '#/definitions/api.ProjectRole'
+      updated_at:
+        type: string
+    type: object
+  api.RegisterUserResultStatus:
+    enum:
+    - registered
+    - pending_verification
+    type: string
+    x-enum-varnames:
+    - RegisterUserResultStatusRegistered
+    - RegisterUserResultStatusPendingVerification
+  api.RegisterUserResultView:
+    properties:
+      primary_email:
+        type: string
+      status:
+        $ref: '#/definitions/api.RegisterUserResultStatus'
+      user:
+        $ref: '#/definitions/api.MeView'
+      verification_expires_at:
+        type: string
+    type: object
+  api.SSHKeyView:
+    properties:
+      created_at:
+        type: string
+      fingerprint:
+        type: string
+      label:
+        type: string
+      last_used_at:
+        type: string
+      ssh_key_id:
+        type: string
+    type: object
+  api.SharedSnapDetailView:
+    properties:
+      latest_version:
+        type: integer
+      name:
+        type: string
+      org_id:
+        type: string
+      publisher:
+        type: string
+      versions:
+        items:
+          $ref: '#/definitions/api.SharedSnapVersionView'
+        type: array
+    type: object
+  api.SharedSnapLineView:
+    properties:
+      description:
+        type: string
+      latest_version:
+        type: integer
+      name:
+        type: string
+      org_id:
+        type: string
+      published_at:
+        type: string
+      published_by:
+        type: string
+      publisher:
+        type: string
+      source_project_cid:
+        type: string
+      source_project_display_name:
+        type: string
+      source_project_id:
+        type: string
+    type: object
+  api.SharedSnapVersionView:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      org_id:
+        type: string
+      published_at:
+        type: string
+      published_by:
+        type: string
+      source_project_cid:
+        type: string
+      source_project_display_name:
+        type: string
+      source_project_id:
+        type: string
+      version:
+        type: integer
+    type: object
+  api.SignInMethodView:
+    properties:
+      configured:
+        type: boolean
+      display_name:
+        type: string
+      linked:
+        type: boolean
+      provider:
+        $ref: '#/definitions/api.SocialAuthProvider'
+    type: object
+  api.SignInMethodsView:
+    properties:
+      has_password:
+        type: boolean
+      primary_email:
+        type: string
+      providers:
+        items:
+          $ref: '#/definitions/api.SignInMethodView'
+        type: array
+    type: object
+  api.SnapInUseReason:
+    enum:
+    - delete_cleanup_pending
+    - box_control_operation
+    - open_execs
+    - active_transfers
+    - runtime_binding
+    type: string
+    x-enum-varnames:
+    - SnapInUseReasonDeleteCleanupPending
+    - SnapInUseReasonBoxControlOperation
+    - SnapInUseReasonOpenExecs
+    - SnapInUseReasonActiveTransfers
+    - SnapInUseReasonRuntimeBinding
+  api.SnapOwnedStorage:
+    properties:
+      bytes:
+        type: integer
+      measured_at:
+        type: string
+      objects:
+        type: integer
+    type: object
+  api.SnapSize:
+    properties:
+      measured_at:
+        type: string
+      used_bytes:
+        type: integer
+      used_inodes:
+        type: integer
+    type: object
+  api.SnapState:
+    enum:
+    - available
+    - inuse
+    - error
+    - deleted
+    type: string
+    x-enum-varnames:
+    - SnapStateAvailable
+    - SnapStateInUse
+    - SnapStateError
+    - SnapStateDeleted
+  api.SnapTreeAttachedBoxView:
+    properties:
+      box_id:
+        type: string
+      desired_shape:
+        type: string
+      state:
+        $ref: '#/definitions/api.BoxState'
+    type: object
+  api.SnapTreeNodeView:
+    properties:
+      attached_box:
+        $ref: '#/definitions/api.SnapTreeAttachedBoxView'
+      created_at:
+        type: string
+      creator:
+        type: string
+      creator_display_name:
+        type: string
+      creator_primary_email:
+        type: string
+      parent_snap_id:
+        type: string
+      reason:
+        type: string
+      snap_id:
+        type: string
+      source_image_digest:
+        type: string
+      source_image_platform:
+        type: string
+      source_image_ref:
+        type: string
+      state:
+        $ref: '#/definitions/api.SnapState'
+    type: object
+  api.SnapTreeView:
+    properties:
+      nodes:
+        items:
+          $ref: '#/definitions/api.SnapTreeNodeView'
+        type: array
+      root_snap_id:
+        type: string
+      supported:
+        type: boolean
+    type: object
+  api.SnapView:
+    properties:
+      attached:
+        type: boolean
+      attached_box_id:
+        type: string
+      created_at:
+        type: string
+      creator:
+        type: string
+      creator_display_name:
+        type: string
+      creator_primary_email:
+        type: string
+      inuse_reason:
+        $ref: '#/definitions/api.SnapInUseReason'
+      last_used_at:
+        type: string
+      org_id:
+        type: string
+      owned_storage:
+        $ref: '#/definitions/api.SnapOwnedStorage'
+      parent_chain:
+        items:
+          type: string
+        type: array
+      project_id:
+        type: string
+      reason:
+        type: string
+      size:
+        $ref: '#/definitions/api.SnapSize'
+      snap_id:
+        type: string
+      source_image_digest:
+        type: string
+      source_image_platform:
+        type: string
+      source_image_ref:
+        type: string
+      state:
+        $ref: '#/definitions/api.SnapState'
+    type: object
+  api.SocialAuthProvider:
+    enum:
+    - google
+    - github
+    type: string
+    x-enum-varnames:
+    - SocialAuthProviderGoogle
+    - SocialAuthProviderGitHub
+  api.SocialProviderView:
+    properties:
+      authorization_url:
+        type: string
+      client_id:
+        type: string
+      display_name:
+        type: string
+      provider:
+        $ref: '#/definitions/api.SocialAuthProvider'
+      redirect_uri:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+    type: object
+  api.SocialSignInResultView:
+    properties:
+      pending_password_token:
+        type: string
+      session:
+        $ref: '#/definitions/api.UserSessionView'
+      sign_in_methods:
+        $ref: '#/definitions/api.SignInMethodsView'
+      status:
+        $ref: '#/definitions/api.SocialSignInStatus'
+    type: object
+  api.SocialSignInStatus:
+    enum:
+    - signed_in
+    - password_confirmation_required
+    - existing_login_required
+    type: string
+    x-enum-varnames:
+    - SocialSignInStatusSignedIn
+    - SocialSignInStatusPasswordConfirmationRequired
+    - SocialSignInStatusExistingLoginRequired
+  api.StatusResult:
+    properties:
+      status:
+        type: string
+    type: object
+  api.SubscriptionTier:
+    enum:
+    - free
+    - starter
+    type: string
+    x-enum-varnames:
+    - SubscriptionTierFree
+    - SubscriptionTierStarter
+  api.UsageReportPointView:
+    properties:
+      end_at:
+        type: string
+      host_compute_usage_micros:
+        type: integer
+      partial:
+        type: boolean
+      raw_box_compute_usage_micros:
+        type: integer
+      reserved_host_compute_usage_micros:
+        type: integer
+      start_at:
+        type: string
+      storage_usage_micros:
+        type: integer
+      total_usage_micros:
+        type: integer
+    type: object
+  api.UsageReportResolution:
+    enum:
+    - hourly
+    - daily
+    - monthly
+    type: string
+    x-enum-varnames:
+    - UsageReportResolutionHourly
+    - UsageReportResolutionDaily
+    - UsageReportResolutionMonthly
+  api.UsageReportView:
+    properties:
+      generated_at:
+        type: string
+      resolution:
+        $ref: '#/definitions/api.UsageReportResolution'
+      series:
+        items:
+          $ref: '#/definitions/api.UsageReportPointView'
+        type: array
+      window_end:
+        type: string
+      window_start:
+        type: string
+    type: object
+  api.UserSessionView:
+    properties:
+      expires_at:
+        type: string
+      session_token:
+        type: string
+      user:
+        $ref: '#/definitions/api.MeView'
+    type: object
+  api.VerifyUserEmailResultView:
+    properties:
+      primary_email:
+        type: string
+      status:
+        $ref: '#/definitions/api.VerifyUserEmailStatus'
+    type: object
+  api.VerifyUserEmailStatus:
+    enum:
+    - verified
+    - expired
+    - invalid
+    type: string
+    x-enum-varnames:
+    - VerifyUserEmailStatusVerified
+    - VerifyUserEmailStatusExpired
+    - VerifyUserEmailStatusInvalid
+  api.elasticityDataTransfer:
+    properties:
+      accepted_at:
+        type: string
+      creator:
+        type: string
+      direction:
+        type: string
+      path_summary:
+        type: string
+    type: object
+  api.elasticityHostIssue:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  api.elasticityHostView:
+    properties:
+      active_background_owner_execs:
+        type: integer
+      active_boxes:
+        type: integer
+      active_execs:
+        type: integer
+      active_transfers:
+        type: integer
+      boot_id:
+        type: string
+      box_inventory_complete:
+        type: boolean
+      ch_version:
+        type: string
+      connected:
+        type: boolean
+      cpu_total_cores:
+        type: number
+      cpu_used_cores:
+        type: number
+      foreground_relay_configured:
+        type: boolean
+      host_class:
+        type: string
+      host_id:
+        type: string
+      hostname:
+        type: string
+      instance_id:
+        type: string
+      issues:
+        items:
+          $ref: '#/definitions/api.elasticityHostIssue'
+        type: array
+      last_heartbeat_at:
+        type: string
+      last_issue_summary:
+        type: string
+      lifecycle_state:
+        type: string
+      machine_id:
+        type: string
+      maintenance_only:
+        type: boolean
+      memory_total_bytes:
+        type: integer
+      memory_used_bytes:
+        type: integer
+      observed_boxes:
+        items:
+          $ref: '#/definitions/api.elasticityObservedBoxRuntime'
+        type: array
+      owner_org_id:
+        type: string
+      planning_reserved_cpu_millis:
+        type: integer
+      planning_reserved_memory_bytes:
+        type: integer
+      ready:
+        type: boolean
+      rt_version:
+        type: string
+      runtime_reserved_cpu_millis:
+        type: integer
+      runtime_reserved_memory_bytes:
+        type: integer
+      vma_service_restart_preserves_background_owners:
+        type: boolean
+      vma_version:
+        type: string
+    type: object
+  api.elasticityObservedBoxRuntime:
+    properties:
+      active_execs:
+        type: integer
+      active_transfers:
+        type: integer
+      box_id:
+        type: string
+      cpu_millis:
+        type: integer
+      memory_bytes:
+        type: integer
+      network_mode:
+        $ref: '#/definitions/api.BoxNetworkMode'
+      security_mode:
+        $ref: '#/definitions/api.BoxSecurityMode'
+    type: object
+  pb.SnapSize:
+    properties:
+      measured_at_unix_ms:
+        type: integer
+      used_bytes:
+        type: integer
+      used_inodes:
+        type: integer
+    type: object
+  pb.StopBoxResult:
+    properties:
+      released_snap_size:
+        $ref: '#/definitions/pb.SnapSize'
+      size_error:
+        type: string
+    type: object
+  pb.TTYSize:
+    properties:
+      cols:
+        type: integer
+      rows:
+        type: integer
+    type: object
+host: api.run.sys9.ai
+info:
+  contact:
+    email: h@pingcap.com
+    name: run9
+    url: https://run.sys9.ai
+  description: |-
+    The public portal-api HTTP surface for run9.
+    JSON request bodies reject unknown fields and errors are returned as {"error":"..."}.
+  license:
+    name: Proprietary
+  title: run9 API
+  version: 1.0.0
+paths:
+  /account:
+    patch:
+      consumes:
+      - application/json
+      operationId: updateAccount
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateMePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The updated user.
+          schema:
+            $ref: '#/definitions/api.MeView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Update the caller's profile
+      tags:
+      - Org access
+  /account/ssh-keys:
+    get:
+      operationId: listAccountSSHKeys
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: SSH keys.
+          schema:
+            items:
+              $ref: '#/definitions/api.SSHKeyView'
+            type: array
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List the caller's SSH keys
+      tags:
+      - Org access
+    post:
+      consumes:
+      - application/json
+      operationId: createAccountSSHKey
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateSSHKeyPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created SSH key.
+          schema:
+            $ref: '#/definitions/api.SSHKeyView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Add an SSH public key
+      tags:
+      - Org access
+  /account/ssh-keys/{id}:
+    delete:
+      operationId: deleteAccountSSHKey
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The deleted SSH key.
+          schema:
+            $ref: '#/definitions/api.SSHKeyView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete an SSH key
+      tags:
+      - Org access
+  /api-keys:
+    get:
+      operationId: listAPIKeys
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: API keys (no secrets).
+          schema:
+            items:
+              $ref: '#/definitions/api.APIKeyView'
+            type: array
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List API keys in the current org
+      tags:
+      - Org access
+    post:
+      consumes:
+      - application/json
+      description: The secret key (`sk`) is returned only once, in this response.
+      operationId: createAPIKey
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateAPIKeyPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created API key, including its one-time secret.
+          schema:
+            $ref: '#/definitions/api.CreatedAPIKeyView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Create an API key
+      tags:
+      - Org access
+  /api-keys/{id}:
+    delete:
+      operationId: revokeAPIKey
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The revoked API key.
+          schema:
+            $ref: '#/definitions/api.APIKeyView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Revoke an API key
+      tags:
+      - Org access
+  /auth/social-providers:
+    get:
+      operationId: listSocialProviders
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Configured providers.
+          schema:
+            items:
+              $ref: '#/definitions/api.SocialProviderView'
+            type: array
+      summary: List configured social login providers
+      tags:
+      - Authentication
+  /auth/social/{provider}/confirm-password:
+    post:
+      consumes:
+      - application/json
+      operationId: confirmSocialAuthPassword
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ConfirmSocialAuthPayload'
+      - description: provider
+        enum:
+        - google
+        - github
+        in: path
+        name: provider
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Social sign-in result.
+          schema:
+            $ref: '#/definitions/api.SocialSignInResultView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Confirm a password to bind a social identity
+      tags:
+      - Authentication
+  /auth/social/{provider}/exchange:
+    post:
+      consumes:
+      - application/json
+      operationId: exchangeSocialAuth
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/SocialAuthExchangePayload'
+      - description: provider
+        enum:
+        - google
+        - github
+        in: path
+        name: provider
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Social sign-in result.
+          schema:
+            $ref: '#/definitions/api.SocialSignInResultView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Exchange a social auth code for a session
+      tags:
+      - Authentication
+  /boxes:
+    get:
+      deprecated: true
+      operationId: legacyListBoxes
+      parameters:
+      - description: Filter by creator user id.
+        in: query
+        name: creator
+        type: string
+      - description: Filter by box state.
+        enum:
+        - ready
+        - idle
+        - running
+        - error
+        - deleted
+        in: query
+        name: state
+        type: string
+      - description: Filter by label key, or `key=value`.
+        in: query
+        name: label
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Boxes.
+          schema:
+            items:
+              $ref: '#/definitions/api.BoxView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List boxes (default project)
+      tags:
+      - Compat
+    post:
+      consumes:
+      - application/json
+      deprecated: true
+      operationId: legacyCreateBox
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateBoxPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created box.
+          schema:
+            $ref: '#/definitions/api.BoxView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Create a box (default project)
+      tags:
+      - Compat
+  /boxes/{id}:
+    delete:
+      deprecated: true
+      operationId: legacyDeleteBox
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The deleted box.
+          schema:
+            $ref: '#/definitions/api.BoxView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete a box (default project)
+      tags:
+      - Compat
+    get:
+      deprecated: true
+      operationId: legacyGetBox
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The box.
+          schema:
+            $ref: '#/definitions/api.BoxView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Get a box (default project)
+      tags:
+      - Compat
+  /boxes/{id}/files/download:
+    get:
+      deprecated: true
+      description: Set `archive=tar` to download a tar archive. Otherwise portal-api
+        expects exactly one regular file at `box_abs_path` and returns that file's
+        raw bytes.
+      operationId: legacyDownloadBoxFiles
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Absolute source path inside the box.
+        in: query
+        name: box_abs_path
+        required: true
+        type: string
+      - description: Set to `tar` to download a tar archive of the target path.
+        in: query
+        name: archive
+        type: string
+      produces:
+      - application/octet-stream
+      - application/x-tar
+      responses:
+        "200":
+          description: The downloaded file bytes or tar archive.
+          schema:
+            type: string
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Download from a box (default project)
+      tags:
+      - Compat
+  /boxes/{id}/files/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      - application/x-tar
+      deprecated: true
+      description: Send `multipart/form-data` with `file` for a single-file upload,
+        or send an `application/x-tar` request body to upload an archive. In multipart
+        mode `box_abs_path` may be provided as a form field or query parameter. In
+        archive mode `box_abs_path` must be provided as a query parameter.
+      operationId: legacyUploadBoxFiles
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Absolute target path inside the box.
+        in: query
+        name: box_abs_path
+        type: string
+      - description: Absolute target path inside the box for multipart uploads.
+        in: formData
+        name: box_abs_path
+        type: string
+      - description: Single file payload used in multipart uploads.
+        in: formData
+        name: file
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Prepared transfer session.
+          schema:
+            $ref: '#/definitions/DataTransferPrepareView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Upload files into a box (default project)
+      tags:
+      - Compat
+  /boxes/{id}/stop:
+    post:
+      deprecated: true
+      operationId: legacyStopBox
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The stopped box.
+          schema:
+            $ref: '#/definitions/api.BoxView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Stop a box (default project)
+      tags:
+      - Compat
+  /me:
+    get:
+      operationId: getMe
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The current user.
+          schema:
+            $ref: '#/definitions/api.MeView'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: Get the signed-in user
+      tags:
+      - Account
+    patch:
+      consumes:
+      - application/json
+      operationId: updateMe
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateMePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The updated user.
+          schema:
+            $ref: '#/definitions/api.MeView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: Update the signed-in user's profile
+      tags:
+      - Account
+  /me/password:
+    post:
+      consumes:
+      - application/json
+      operationId: updatePassword
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdatePasswordPayload'
+      responses:
+        "204":
+          description: Password updated.
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: Change the current password
+      tags:
+      - Account
+  /me/sign-in-methods:
+    get:
+      operationId: getSignInMethods
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sign-in methods.
+          schema:
+            $ref: '#/definitions/api.SignInMethodsView'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: List the account's sign-in methods
+      tags:
+      - Account
+  /me/sign-in-methods/{provider}/exchange:
+    post:
+      consumes:
+      - application/json
+      operationId: linkSocialIdentity
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/SocialAuthExchangePayload'
+      - description: provider
+        enum:
+        - google
+        - github
+        in: path
+        name: provider
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated sign-in methods.
+          schema:
+            $ref: '#/definitions/api.SignInMethodsView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: Link a social identity to the account
+      tags:
+      - Account
+  /me/sign-in-methods/password:
+    post:
+      consumes:
+      - application/json
+      operationId: setInitialPassword
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/SetInitialPasswordPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated sign-in methods.
+          schema:
+            $ref: '#/definitions/api.SignInMethodsView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: Set the first password for a passwordless account
+      tags:
+      - Account
+  /me/ssh-keys:
+    get:
+      operationId: listMySSHKeys
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: SSH keys.
+          schema:
+            items:
+              $ref: '#/definitions/api.SSHKeyView'
+            type: array
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: List the account's SSH keys
+      tags:
+      - Account
+    post:
+      consumes:
+      - application/json
+      operationId: createMySSHKey
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateSSHKeyPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created SSH key.
+          schema:
+            $ref: '#/definitions/api.SSHKeyView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: Add an SSH public key
+      tags:
+      - Account
+  /me/ssh-keys/{id}:
+    delete:
+      operationId: deleteMySSHKey
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The deleted SSH key.
+          schema:
+            $ref: '#/definitions/api.SSHKeyView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: Delete an SSH key
+      tags:
+      - Account
+  /org-invitations/registration:
+    get:
+      operationId: getInvitationRegistrationContext
+      parameters:
+      - description: token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Invitation registration context.
+          schema:
+            $ref: '#/definitions/api.InvitationRegistrationView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Read the registration context behind an invite token
+      tags:
+      - Authentication
+  /org-runtime/hosts:
+    get:
+      operationId: listOrgHosts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Org host capacity.
+          schema:
+            $ref: '#/definitions/OrgHostsView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List hosts currently assigned to the org
+      tags:
+      - Org access
+  /orgs:
+    get:
+      operationId: listOrgs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organizations.
+          schema:
+            items:
+              $ref: '#/definitions/api.OrgView'
+            type: array
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: List organizations the user belongs to
+      tags:
+      - Organizations
+    post:
+      consumes:
+      - application/json
+      operationId: createOrg
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateOrgPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created organization.
+          schema:
+            $ref: '#/definitions/api.OrgView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: Create a shared organization
+      tags:
+      - Organizations
+  /orgs/{id}:
+    delete:
+      operationId: deleteOrg
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete accepted.
+          schema:
+            $ref: '#/definitions/api.DeleteOrgResult'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete the current organization
+      tags:
+      - Org members
+    patch:
+      consumes:
+      - application/json
+      operationId: updateOrg
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateOrgPayload'
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The updated organization.
+          schema:
+            $ref: '#/definitions/api.OrgView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Update the current organization
+      tags:
+      - Org members
+  /orgs/{id}/invitations:
+    get:
+      operationId: listOrgInvitations
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Invitations.
+          schema:
+            items:
+              $ref: '#/definitions/api.InvitationView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List pending invitations
+      tags:
+      - Org members
+    post:
+      consumes:
+      - application/json
+      operationId: createOrgInvitation
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateInvitationPayload'
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created invitation.
+          schema:
+            $ref: '#/definitions/api.InvitationView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Invite a user to the organization
+      tags:
+      - Org members
+  /orgs/{id}/invitations/{invitation_id}:
+    delete:
+      operationId: revokeOrgInvitation
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: invitation_id
+        in: path
+        name: invitation_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The revoked invitation.
+          schema:
+            $ref: '#/definitions/api.DeleteInvitationResult'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Revoke an invitation
+      tags:
+      - Org members
+  /orgs/{id}/members:
+    get:
+      operationId: listOrgMembers
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Members.
+          schema:
+            items:
+              $ref: '#/definitions/api.MembershipView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List organization members
+      tags:
+      - Org members
+  /orgs/{id}/members/{user_id}:
+    delete:
+      operationId: removeOrgMember
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: user_id
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Member removed.
+          schema:
+            $ref: '#/definitions/api.StatusResult'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Remove a member
+      tags:
+      - Org members
+    patch:
+      consumes:
+      - application/json
+      operationId: updateOrgMember
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateMembershipPayload'
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: user_id
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The updated membership.
+          schema:
+            $ref: '#/definitions/api.MembershipView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Change a member's role
+      tags:
+      - Org members
+  /orgs/{id}/switch-token:
+    post:
+      operationId: createOrgSessionToken
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: An org-scoped session token.
+          schema:
+            $ref: '#/definitions/api.OrgSessionView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: Mint an org-scoped session token
+      tags:
+      - Organizations
+  /orgs/by-cid/{org_cid}/invite:
+    get:
+      operationId: getOrgInvitePage
+      parameters:
+      - description: org_cid
+        in: path
+        name: org_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The invitation page.
+          schema:
+            $ref: '#/definitions/api.OrgInvitePageView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: Read an organization invitation landing page
+      tags:
+      - Organizations
+  /orgs/by-cid/{org_cid}/invite/accept:
+    post:
+      operationId: acceptOrgInvite
+      parameters:
+      - description: org_cid
+        in: path
+        name: org_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The organization that was joined.
+          schema:
+            $ref: '#/definitions/api.OrgView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - SessionToken: []
+      summary: Accept an organization invitation
+      tags:
+      - Organizations
+  /projects:
+    get:
+      operationId: listProjects
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Projects.
+          schema:
+            items:
+              $ref: '#/definitions/api.ProjectView'
+            type: array
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List projects in the current org
+      tags:
+      - Projects
+    post:
+      consumes:
+      - application/json
+      operationId: createProject
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateProjectPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created project.
+          schema:
+            $ref: '#/definitions/api.ProjectView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Create a project
+      tags:
+      - Projects
+  /projects/{project_cid}:
+    delete:
+      operationId: deleteProject
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete accepted.
+          schema:
+            $ref: '#/definitions/api.DeleteProjectResult'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete a project
+      tags:
+      - Projects
+    get:
+      operationId: getProject
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The project.
+          schema:
+            $ref: '#/definitions/api.ProjectView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Get a project
+      tags:
+      - Projects
+    patch:
+      consumes:
+      - application/json
+      operationId: updateProject
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateProjectPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The updated project.
+          schema:
+            $ref: '#/definitions/api.ProjectView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Update a project
+      tags:
+      - Projects
+  /projects/{project_cid}/members:
+    get:
+      operationId: listProjectMembers
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project members.
+          schema:
+            items:
+              $ref: '#/definitions/api.ProjectMembershipView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List project members
+      tags:
+      - Projects
+  /projects/{project_cid}/members/{user_id}:
+    delete:
+      operationId: removeProjectMember
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: user_id
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Member removed.
+          schema:
+            $ref: '#/definitions/api.StatusResult'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Remove a project member
+      tags:
+      - Projects
+    patch:
+      consumes:
+      - application/json
+      operationId: updateProjectMember
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateProjectMembershipPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: user_id
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The updated project membership.
+          schema:
+            $ref: '#/definitions/api.ProjectMembershipView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Change a project member's role
+      tags:
+      - Projects
+  /projects/{project_cid}/secrets:
+    get:
+      operationId: listProjectSecrets
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project secrets (metadata only).
+          schema:
+            items:
+              $ref: '#/definitions/api.ProjectSecretView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List project secrets
+      tags:
+      - Projects
+    post:
+      consumes:
+      - application/json
+      operationId: createProjectSecret
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateProjectSecretPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created secret (metadata only).
+          schema:
+            $ref: '#/definitions/api.ProjectSecretView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Create a project secret
+      tags:
+      - Projects
+  /projects/{project_cid}/secrets/{secret_id}:
+    delete:
+      operationId: deleteProjectSecret
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: secret_id
+        in: path
+        name: secret_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Secret removed.
+          schema:
+            $ref: '#/definitions/api.StatusResult'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete a project secret
+      tags:
+      - Projects
+    patch:
+      consumes:
+      - application/json
+      operationId: updateProjectSecret
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateProjectSecretPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: secret_id
+        in: path
+        name: secret_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The updated secret (metadata only).
+          schema:
+            $ref: '#/definitions/api.ProjectSecretView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Update a project secret
+      tags:
+      - Projects
+  /projects/{project_cid}/workspace/boxes:
+    get:
+      operationId: listBoxes
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Filter by creator user id.
+        in: query
+        name: creator
+        type: string
+      - description: Filter by box state.
+        enum:
+        - ready
+        - idle
+        - running
+        - error
+        - deleted
+        in: query
+        name: state
+        type: string
+      - description: Filter by label key, or `key=value`.
+        in: query
+        name: label
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Boxes.
+          schema:
+            items:
+              $ref: '#/definitions/api.BoxView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List boxes in a project
+      tags:
+      - Boxes
+    post:
+      consumes:
+      - application/json
+      operationId: createBox
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateBoxPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created box.
+          schema:
+            $ref: '#/definitions/api.BoxView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Create a box
+      tags:
+      - Boxes
+  /projects/{project_cid}/workspace/boxes/{id}:
+    delete:
+      operationId: deleteBox
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The deleted box.
+          schema:
+            $ref: '#/definitions/api.BoxView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete a box
+      tags:
+      - Boxes
+    get:
+      operationId: getBox
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The box.
+          schema:
+            $ref: '#/definitions/api.BoxView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Get a box
+      tags:
+      - Boxes
+    patch:
+      consumes:
+      - application/json
+      operationId: updateBox
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateBoxPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The updated box.
+          schema:
+            $ref: '#/definitions/api.BoxView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Update a box
+      tags:
+      - Boxes
+  /projects/{project_cid}/workspace/boxes/{id}/background-execs:
+    post:
+      consumes:
+      - application/json
+      operationId: backgroundExecBox
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/BackgroundExecBoxPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The accepted background exec.
+          schema:
+            $ref: '#/definitions/api.ExecView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Start a background command in a box
+      tags:
+      - Execs
+  /projects/{project_cid}/workspace/boxes/{id}/execs:
+    post:
+      consumes:
+      - application/json
+      operationId: execBox
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ExecBoxPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The accepted exec.
+          schema:
+            $ref: '#/definitions/api.ExecView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Run a foreground command in a box
+      tags:
+      - Execs
+  /projects/{project_cid}/workspace/boxes/{id}/execs/stream:
+    post:
+      consumes:
+      - application/json
+      description: 'By default this endpoint returns `303 See Other` to the foreground
+        relay and includes the accepted exec id in `X-Run9-Exec-ID`. Set `X-Run9-Exec-Stream-Mode:
+        inline` to receive an `application/x-ndjson` event stream directly from portal-api
+        instead.'
+      operationId: execBoxStream
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ExecStreamPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Set to `inline` to stream NDJSON directly instead of receiving
+          a foreground relay redirect.
+        enum:
+        - inline
+        in: header
+        name: X-Run9-Exec-Stream-Mode
+        type: string
+      produces:
+      - application/x-ndjson
+      responses:
+        "200":
+          description: NDJSON stream of foreground exec events.
+          headers:
+            X-Run9-Exec-ID:
+              description: Accepted foreground exec id.
+              type: string
+          schema:
+            type: string
+        "303":
+          description: See Other redirect to the foreground relay attach URL.
+          headers:
+            Location:
+              description: Foreground relay attach URL.
+              type: string
+            X-Run9-Exec-ID:
+              description: Accepted foreground exec id.
+              type: string
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Run a foreground command and stream its output
+      tags:
+      - Execs
+  /projects/{project_cid}/workspace/boxes/{id}/files/download:
+    get:
+      description: Set `archive=tar` to download a tar archive. Otherwise portal-api
+        expects exactly one regular file at `box_abs_path` and returns that file's
+        raw bytes.
+      operationId: downloadBoxFiles
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Absolute source path inside the box.
+        in: query
+        name: box_abs_path
+        required: true
+        type: string
+      - description: Set to `tar` to download a tar archive of the target path.
+        in: query
+        name: archive
+        type: string
+      produces:
+      - application/octet-stream
+      - application/x-tar
+      responses:
+        "200":
+          description: The downloaded file bytes or tar archive.
+          schema:
+            type: string
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Download a file or tar archive from a box
+      tags:
+      - Files
+  /projects/{project_cid}/workspace/boxes/{id}/files/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      - application/x-tar
+      description: Send `multipart/form-data` with `file` for a single-file upload,
+        or send an `application/x-tar` request body to upload an archive. In multipart
+        mode `box_abs_path` may be provided as a form field or query parameter. In
+        archive mode `box_abs_path` must be provided as a query parameter.
+      operationId: uploadBoxFiles
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Absolute target path inside the box.
+        in: query
+        name: box_abs_path
+        type: string
+      - description: Absolute target path inside the box for multipart uploads.
+        in: formData
+        name: box_abs_path
+        type: string
+      - description: Single file payload used in multipart uploads.
+        in: formData
+        name: file
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Prepared transfer session.
+          schema:
+            $ref: '#/definitions/DataTransferPrepareView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Upload files into a box
+      tags:
+      - Files
+  /projects/{project_cid}/workspace/boxes/{id}/secrets:
+    get:
+      operationId: listBoxSecrets
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Box secrets (metadata only).
+          schema:
+            items:
+              $ref: '#/definitions/api.ProjectSecretView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List a box's secrets
+      tags:
+      - Boxes
+    post:
+      consumes:
+      - application/json
+      operationId: createBoxSecret
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateProjectSecretPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created secret (metadata only).
+          schema:
+            $ref: '#/definitions/api.ProjectSecretView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Create a box secret
+      tags:
+      - Boxes
+  /projects/{project_cid}/workspace/boxes/{id}/secrets/{secret_id}:
+    delete:
+      operationId: deleteBoxSecret
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: secret_id
+        in: path
+        name: secret_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Secret removed.
+          schema:
+            $ref: '#/definitions/api.StatusResult'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete a box secret
+      tags:
+      - Boxes
+    patch:
+      consumes:
+      - application/json
+      operationId: updateBoxSecret
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateProjectSecretPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: secret_id
+        in: path
+        name: secret_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The updated secret (metadata only).
+          schema:
+            $ref: '#/definitions/api.ProjectSecretView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Update a box secret
+      tags:
+      - Boxes
+  /projects/{project_cid}/workspace/boxes/{id}/stop:
+    post:
+      operationId: stopBox
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The stopped box.
+          schema:
+            $ref: '#/definitions/api.BoxView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Stop a box's runtime
+      tags:
+      - Boxes
+  /projects/{project_cid}/workspace/data-transfers/active:
+    get:
+      operationId: listActiveDataTransfers
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: box_id
+        in: query
+        name: box_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Active data transfers.
+          schema:
+            items:
+              $ref: '#/definitions/api.ActiveDataTransferView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List active file transfers
+      tags:
+      - Files
+  /projects/{project_cid}/workspace/execs:
+    get:
+      operationId: listExecs
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: box_id
+        in: query
+        name: box_id
+        type: string
+      - description: creator
+        in: query
+        name: creator
+        type: string
+      - description: state
+        enum:
+        - pending
+        - running
+        - succeeded
+        - failed
+        - error
+        - cancelled
+        in: query
+        name: state
+        type: string
+      - description: accepted_after
+        format: date-time
+        in: query
+        name: accepted_after
+        type: string
+      - description: accepted_before
+        format: date-time
+        in: query
+        name: accepted_before
+        type: string
+      - description: Enable cursor pagination. Required to use `limit`, `cursor` or
+          `order`.
+        in: query
+        name: paged
+        type: boolean
+      - description: limit
+        in: query
+        minimum: 1
+        name: limit
+        type: integer
+      - description: cursor
+        in: query
+        name: cursor
+        type: string
+      - default: desc
+        description: order
+        enum:
+        - asc
+        - desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Execs. When `paged=true`, the next page cursor is returned
+            in the `X-Run9-Next-Cursor` response header (absent on the last page).
+          headers:
+            X-Run9-Next-Cursor:
+              description: Cursor for the next page; absent when there are no more
+                results.
+              type: string
+          schema:
+            items:
+              $ref: '#/definitions/api.ExecView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List execs in a project
+      tags:
+      - Execs
+  /projects/{project_cid}/workspace/execs/{id}:
+    get:
+      operationId: getExec
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The exec.
+          schema:
+            $ref: '#/definitions/api.ExecView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Get an exec
+      tags:
+      - Execs
+  /projects/{project_cid}/workspace/execs/{id}/kill:
+    post:
+      operationId: killBackgroundExec
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Kill accepted.
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Kill a background exec
+      tags:
+      - Execs
+  /projects/{project_cid}/workspace/execs/{id}/log-download:
+    get:
+      operationId: downloadExecLog
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: The exec log.
+          schema:
+            type: string
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Download a foreground exec's captured log
+      tags:
+      - Execs
+  /projects/{project_cid}/workspace/execs/{id}/pull-output:
+    post:
+      consumes:
+      - application/json
+      description: Long-polls for new output bytes from a background exec. The body
+        is the raw output chunk (`application/octet-stream`); the cursor and exec
+        status are returned in `X-Run9-*` response headers.
+      operationId: pullBackgroundExecOutput
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/PullOutputPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: A chunk of output bytes plus status headers.
+          headers:
+            X-Run9-Exec-State:
+              description: Current exec state.
+              type: string
+            X-Run9-Exit-Code:
+              description: Exit code
+              type: integer
+            X-Run9-Idle-Deadline-At:
+              description: When the background exec idle-leases out.
+              type: string
+            X-Run9-Next-Cursor:
+              description: Cursor to pass on the next pull.
+              type: string
+            X-Run9-Reason:
+              description: Failure reason
+              type: string
+          schema:
+            type: string
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Pull incremental output from a background exec
+      tags:
+      - Execs
+  /projects/{project_cid}/workspace/execs/{id}/write-stdin:
+    post:
+      consumes:
+      - application/octet-stream
+      operationId: writeBackgroundExecStdin
+      parameters:
+      - description: Raw stdin bytes (max 32768 bytes per call).
+        in: body
+        name: body
+        required: true
+        schema:
+          type: string
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Set to `true` to close the exec's stdin after writing this chunk.
+        enum:
+        - "true"
+        - "false"
+        in: header
+        name: X-Run9-Close-Stdin
+        type: string
+      responses:
+        "200":
+          description: Stdin accepted.
+          headers:
+            X-Run9-Idle-Deadline-At:
+              description: When the background exec idle-leases out.
+              type: string
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Write stdin to a background exec
+      tags:
+      - Execs
+  /projects/{project_cid}/workspace/shared-snaps/{name}/boxes:
+    post:
+      consumes:
+      - application/json
+      operationId: consumeSharedSnapToBox
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ConsumeSharedSnapToBoxPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Shared snap name.
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created box.
+          schema:
+            $ref: '#/definitions/api.BoxView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Create a box from a shared snap
+      tags:
+      - Shared snaps
+  /projects/{project_cid}/workspace/shared-snaps/{name}/snaps:
+    post:
+      consumes:
+      - application/json
+      operationId: consumeSharedSnapToSnap
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ConsumeSharedSnapToSnapPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Shared snap name.
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The new snap.
+          schema:
+            $ref: '#/definitions/api.SnapView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Fork a private snap from a shared snap
+      tags:
+      - Shared snaps
+  /projects/{project_cid}/workspace/snaps:
+    get:
+      operationId: listSnaps
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Filter by attached (`true`) or detached (`false`) snaps.
+        in: query
+        name: attached
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Snaps.
+          schema:
+            items:
+              $ref: '#/definitions/api.SnapView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List snaps in a project
+      tags:
+      - Snaps
+  /projects/{project_cid}/workspace/snaps/{id}:
+    delete:
+      operationId: deleteSnap
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The deleted snap.
+          schema:
+            $ref: '#/definitions/api.SnapView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete a snap
+      tags:
+      - Snaps
+    get:
+      operationId: getSnap
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The snap.
+          schema:
+            $ref: '#/definitions/api.SnapView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Get a snap
+      tags:
+      - Snaps
+  /projects/{project_cid}/workspace/snaps/{id}/fork:
+    post:
+      operationId: forkSnap
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The new forked snap.
+          schema:
+            $ref: '#/definitions/api.SnapView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Fork a snap
+      tags:
+      - Snaps
+  /projects/{project_cid}/workspace/snaps/{id}/tree:
+    get:
+      operationId: getSnapTree
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The snap tree.
+          schema:
+            $ref: '#/definitions/api.SnapTreeView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Get a snap's fork lineage tree
+      tags:
+      - Snaps
+  /projects/{project_cid}/workspace/snaps/import:
+    post:
+      consumes:
+      - application/json
+      operationId: importSnap
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ImportSnapPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The imported snap.
+          schema:
+            $ref: '#/definitions/api.SnapView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Import a snap from an OCI image
+      tags:
+      - Snaps
+  /shared-snaps:
+    get:
+      operationId: listSharedSnaps
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Shared snaps.
+          schema:
+            items:
+              $ref: '#/definitions/api.SharedSnapLineView'
+            type: array
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List shared snaps in the org
+      tags:
+      - Shared snaps
+    post:
+      consumes:
+      - application/json
+      operationId: publishSharedSnap
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/PublishSharedSnapPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The published shared snap version.
+          schema:
+            $ref: '#/definitions/api.SharedSnapVersionView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Publish a new shared snap version
+      tags:
+      - Shared snaps
+  /shared-snaps/{name}:
+    delete:
+      operationId: deleteSharedSnap
+      parameters:
+      - description: Shared snap name.
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deleted.
+          schema:
+            $ref: '#/definitions/api.StatusResult'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete a shared snap and all its versions
+      tags:
+      - Shared snaps
+    get:
+      operationId: getSharedSnap
+      parameters:
+      - description: Shared snap name.
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The shared snap detail.
+          schema:
+            $ref: '#/definitions/api.SharedSnapDetailView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Get a shared snap and its versions
+      tags:
+      - Shared snaps
+  /shared-snaps/{name}/versions/{version}:
+    delete:
+      operationId: deleteSharedSnapVersion
+      parameters:
+      - description: Shared snap name.
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: version
+        in: path
+        name: version
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deleted.
+          schema:
+            $ref: '#/definitions/api.StatusResult'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete one shared snap version
+      tags:
+      - Shared snaps
+  /snaps:
+    get:
+      deprecated: true
+      operationId: legacyListSnaps
+      parameters:
+      - description: attached
+        in: query
+        name: attached
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Snaps.
+          schema:
+            items:
+              $ref: '#/definitions/api.SnapView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List snaps (default project)
+      tags:
+      - Compat
+  /snaps/{id}:
+    delete:
+      deprecated: true
+      operationId: legacyDeleteSnap
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The deleted snap.
+          schema:
+            $ref: '#/definitions/api.SnapView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete a snap (default project)
+      tags:
+      - Compat
+    get:
+      deprecated: true
+      operationId: legacyGetSnap
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The snap.
+          schema:
+            $ref: '#/definitions/api.SnapView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Get a snap (default project)
+      tags:
+      - Compat
+  /snaps/{id}/fork:
+    post:
+      deprecated: true
+      operationId: legacyForkSnap
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The new forked snap.
+          schema:
+            $ref: '#/definitions/api.SnapView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Fork a snap (default project)
+      tags:
+      - Compat
+  /snaps/{id}/tree:
+    get:
+      deprecated: true
+      operationId: legacyGetSnapTree
+      parameters:
+      - description: Resource identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The snap tree.
+          schema:
+            $ref: '#/definitions/api.SnapTreeView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Get a snap tree (default project)
+      tags:
+      - Compat
+  /snaps/import:
+    post:
+      consumes:
+      - application/json
+      deprecated: true
+      operationId: legacyImportSnap
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ImportSnapPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The imported snap.
+          schema:
+            $ref: '#/definitions/api.SnapView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Import a snap (default project)
+      tags:
+      - Compat
+  /swagger.yaml:
+    get:
+      operationId: getAPISpec
+      produces:
+      - application/yaml
+      responses:
+        "200":
+          description: Tracked Swagger 2.0 YAML for this build.
+          schema:
+            type: string
+      summary: Download the current portal-api Swagger 2.0 spec
+      tags:
+      - Documentation
+  /usage:
+    get:
+      description: Returns a compute and storage usage time series for the current
+        org over one requested UTC window.
+      operationId: getOrgUsageReport
+      parameters:
+      - description: RFC3339 UTC window start aligned to the requested resolution
+          boundary.
+        format: date-time
+        in: query
+        name: start_at
+        required: true
+        type: string
+      - description: RFC3339 UTC window end. It must be after start_at and may be
+          truncated to now.
+        format: date-time
+        in: query
+        name: end_at
+        required: true
+        type: string
+      - default: hourly
+        description: Usage bucket size.
+        enum:
+        - hourly
+        - daily
+        - monthly
+        in: query
+        name: resolution
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usage report.
+          schema:
+            $ref: '#/definitions/api.UsageReportView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Read the current org's usage report
+      tags:
+      - Org access
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      operationId: loginUser
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/LoginUserPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A user session token.
+          schema:
+            $ref: '#/definitions/api.UserSessionView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Sign in with email and password
+      tags:
+      - Authentication
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      operationId: registerUser
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/RegisterUserPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Account created and ready to sign in.
+          schema:
+            $ref: '#/definitions/api.RegisterUserResultView'
+        "202":
+          description: Registration accepted; email verification is pending.
+          schema:
+            $ref: '#/definitions/api.RegisterUserResultView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Register a new user
+      tags:
+      - Authentication
+  /users/verify-email:
+    post:
+      consumes:
+      - application/json
+      operationId: verifyUserEmail
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/VerifyUserEmailPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Verification result.
+          schema:
+            $ref: '#/definitions/api.VerifyUserEmailResultView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Consume an email verification token
+      tags:
+      - Authentication
+  /whoami:
+    get:
+      operationId: whoami
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The current identity.
+          schema:
+            $ref: '#/definitions/api.CurrentOrgIdentityView'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Identify the current org-scoped caller
+      tags:
+      - Org access
+schemes:
+- https
+securityDefinitions:
+  BasicAuth:
+    type: basic
+  SessionToken:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
