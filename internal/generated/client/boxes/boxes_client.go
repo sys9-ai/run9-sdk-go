@@ -106,6 +106,18 @@ type ClientService interface {
 	// StopBoxContext stop a box s runtime.
 	StopBoxContext(ctx context.Context, params *StopBoxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*StopBoxOK, error)
 
+	// UpdateBox update a box.
+	UpdateBox(params *UpdateBoxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBoxOK, error)
+
+	// UpdateBoxContext update a box.
+	UpdateBoxContext(ctx context.Context, params *UpdateBoxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBoxOK, error)
+
+	// UpdateBoxSecret update a box secret.
+	UpdateBoxSecret(params *UpdateBoxSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBoxSecretOK, error)
+
+	// UpdateBoxSecretContext update a box secret.
+	UpdateBoxSecretContext(ctx context.Context, params *UpdateBoxSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBoxSecretOK, error)
+
 	SetTransport(transport runtime.ContextualTransport)
 }
 
@@ -642,6 +654,140 @@ func (a *Client) StopBoxContext(ctx context.Context, params *StopBoxParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for stopBox: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateBoxupdates a box.
+
+This method does not support injected context.
+However, timeout and opentracing contexts are honored whenever enabled.
+
+If you need to pass a specific context, use [Client.UpdateBoxContext] instead.
+*/
+func (a *Client) UpdateBox(params *UpdateBoxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBoxOK, error) {
+	var ctx context.Context
+	if params.inner.ctx != nil {
+		ctx = params.inner.ctx
+	} else {
+		ctx = context.Background()
+	}
+
+	return a.UpdateBoxContext(ctx, params, authInfo, opts...)
+}
+
+/*
+UpdateBoxContextupdates a box.
+
+Do not use the deprecated [UpdateBoxParams.Context] with this method: it would be ignored.
+*/
+func (a *Client) UpdateBoxContext(ctx context.Context, params *UpdateBoxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBoxOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateBoxParams()
+	}
+
+	op := &runtime.ClientOperation{
+		ID:                 "updateBox",
+		Method:             "PATCH",
+		PathPattern:        "/projects/{project_cid}/workspace/boxes/{id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateBoxReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Client:             params.HTTPClient,
+	}
+
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.SubmitContext(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateBoxOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for updateBox: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateBoxSecretupdates a box secret.
+
+This method does not support injected context.
+However, timeout and opentracing contexts are honored whenever enabled.
+
+If you need to pass a specific context, use [Client.UpdateBoxSecretContext] instead.
+*/
+func (a *Client) UpdateBoxSecret(params *UpdateBoxSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBoxSecretOK, error) {
+	var ctx context.Context
+	if params.inner.ctx != nil {
+		ctx = params.inner.ctx
+	} else {
+		ctx = context.Background()
+	}
+
+	return a.UpdateBoxSecretContext(ctx, params, authInfo, opts...)
+}
+
+/*
+UpdateBoxSecretContextupdates a box secret.
+
+Do not use the deprecated [UpdateBoxSecretParams.Context] with this method: it would be ignored.
+*/
+func (a *Client) UpdateBoxSecretContext(ctx context.Context, params *UpdateBoxSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBoxSecretOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateBoxSecretParams()
+	}
+
+	op := &runtime.ClientOperation{
+		ID:                 "updateBoxSecret",
+		Method:             "PATCH",
+		PathPattern:        "/projects/{project_cid}/workspace/boxes/{id}/secrets/{secret_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateBoxSecretReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Client:             params.HTTPClient,
+	}
+
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.SubmitContext(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateBoxSecretOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for updateBoxSecret: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

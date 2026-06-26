@@ -124,6 +124,12 @@ type ClientService interface {
 	// UpdateProjectMemberContext change a project member s role.
 	UpdateProjectMemberContext(ctx context.Context, params *UpdateProjectMemberParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateProjectMemberOK, error)
 
+	// UpdateProjectSecret update a project secret.
+	UpdateProjectSecret(params *UpdateProjectSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateProjectSecretOK, error)
+
+	// UpdateProjectSecretContext update a project secret.
+	UpdateProjectSecretContext(ctx context.Context, params *UpdateProjectSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateProjectSecretOK, error)
+
 	SetTransport(transport runtime.ContextualTransport)
 }
 
@@ -861,6 +867,73 @@ func (a *Client) UpdateProjectMemberContext(ctx context.Context, params *UpdateP
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for updateProjectMember: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateProjectSecretupdates a project secret.
+
+This method does not support injected context.
+However, timeout and opentracing contexts are honored whenever enabled.
+
+If you need to pass a specific context, use [Client.UpdateProjectSecretContext] instead.
+*/
+func (a *Client) UpdateProjectSecret(params *UpdateProjectSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateProjectSecretOK, error) {
+	var ctx context.Context
+	if params.inner.ctx != nil {
+		ctx = params.inner.ctx
+	} else {
+		ctx = context.Background()
+	}
+
+	return a.UpdateProjectSecretContext(ctx, params, authInfo, opts...)
+}
+
+/*
+UpdateProjectSecretContextupdates a project secret.
+
+Do not use the deprecated [UpdateProjectSecretParams.Context] with this method: it would be ignored.
+*/
+func (a *Client) UpdateProjectSecretContext(ctx context.Context, params *UpdateProjectSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateProjectSecretOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateProjectSecretParams()
+	}
+
+	op := &runtime.ClientOperation{
+		ID:                 "updateProjectSecret",
+		Method:             "PATCH",
+		PathPattern:        "/projects/{project_cid}/secrets/{secret_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateProjectSecretReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Client:             params.HTTPClient,
+	}
+
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.SubmitContext(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateProjectSecretOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for updateProjectSecret: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

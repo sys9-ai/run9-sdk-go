@@ -13,6 +13,10 @@ if [[ ! -f "$spec_path" ]]; then
   exit 1
 fi
 
+normalized_spec="$(mktemp)"
+trap 'rm -f "$normalized_spec"' EXIT
+go run ./cmd/normalizeswagger -in "$spec_path" -out "$normalized_spec"
+
 operations=(
   updateAccount
   listAccountSSHKeys
@@ -41,14 +45,17 @@ operations=(
   removeProjectMember
   listProjectSecrets
   createProjectSecret
+  updateProjectSecret
   deleteProjectSecret
   createBox
   listBoxes
   getBox
+  updateBox
   deleteBox
   stopBox
   listBoxSecrets
   createBoxSecret
+  updateBoxSecret
   deleteBoxSecret
   importSnap
   listSnaps
@@ -72,7 +79,7 @@ operations=(
 args=(
   go run github.com/go-swagger/go-swagger/cmd/swagger@v0.34.1 generate client
   --skip-validation
-  -f "$spec_path"
+  -f "$normalized_spec"
   -A run9_portal
   -t .
   --client-package internal/generated/client

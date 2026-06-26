@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/jsonutils"
+	"github.com/sys9-ai/run9-sdk-go/internal/codegenpatch"
 )
 
 // UpdateProjectSecretPayload update project secret payload
@@ -15,7 +16,7 @@ import (
 type UpdateProjectSecretPayload struct {
 
 	// allowed hosts
-	AllowedHosts []string `json:"allowed_hosts"`
+	AllowedHosts *codegenpatch.StringSlice `json:"allowed_hosts,omitempty"`
 
 	// inject header name
 	InjectHeaderName *string `json:"inject_header_name,omitempty"`

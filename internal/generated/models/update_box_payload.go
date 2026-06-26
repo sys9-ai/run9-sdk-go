@@ -8,7 +8,7 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/jsonutils"
-	"github.com/go-openapi/swag/typeutils"
+	"github.com/sys9-ai/run9-sdk-go/internal/codegenpatch"
 )
 
 // UpdateBoxPayload update box payload
@@ -23,78 +23,29 @@ type UpdateBoxPayload struct {
 	DesiredShape *string `json:"desired_shape,omitempty"`
 
 	// labels
-	Labels map[string]string `json:"labels,omitempty"`
+	Labels *codegenpatch.StringMap `json:"labels,omitempty"`
 
 	// network mode
-	NetworkMode struct {
-		APIBoxNetworkMode
-	} `json:"network_mode,omitempty"`
+	// Enum: ["normal","managed"]
+	NetworkMode *codegenpatch.BoxNetworkMode `json:"network_mode,omitempty"`
 
 	// security mode
-	SecurityMode struct {
-		APIBoxSecurityMode
-	} `json:"security_mode,omitempty"`
+	// Enum: ["restricted","unsafe"]
+	SecurityMode *codegenpatch.BoxSecurityMode `json:"security_mode,omitempty"`
 }
 
 // Validate validates this update box payload
 func (m *UpdateBoxPayload) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateNetworkMode(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateSecurityMode(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
 	return nil
 }
 
-func (m *UpdateBoxPayload) validateNetworkMode(formats strfmt.Registry) error {
-	if typeutils.IsZero(m.NetworkMode) { // not required
-		return nil
-	}
-
-	return nil
-}
-
-func (m *UpdateBoxPayload) validateSecurityMode(formats strfmt.Registry) error {
-	if typeutils.IsZero(m.SecurityMode) { // not required
-		return nil
-	}
-
-	return nil
-}
-
-// ContextValidate validate this update box payload based on the context it is used
+// ContextValidate validates this update box payload based on context it is used
 func (m *UpdateBoxPayload) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateNetworkMode(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateSecurityMode(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *UpdateBoxPayload) contextValidateNetworkMode(ctx context.Context, formats strfmt.Registry) error {
-
-	return nil
-}
-
-func (m *UpdateBoxPayload) contextValidateSecurityMode(ctx context.Context, formats strfmt.Registry) error {
-
 	return nil
 }
 

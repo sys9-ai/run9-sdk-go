@@ -2,8 +2,6 @@ package run9
 
 import (
 	"context"
-	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/sys9-ai/run9-sdk-go/internal/generated/client/boxes"
@@ -56,12 +54,20 @@ func (c *Client) UpdateProjectSecret(ctx context.Context, secretID string, req U
 		return ProjectSecretView{}, err
 	}
 
-	var view ProjectSecretView
-	err = c.do(ctx, http.MethodPatch, "/projects/"+url.PathEscape(projectCID)+"/secrets/"+url.PathEscape(strings.TrimSpace(secretID)), requestOptions{
-		body:   req,
-		result: &view,
-	})
-	return view, err
+	payload, err := remarshalJSON[*genmodels.UpdateProjectSecretPayload](req)
+	if err != nil {
+		return ProjectSecretView{}, err
+	}
+
+	result, err := c.portal.Projects.UpdateProjectSecretContext(ctx, &projects.UpdateProjectSecretParams{
+		ProjectCid: projectCID,
+		SecretID:   strings.TrimSpace(secretID),
+		Request:    payload,
+	}, c.auth)
+	if err != nil {
+		return ProjectSecretView{}, generatedError(err)
+	}
+	return remarshalJSON[ProjectSecretView](result.GetPayload())
 }
 
 // DeleteProjectSecret deletes one project-scoped secret.
@@ -120,12 +126,26 @@ func (c *Client) CreateBoxSecret(ctx context.Context, boxID string, req CreatePr
 
 // UpdateBoxSecret updates one box-scoped secret.
 func (c *Client) UpdateBoxSecret(ctx context.Context, boxID string, secretID string, req UpdateProjectSecretRequest) (ProjectSecretView, error) {
-	var view ProjectSecretView
-	err := c.doWorkspace(ctx, http.MethodPatch, "/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/secrets/"+url.PathEscape(strings.TrimSpace(secretID)), requestOptions{
-		body:   req,
-		result: &view,
-	})
-	return view, err
+	projectCID, err := c.requireProjectCID()
+	if err != nil {
+		return ProjectSecretView{}, err
+	}
+
+	payload, err := remarshalJSON[*genmodels.UpdateProjectSecretPayload](req)
+	if err != nil {
+		return ProjectSecretView{}, err
+	}
+
+	result, err := c.portal.Boxes.UpdateBoxSecretContext(ctx, &boxes.UpdateBoxSecretParams{
+		ProjectCid: projectCID,
+		ID:         strings.TrimSpace(boxID),
+		SecretID:   strings.TrimSpace(secretID),
+		Request:    payload,
+	}, c.auth)
+	if err != nil {
+		return ProjectSecretView{}, generatedError(err)
+	}
+	return remarshalJSON[ProjectSecretView](result.GetPayload())
 }
 
 // DeleteBoxSecret deletes one box-scoped secret.

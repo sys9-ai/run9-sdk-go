@@ -192,6 +192,30 @@ func TestClientUpdateProjectSecretOmitsAllowedHostsWhenUnset(t *testing.T) {
 	require.Equal(t, "OPENAI_API_KEY", view.Name)
 }
 
+func TestClientUpdateProjectSecretCanClearAllowedHosts(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/projects/default/secrets/secret-1", r.URL.Path)
+		require.Equal(t, http.MethodPatch, r.Method)
+
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		require.JSONEq(t, `{"allowed_hosts":[]}`, string(body))
+
+		writeJSONResponse(t, w, http.StatusOK, ProjectSecretView{
+			SecretID: "secret-1",
+			Name:     "OPENAI_API_KEY",
+		})
+	}))
+	defer server.Close()
+
+	allowedHosts := []string{}
+	view, err := newProjectTestClient(t, server.URL, "default").UpdateProjectSecret(context.Background(), "secret-1", UpdateProjectSecretRequest{
+		AllowedHosts: &allowedHosts,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "secret-1", view.SecretID)
+}
+
 func TestClientUpdateBoxSecretOmitsAllowedHostsWhenUnset(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/projects/default/workspace/boxes/box-1/secrets/secret-1", r.URL.Path)
