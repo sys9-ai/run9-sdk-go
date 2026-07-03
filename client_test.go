@@ -142,7 +142,7 @@ func TestClientUpdateBoxCanClearLabelsWithoutSendingNull(t *testing.T) {
 
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		require.JSONEq(t, `{"labels":{},"desired_shape":"2c4g","network_mode":"managed","security_mode":"restricted"}`, string(body))
+		require.JSONEq(t, `{"labels":{},"desired_shape":"2c4g","network_mode":"managed"}`, string(body))
 
 		writeJSONResponse(t, w, http.StatusOK, BoxView{
 			BoxID:        "box-1",
@@ -155,12 +155,10 @@ func TestClientUpdateBoxCanClearLabelsWithoutSendingNull(t *testing.T) {
 	labels := map[string]string{}
 	shape := "2c4g"
 	networkMode := BoxNetworkModeManaged
-	securityMode := BoxSecurityModeRestricted
 	view, err := newProjectTestClient(t, server.URL, "default").UpdateBox(context.Background(), "box-1", UpdateBoxRequest{
 		Labels:       &labels,
 		DesiredShape: &shape,
 		NetworkMode:  &networkMode,
-		SecurityMode: &securityMode,
 	})
 	require.NoError(t, err)
 	require.Equal(t, "box-1", view.BoxID)

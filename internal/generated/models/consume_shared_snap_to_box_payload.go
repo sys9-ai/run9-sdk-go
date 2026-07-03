@@ -32,9 +32,6 @@ type ConsumeSharedSnapToBoxPayload struct {
 	// network mode
 	NetworkMode APIBoxNetworkMode `json:"network_mode,omitempty"`
 
-	// security mode
-	SecurityMode APIBoxSecurityMode `json:"security_mode,omitempty"`
-
 	// version
 	Version *int64 `json:"version,omitempty"`
 }
@@ -44,10 +41,6 @@ func (m *ConsumeSharedSnapToBoxPayload) Validate(formats strfmt.Registry) error 
 	var res []error
 
 	if err := m.validateNetworkMode(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateSecurityMode(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -78,36 +71,11 @@ func (m *ConsumeSharedSnapToBoxPayload) validateNetworkMode(formats strfmt.Regis
 	return nil
 }
 
-func (m *ConsumeSharedSnapToBoxPayload) validateSecurityMode(formats strfmt.Registry) error {
-	if typeutils.IsZero(m.SecurityMode) { // not required
-		return nil
-	}
-
-	if err := m.SecurityMode.Validate(formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("security_mode")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("security_mode")
-		}
-
-		return err
-	}
-
-	return nil
-}
-
 // ContextValidate validate this consume shared snap to box payload based on the context it is used
 func (m *ConsumeSharedSnapToBoxPayload) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateNetworkMode(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateSecurityMode(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -131,28 +99,6 @@ func (m *ConsumeSharedSnapToBoxPayload) contextValidateNetworkMode(ctx context.C
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
 			return ce.ValidateName("network_mode")
-		}
-
-		return err
-	}
-
-	return nil
-}
-
-func (m *ConsumeSharedSnapToBoxPayload) contextValidateSecurityMode(ctx context.Context, formats strfmt.Registry) error {
-
-	if typeutils.IsZero(m.SecurityMode) { // not required
-		return nil
-	}
-
-	if err := m.SecurityMode.ContextValidate(ctx, formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("security_mode")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("security_mode")
 		}
 
 		return err

@@ -31,10 +31,6 @@ type UpdateBoxPayload struct {
 	// network mode
 	// Enum: ["normal","managed"]
 	NetworkMode *string `json:"network_mode,omitempty"`
-
-	// security mode
-	// Enum: ["restricted","unsafe"]
-	SecurityMode *string `json:"security_mode,omitempty"`
 }
 
 // Validate validates this update box payload
@@ -42,10 +38,6 @@ func (m *UpdateBoxPayload) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateNetworkMode(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateSecurityMode(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -91,48 +83,6 @@ func (m *UpdateBoxPayload) validateNetworkMode(formats strfmt.Registry) error {
 
 	// value enum
 	if err := m.validateNetworkModeEnum("network_mode", "body", *m.NetworkMode); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-var updateBoxPayloadTypeSecurityModePropEnum []any
-
-func init() {
-	var res []string
-	if err := json.Unmarshal([]byte(`["restricted","unsafe"]`), &res); err != nil {
-		panic(err)
-	}
-	for _, v := range res {
-		updateBoxPayloadTypeSecurityModePropEnum = append(updateBoxPayloadTypeSecurityModePropEnum, v)
-	}
-}
-
-const (
-
-	// UpdateBoxPayloadSecurityModeRestricted captures enum value "restricted"
-	UpdateBoxPayloadSecurityModeRestricted string = "restricted"
-
-	// UpdateBoxPayloadSecurityModeUnsafe captures enum value "unsafe"
-	UpdateBoxPayloadSecurityModeUnsafe string = "unsafe"
-)
-
-// prop value enum
-func (m *UpdateBoxPayload) validateSecurityModeEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, updateBoxPayloadTypeSecurityModePropEnum, true); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *UpdateBoxPayload) validateSecurityMode(formats strfmt.Registry) error {
-	if typeutils.IsZero(m.SecurityMode) { // not required
-		return nil
-	}
-
-	// value enum
-	if err := m.validateSecurityModeEnum("security_mode", "body", *m.SecurityMode); err != nil {
 		return err
 	}
 

@@ -41,9 +41,6 @@ type APIBoxView struct {
 	// current runtime network mode
 	CurrentRuntimeNetworkMode APIBoxNetworkMode `json:"current_runtime_network_mode,omitempty"`
 
-	// current runtime security mode
-	CurrentRuntimeSecurityMode APIBoxSecurityMode `json:"current_runtime_security_mode,omitempty"`
-
 	// current runtime shape
 	CurrentRuntimeShape string `json:"current_runtime_shape,omitempty"`
 
@@ -71,9 +68,6 @@ type APIBoxView struct {
 	// pending network mode change
 	PendingNetworkModeChange bool `json:"pending_network_mode_change,omitempty"`
 
-	// pending security mode change
-	PendingSecurityModeChange bool `json:"pending_security_mode_change,omitempty"`
-
 	// pending shape change
 	PendingShapeChange bool `json:"pending_shape_change,omitempty"`
 
@@ -82,9 +76,6 @@ type APIBoxView struct {
 
 	// reason
 	Reason string `json:"reason,omitempty"`
-
-	// security mode
-	SecurityMode APIBoxSecurityMode `json:"security_mode,omitempty"`
 
 	// state
 	State APIBoxState `json:"state,omitempty"`
@@ -98,19 +89,11 @@ func (m *APIBoxView) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateCurrentRuntimeSecurityMode(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateLatestExec(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if err := m.validateNetworkMode(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateSecurityMode(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -137,27 +120,6 @@ func (m *APIBoxView) validateCurrentRuntimeNetworkMode(formats strfmt.Registry) 
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
 			return ce.ValidateName("current_runtime_network_mode")
-		}
-
-		return err
-	}
-
-	return nil
-}
-
-func (m *APIBoxView) validateCurrentRuntimeSecurityMode(formats strfmt.Registry) error {
-	if typeutils.IsZero(m.CurrentRuntimeSecurityMode) { // not required
-		return nil
-	}
-
-	if err := m.CurrentRuntimeSecurityMode.Validate(formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("current_runtime_security_mode")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("current_runtime_security_mode")
 		}
 
 		return err
@@ -210,27 +172,6 @@ func (m *APIBoxView) validateNetworkMode(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *APIBoxView) validateSecurityMode(formats strfmt.Registry) error {
-	if typeutils.IsZero(m.SecurityMode) { // not required
-		return nil
-	}
-
-	if err := m.SecurityMode.Validate(formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("security_mode")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("security_mode")
-		}
-
-		return err
-	}
-
-	return nil
-}
-
 func (m *APIBoxView) validateState(formats strfmt.Registry) error {
 	if typeutils.IsZero(m.State) { // not required
 		return nil
@@ -260,19 +201,11 @@ func (m *APIBoxView) ContextValidate(ctx context.Context, formats strfmt.Registr
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateCurrentRuntimeSecurityMode(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateLatestExec(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
 	if err := m.contextValidateNetworkMode(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateSecurityMode(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -300,28 +233,6 @@ func (m *APIBoxView) contextValidateCurrentRuntimeNetworkMode(ctx context.Contex
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
 			return ce.ValidateName("current_runtime_network_mode")
-		}
-
-		return err
-	}
-
-	return nil
-}
-
-func (m *APIBoxView) contextValidateCurrentRuntimeSecurityMode(ctx context.Context, formats strfmt.Registry) error {
-
-	if typeutils.IsZero(m.CurrentRuntimeSecurityMode) { // not required
-		return nil
-	}
-
-	if err := m.CurrentRuntimeSecurityMode.ContextValidate(ctx, formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("current_runtime_security_mode")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("current_runtime_security_mode")
 		}
 
 		return err
@@ -369,28 +280,6 @@ func (m *APIBoxView) contextValidateNetworkMode(ctx context.Context, formats str
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
 			return ce.ValidateName("network_mode")
-		}
-
-		return err
-	}
-
-	return nil
-}
-
-func (m *APIBoxView) contextValidateSecurityMode(ctx context.Context, formats strfmt.Registry) error {
-
-	if typeutils.IsZero(m.SecurityMode) { // not required
-		return nil
-	}
-
-	if err := m.SecurityMode.ContextValidate(ctx, formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("security_mode")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("security_mode")
 		}
 
 		return err

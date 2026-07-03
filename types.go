@@ -50,17 +50,6 @@ const (
 	BoxNetworkModeManaged BoxNetworkMode = "managed"
 )
 
-// BoxSecurityMode represents the requested security mode for a box.
-type BoxSecurityMode string
-
-// Box security modes accepted by box create and update APIs.
-const (
-	// BoxSecurityModeRestricted requests the default restricted security mode.
-	BoxSecurityModeRestricted BoxSecurityMode = "restricted"
-	// BoxSecurityModeUnsafe requests the less restricted unsafe security mode.
-	BoxSecurityModeUnsafe BoxSecurityMode = "unsafe"
-)
-
 // SnapState represents the current snap state.
 type SnapState string
 
@@ -272,27 +261,24 @@ type ListBoxesRequest struct {
 
 // BoxView describes one box.
 type BoxView struct {
-	BoxID                      string            `json:"box_id"`
-	OrgID                      string            `json:"org_id"`
-	ProjectID                  string            `json:"project_id"`
-	Creator                    string            `json:"creator"`
-	CreatedAt                  time.Time         `json:"created_at"`
-	LastUsedAt                 time.Time         `json:"last_used_at"`
-	Description                string            `json:"description,omitempty"`
-	Labels                     map[string]string `json:"labels,omitempty"`
-	State                      BoxState          `json:"state"`
-	Reason                     string            `json:"reason,omitempty"`
-	BoxSnapID                  string            `json:"box_snap_id"`
-	DesiredShape               string            `json:"desired_shape"`
-	NetworkMode                BoxNetworkMode    `json:"network_mode"`
-	SecurityMode               BoxSecurityMode   `json:"security_mode"`
-	CurrentHostID              string            `json:"current_host_id,omitempty"`
-	CurrentRuntimeShape        string            `json:"current_runtime_shape,omitempty"`
-	CurrentRuntimeNetworkMode  BoxNetworkMode    `json:"current_runtime_network_mode,omitempty"`
-	CurrentRuntimeSecurityMode BoxSecurityMode   `json:"current_runtime_security_mode,omitempty"`
-	PendingShapeChange         bool              `json:"pending_shape_change"`
-	PendingNetworkModeChange   bool              `json:"pending_network_mode_change"`
-	PendingSecurityModeChange  bool              `json:"pending_security_mode_change"`
+	BoxID                     string            `json:"box_id"`
+	OrgID                     string            `json:"org_id"`
+	ProjectID                 string            `json:"project_id"`
+	Creator                   string            `json:"creator"`
+	CreatedAt                 time.Time         `json:"created_at"`
+	LastUsedAt                time.Time         `json:"last_used_at"`
+	Description               string            `json:"description,omitempty"`
+	Labels                    map[string]string `json:"labels,omitempty"`
+	State                     BoxState          `json:"state"`
+	Reason                    string            `json:"reason,omitempty"`
+	BoxSnapID                 string            `json:"box_snap_id"`
+	DesiredShape              string            `json:"desired_shape"`
+	NetworkMode               BoxNetworkMode    `json:"network_mode"`
+	CurrentHostID             string            `json:"current_host_id,omitempty"`
+	CurrentRuntimeShape       string            `json:"current_runtime_shape,omitempty"`
+	CurrentRuntimeNetworkMode BoxNetworkMode    `json:"current_runtime_network_mode,omitempty"`
+	PendingShapeChange        bool              `json:"pending_shape_change"`
+	PendingNetworkModeChange  bool              `json:"pending_network_mode_change"`
 }
 
 // SnapView describes one snap.
@@ -538,8 +524,6 @@ type CreateBoxRequest struct {
 	DesiredShape string `json:"desired_shape,omitempty"`
 	// NetworkMode requests the durable network mode for the box.
 	NetworkMode BoxNetworkMode `json:"network_mode,omitempty"`
-	// SecurityMode requests the durable security mode for the box.
-	SecurityMode BoxSecurityMode `json:"security_mode,omitempty"`
 	// Description is optional free-form box text.
 	Description string `json:"description,omitempty"`
 	// Labels sets durable box labels.
@@ -560,8 +544,6 @@ type CreateBoxFromSharedSnapRequest struct {
 	DesiredShape string `json:"desired_shape,omitempty"`
 	// NetworkMode requests the durable network mode for the box.
 	NetworkMode BoxNetworkMode `json:"network_mode,omitempty"`
-	// SecurityMode requests the durable security mode for the box.
-	SecurityMode BoxSecurityMode `json:"security_mode,omitempty"`
 	// Description is optional free-form box text.
 	Description string `json:"description,omitempty"`
 	// Labels sets durable box labels.
@@ -650,8 +632,6 @@ type UpdateBoxRequest struct {
 	DesiredShape *string `json:"desired_shape,omitempty"`
 	// NetworkMode replaces the durable network mode when non-nil.
 	NetworkMode *BoxNetworkMode `json:"network_mode,omitempty"`
-	// SecurityMode replaces the durable security mode when non-nil.
-	SecurityMode *BoxSecurityMode `json:"security_mode,omitempty"`
 }
 
 // PublishSharedSnapRequest publishes one snap into the shared snap catalog.

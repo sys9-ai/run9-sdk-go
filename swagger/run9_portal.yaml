@@ -40,8 +40,6 @@ definitions:
         type: object
       network_mode:
         $ref: '#/definitions/api.BoxNetworkMode'
-      security_mode:
-        $ref: '#/definitions/api.BoxSecurityMode'
       version:
         type: integer
         x-nullable: true
@@ -76,8 +74,6 @@ definitions:
         type: object
       network_mode:
         $ref: '#/definitions/api.BoxNetworkMode'
-      security_mode:
-        $ref: '#/definitions/api.BoxSecurityMode'
       source_image_digest:
         type: string
       source_image_platform:
@@ -286,12 +282,6 @@ definitions:
         - managed
         type: string
         x-nullable: true
-      security_mode:
-        enum:
-        - restricted
-        - unsafe
-        type: string
-        x-nullable: true
     type: object
   UpdateMePayload:
     properties:
@@ -412,14 +402,6 @@ definitions:
     x-enum-varnames:
     - BoxNetworkModeNormal
     - BoxNetworkModeManaged
-  api.BoxSecurityMode:
-    enum:
-    - restricted
-    - unsafe
-    type: string
-    x-enum-varnames:
-    - BoxSecurityModeRestricted
-    - BoxSecurityModeUnsafe
   api.BoxState:
     enum:
     - ready
@@ -452,8 +434,6 @@ definitions:
         type: string
       current_runtime_network_mode:
         $ref: '#/definitions/api.BoxNetworkMode'
-      current_runtime_security_mode:
-        $ref: '#/definitions/api.BoxSecurityMode'
       current_runtime_shape:
         type: string
       description:
@@ -474,16 +454,12 @@ definitions:
         type: string
       pending_network_mode_change:
         type: boolean
-      pending_security_mode_change:
-        type: boolean
       pending_shape_change:
         type: boolean
       project_id:
         type: string
       reason:
         type: string
-      security_mode:
-        $ref: '#/definitions/api.BoxSecurityMode'
       state:
         $ref: '#/definitions/api.BoxState'
     type: object
