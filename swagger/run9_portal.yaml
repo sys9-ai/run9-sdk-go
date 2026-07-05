@@ -162,6 +162,8 @@ definitions:
         type: string
       stop_box:
         $ref: '#/definitions/pb.StopBoxResult'
+      warm_hit:
+        type: boolean
     type: object
   Error:
     properties:
