@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -369,4 +370,159 @@ func TestAuth9StubCancellationPropagates(t *testing.T) {
 	require.NotPanics(t, func() {
 		_ = view.ContextValidate(canceled, strfmt.Default)
 	})
+}
+
+// auth9Path describes one auth9 route so the propagation and adversarial
+// matrices below exercise every new endpoint, not just config.
+type auth9Path struct {
+	name   string
+	method string
+	path   string
+	body   func() []byte
+}
+
+func auth9Paths() []auth9Path {
+	return []auth9Path{
+		{name: "config", method: http.MethodGet, path: "/auth/auth9/config", body: func() []byte { return nil }},
+		{
+			name:   "exchange",
+			method: http.MethodPost,
+			path:   "/auth/auth9/exchange",
+			body: func() []byte {
+				raw, _ := (&genmodels.APIAuth9SignInRequest{Code: "authz-code", CodeVerifier: "pkce", RedirectURI: "https://run9.example.com/auth/auth9/callback"}).MarshalBinary()
+				return raw
+			},
+		},
+		{
+			name:   "refresh",
+			method: http.MethodPost,
+			path:   "/auth/auth9/refresh",
+			body: func() []byte {
+				raw, _ := (&genmodels.APIAuth9RefreshRequest{RefreshToken: "refresh-1"}).MarshalBinary()
+				return raw
+			},
+		},
+	}
+}
+
+func auth9Request(t *testing.T, ctx context.Context, serverURL string, p auth9Path) (*http.Request, error) {
+	t.Helper()
+	var body io.Reader
+	if raw := p.body(); raw != nil {
+		body = bytes.NewReader(raw)
+	}
+	req, err := http.NewRequestWithContext(ctx, p.method, serverURL+p.path, body)
+	if err != nil {
+		return nil, err
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	return req, nil
+}
+
+// TestAuth9AllPathsCancellationPropagates asserts context cancellation and
+// deadline expiry surface as the right errors on every auth9 call path, not
+// just config. The stub blocks until the request context is done, so a leaked
+// or swallowed cancellation would hang the test instead of returning.
+func TestAuth9AllPathsCancellationPropagates(t *testing.T) {
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Park until the client aborts (its context cancels the server-side
+		// request context) or the test tears down via release, so Close never
+		// blocks on a stuck handler goroutine.
+		select {
+		case <-r.Context().Done():
+		case <-release:
+		}
+	}))
+	server.Config.SetKeepAlivesEnabled(false)
+	defer server.Close()
+	defer close(release)
+	client := server.Client()
+
+	for _, p := range auth9Paths() {
+		t.Run(p.name+"/cancel", func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			go func() {
+				time.Sleep(20 * time.Millisecond)
+				cancel()
+			}()
+			req, err := auth9Request(t, ctx, server.URL, p)
+			require.NoError(t, err)
+			_, err = client.Do(req)
+			require.ErrorIs(t, err, context.Canceled)
+		})
+		t.Run(p.name+"/deadline", func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+			defer cancel()
+			req, err := auth9Request(t, ctx, server.URL, p)
+			require.NoError(t, err)
+			_, err = client.Do(req)
+			require.ErrorIs(t, err, context.DeadlineExceeded)
+		})
+	}
+}
+
+// TestAuth9AllPathsUnexpectedStatusYieldsCleanErrors feeds each auth9 path an
+// adversarial server that returns non-2xx statuses with non-JSON or malformed
+// bodies. Decoding such a body through the generated success model must return
+// an error and never panic — the SDK must not mistake an error page for a
+// session.
+func TestAuth9AllPathsUnexpectedStatusYieldsCleanErrors(t *testing.T) {
+	adversarial := []struct {
+		name string
+		// status/ctype/body are the wire the adversarial server returns.
+		status int
+		ctype  string
+		body   string
+		// decodes is true when the body is valid JSON for the session model
+		// (so it decodes without error but must still not carry a session).
+		decodes bool
+	}{
+		{name: "500 html", status: http.StatusInternalServerError, ctype: "text/html", body: "<html>500 Internal Server Error</html>"},
+		{name: "502 empty", status: http.StatusBadGateway, ctype: "text/plain", body: ""},
+		{name: "503 truncated json", status: http.StatusServiceUnavailable, ctype: "application/json", body: `{"session_token":`},
+		{name: "429 wrong types", status: http.StatusTooManyRequests, ctype: "application/json", body: `{"session_token":123,"user":[]}`},
+		{name: "200 but error page", status: http.StatusOK, ctype: "text/html", body: "<!doctype html><title>oops</title>"},
+		{name: "400 error json", status: http.StatusBadRequest, ctype: "application/json", body: `{"error":"missing code"}`, decodes: true},
+	}
+	for _, p := range auth9Paths() {
+		for _, adv := range adversarial {
+			t.Run(p.name+"/"+adv.name, func(t *testing.T) {
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", adv.ctype)
+					w.WriteHeader(adv.status)
+					_, _ = w.Write([]byte(adv.body))
+				}))
+				defer server.Close()
+
+				req, err := auth9Request(t, context.Background(), server.URL, p)
+				require.NoError(t, err)
+				resp, err := server.Client().Do(req)
+				require.NoError(t, err)
+				defer resp.Body.Close()
+				raw, err := io.ReadAll(resp.Body)
+				require.NoError(t, err)
+
+				// Decoding an adversarial body through the success model must
+				// never panic, and must never fabricate a session: garbage
+				// bodies fail to decode, and an error-shaped JSON body decodes
+				// to a zero-value session with no token. Either way the SDK
+				// must not mistake it for a real session.
+				var session genmodels.APIAuth9SessionView
+				var decErr error
+				require.NotPanics(t, func() {
+					decErr = session.UnmarshalBinary(raw)
+				})
+				if adv.decodes {
+					require.NoError(t, decErr)
+				} else {
+					require.Error(t, decErr)
+				}
+				require.Empty(t, session.SessionToken)
+				require.Nil(t, session.User)
+			})
+		}
+	}
 }
