@@ -61,6 +61,9 @@ type DataTransferPrepareView struct {
 
 	// stop box
 	StopBox *PbStopBoxResult `json:"stop_box,omitempty"`
+
+	// warm hit
+	WarmHit bool `json:"warm_hit,omitempty"`
 }
 
 // Validate validates this data transfer prepare view
