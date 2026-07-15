@@ -123,8 +123,9 @@ Start one background exec and follow its output with an internal cursor:
 
 ```go
 execView, err := project.StartBackgroundExec(ctx, "devbox", run9.ExecRequest{
-	Command:      []string{"/bin/sh", "-lc", "long task"},
-	StdinEnabled: true,
+	Command:        []string{"/bin/sh", "-lc", "long task"},
+	StdinEnabled:   true,
+	IdempotencyKey: "daemon-generation-42",
 })
 if err != nil {
 	return err
@@ -136,6 +137,8 @@ result, err := follower.Pump(ctx, 2*time.Second, run9.ExecOutputWriters{
 	Stderr: os.Stderr,
 })
 ```
+
+Persist one stable `IdempotencyKey` for each logical daemon generation and reuse it when retrying after an uncertain response. The same key and request return the original exec; changing the request while reusing the key returns a conflict. If omitted, the SDK generates a new key for that `StartBackgroundExec` call.
 
 `result.NextCursor` is still exposed for explicit replay use cases, but callers that only want to keep tailing can let the follower manage it.
 

@@ -99,6 +99,25 @@ func ExampleClient_FollowBackgroundExec() {
 	_ = result.TerminalResult()
 }
 
+func ExampleClient_StartBackgroundExec() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{
+		AK: "ak-...",
+		SK: "sk-...",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	project := client.WithProject("sandbox")
+	_, err = project.StartBackgroundExec(context.Background(), "devbox", run9.ExecRequest{
+		Command:        []string{"/bin/sh", "-lc", "long task"},
+		IdempotencyKey: "daemon-generation-42",
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
 func ExampleBackgroundExecPullOutput_WriteMergedOutput() {
 	result := run9.BackgroundExecPullOutput{
 		Events: []run9.BackgroundExecOutputEvent{

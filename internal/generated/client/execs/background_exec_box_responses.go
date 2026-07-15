@@ -39,6 +39,12 @@ func (o *BackgroundExecBoxReader) ReadResponse(response runtime.ClientResponse, 
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewBackgroundExecBoxConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	default:
 		return nil, runtime.NewAPIError("[POST /projects/{project_cid}/workspace/boxes/{id}/background-execs] backgroundExecBox", response, response.Code())
 	}
@@ -243,6 +249,76 @@ func (o *BackgroundExecBoxUnauthorized) GetPayload() *models.Error {
 }
 
 func (o *BackgroundExecBoxUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.Error)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewBackgroundExecBoxConflict creates a BackgroundExecBoxConflict with default headers values
+func NewBackgroundExecBoxConflict() *BackgroundExecBoxConflict {
+	return &BackgroundExecBoxConflict{}
+}
+
+/*
+BackgroundExecBoxConflict describes a response with status code 409, with default header values.
+
+The idempotency key was already used with a different request.
+*/
+type BackgroundExecBoxConflict struct {
+	Payload *models.Error
+}
+
+// IsSuccess returns true when this background exec box conflict response has a 2xx status code
+func (o *BackgroundExecBoxConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this background exec box conflict response has a 3xx status code
+func (o *BackgroundExecBoxConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this background exec box conflict response has a 4xx status code
+func (o *BackgroundExecBoxConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this background exec box conflict response has a 5xx status code
+func (o *BackgroundExecBoxConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this background exec box conflict response a status code equal to that given
+func (o *BackgroundExecBoxConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the background exec box conflict response
+func (o *BackgroundExecBoxConflict) Code() int {
+	return 409
+}
+
+func (o *BackgroundExecBoxConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /projects/{project_cid}/workspace/boxes/{id}/background-execs][%d] backgroundExecBoxConflict %s", 409, payload)
+}
+
+func (o *BackgroundExecBoxConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /projects/{project_cid}/workspace/boxes/{id}/background-execs][%d] backgroundExecBoxConflict %s", 409, payload)
+}
+
+func (o *BackgroundExecBoxConflict) GetPayload() *models.Error {
+	return o.Payload
+}
+
+func (o *BackgroundExecBoxConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.Error)
 

@@ -2,6 +2,8 @@ package run9
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"io"
 	"net/http"
 	"net/url"
@@ -22,6 +24,14 @@ type backgroundExecPullOutputRequest struct {
 
 // StartBackgroundExec starts one background exec in a box.
 func (c *Client) StartBackgroundExec(ctx context.Context, boxID string, req ExecRequest) (ExecView, error) {
+	idempotencyKey := req.IdempotencyKey
+	if idempotencyKey == "" {
+		var randomBytes [16]byte
+		if _, err := rand.Read(randomBytes[:]); err != nil {
+			return ExecView{}, err
+		}
+		idempotencyKey = "bgexec-" + base64.RawURLEncoding.EncodeToString(randomBytes[:])
+	}
 	payload, err := remarshalJSON[*genmodels.BackgroundExecBoxPayload](req)
 	if err != nil {
 		return ExecView{}, err
@@ -29,9 +39,10 @@ func (c *Client) StartBackgroundExec(ctx context.Context, boxID string, req Exec
 
 	return projectGeneratedResult[ExecView](c, func(projectCID string) (any, error) {
 		return c.portal.Execs.BackgroundExecBoxContext(ctx, &execs.BackgroundExecBoxParams{
-			ID:         strings.TrimSpace(boxID),
-			ProjectCid: projectCID,
-			Request:    payload,
+			ID:             strings.TrimSpace(boxID),
+			ProjectCid:     projectCID,
+			Request:        payload,
+			IdempotencyKey: &idempotencyKey,
 		}, c.auth)
 	})
 }

@@ -63,6 +63,12 @@ BackgroundExecBoxParams contains all the parameters to send to the API endpoint
 */
 type BackgroundExecBoxParams struct {
 
+	/* IdempotencyKey.
+
+	   Opaque key that makes retries of this background exec creation idempotent within the project.
+	*/
+	IdempotencyKey *string
+
 	/* ID.
 
 	   Resource identifier.
@@ -138,6 +144,17 @@ func (o *BackgroundExecBoxParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithIdempotencyKey adds the idempotencyKey to the background exec box params.
+func (o *BackgroundExecBoxParams) WithIdempotencyKey(idempotencyKey *string) *BackgroundExecBoxParams {
+	o.SetIdempotencyKey(idempotencyKey)
+	return o
+}
+
+// SetIdempotencyKey adds the idempotencyKey to the background exec box params.
+func (o *BackgroundExecBoxParams) SetIdempotencyKey(idempotencyKey *string) {
+	o.IdempotencyKey = idempotencyKey
+}
+
 // WithID adds the id to the background exec box params.
 func (o *BackgroundExecBoxParams) WithID(id string) *BackgroundExecBoxParams {
 	o.SetID(id)
@@ -177,6 +194,14 @@ func (o *BackgroundExecBoxParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
+
+	if o.IdempotencyKey != nil {
+
+		// header param Idempotency-Key
+		if err := r.SetHeaderParam("Idempotency-Key", *o.IdempotencyKey); err != nil {
+			return err
+		}
+	}
 
 	// path param id
 	if err := r.SetPathParam("id", o.ID); err != nil {

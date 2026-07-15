@@ -3446,6 +3446,11 @@ paths:
         name: id
         required: true
         type: string
+      - description: Opaque key that makes retries of this background exec creation
+          idempotent within the project.
+        in: header
+        name: Idempotency-Key
+        type: string
       produces:
       - application/json
       responses:
@@ -3459,6 +3464,10 @@ paths:
             $ref: '#/definitions/Error'
         "401":
           description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+        "409":
+          description: The idempotency key was already used with a different request.
           schema:
             $ref: '#/definitions/Error'
       security:

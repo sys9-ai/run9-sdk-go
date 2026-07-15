@@ -58,6 +58,70 @@ func TestClientPullBackgroundExecOutputReadsBinaryBodyAndHeaders(t *testing.T) {
 	require.True(t, result.IdleDeadlineAt.Equal(fixtureTime))
 }
 
+func TestClientStartBackgroundExecSendsIdempotencyKey(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "daemon-generation-1", r.Header.Get("Idempotency-Key"))
+		writeJSONResponse(t, w, http.StatusCreated, map[string]any{
+			"exec_id": "exec-1",
+			"box_id":  "box-1",
+			"state":   "pending",
+			"mode":    "background",
+		})
+	}))
+	defer server.Close()
+
+	_, err := newProjectTestClient(t, server.URL, "default").StartBackgroundExec(context.Background(), "box-1", ExecRequest{
+		Command:        []string{"echo", "hi"},
+		IdempotencyKey: "daemon-generation-1",
+	})
+	require.NoError(t, err)
+}
+
+func TestClientStartBackgroundExecGeneratesIdempotencyKey(t *testing.T) {
+	var keys []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		keys = append(keys, r.Header.Get("Idempotency-Key"))
+		writeJSONResponse(t, w, http.StatusCreated, map[string]any{
+			"exec_id": "exec-1",
+			"box_id":  "box-1",
+			"state":   "pending",
+			"mode":    "background",
+		})
+	}))
+	defer server.Close()
+	client := newProjectTestClient(t, server.URL, "default")
+
+	_, err := client.StartBackgroundExec(context.Background(), "box-1", ExecRequest{Command: []string{"echo", "hi"}})
+	require.NoError(t, err)
+	_, err = client.StartBackgroundExec(context.Background(), "box-1", ExecRequest{Command: []string{"echo", "hi"}})
+	require.NoError(t, err)
+
+	require.Len(t, keys, 2)
+	require.NotEmpty(t, keys[0])
+	require.NotEmpty(t, keys[1])
+	require.NotEqual(t, keys[0], keys[1])
+}
+
+func TestClientStartBackgroundExecReturnsIdempotencyConflict(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "daemon-generation-1", r.Header.Get("Idempotency-Key"))
+		writeJSONResponse(t, w, http.StatusConflict, map[string]string{
+			"error": "idempotency key was already used with a different request",
+		})
+	}))
+	defer server.Close()
+
+	_, err := newProjectTestClient(t, server.URL, "default").StartBackgroundExec(context.Background(), "box-1", ExecRequest{
+		Command:        []string{"echo", "changed"},
+		IdempotencyKey: "daemon-generation-1",
+	})
+	require.Error(t, err)
+	var apiErr *Error
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, http.StatusConflict, apiErr.StatusCode)
+	require.Equal(t, "idempotency key was already used with a different request", apiErr.Message)
+}
+
 func TestClientWriteBackgroundExecStdinSendsOctetStreamAndEOFHeader(t *testing.T) {
 	fixtureTime := time.Date(2026, 3, 28, 12, 5, 0, 0, time.UTC)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
