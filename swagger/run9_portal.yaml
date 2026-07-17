@@ -396,6 +396,44 @@ definitions:
       state:
         $ref: '#/definitions/api.DataTransferState'
     type: object
+  api.Auth9ConfigView:
+    properties:
+      authorize_url:
+        type: string
+      client_id:
+        type: string
+      enabled:
+        type: boolean
+      redirect_uri:
+        type: string
+    type: object
+  api.Auth9RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  api.Auth9SessionView:
+    properties:
+      refresh_expires_at:
+        type: string
+      refresh_token:
+        type: string
+      session_expires_at:
+        type: string
+      session_token:
+        type: string
+      user:
+        $ref: '#/definitions/api.MeView'
+    type: object
+  api.Auth9SignInRequest:
+    properties:
+      code:
+        type: string
+      code_verifier:
+        type: string
+      redirect_uri:
+        type: string
+    type: object
   api.BoxNetworkMode:
     enum:
     - normal
@@ -1627,6 +1665,72 @@ paths:
       summary: Revoke an API key
       tags:
       - Org access
+  /auth/auth9/config:
+    get:
+      operationId: getAuth9Config
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: auth9 login bootstrap; enabled is false while auth9 login is
+            off.
+          schema:
+            $ref: '#/definitions/api.Auth9ConfigView'
+      summary: Read the auth9 login bootstrap configuration
+      tags:
+      - Authentication
+  /auth/auth9/exchange:
+    post:
+      consumes:
+      - application/json
+      operationId: exchangeAuth9
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.Auth9SignInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: auth9 sign-in result.
+          schema:
+            $ref: '#/definitions/api.Auth9SessionView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Exchange an auth9 authorization code for a session
+      tags:
+      - Authentication
+  /auth/auth9/refresh:
+    post:
+      consumes:
+      - application/json
+      operationId: refreshAuth9Session
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.Auth9RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Rotated auth9 session.
+          schema:
+            $ref: '#/definitions/api.Auth9SessionView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Redeem and rotate an auth9 refresh token
+      tags:
+      - Authentication
   /auth/social-providers:
     get:
       operationId: listSocialProviders
@@ -3318,6 +3422,11 @@ paths:
         name: id
         required: true
         type: string
+      - description: Opaque key that makes retries of this background exec creation
+          idempotent within the project.
+        in: header
+        name: Idempotency-Key
+        type: string
       produces:
       - application/json
       responses:
@@ -3331,6 +3440,10 @@ paths:
             $ref: '#/definitions/Error'
         "401":
           description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+        "409":
+          description: The idempotency key was already used with a different request.
           schema:
             $ref: '#/definitions/Error'
       security:

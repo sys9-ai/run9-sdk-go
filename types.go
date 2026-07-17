@@ -652,6 +652,10 @@ type CreateSnapFromSharedSnapRequest struct {
 
 // ExecRequest starts one foreground or background exec in a box.
 type ExecRequest struct {
+	// IdempotencyKey identifies one logical background exec creation. Reusing the key
+	// with the same request returns the existing exec; reusing it with a different
+	// request fails. StartBackgroundExec generates a key when this field is empty.
+	IdempotencyKey string `json:"-"`
 	// DeadlineAt requests a hard deadline. When nil, the target exec API applies its default.
 	DeadlineAt *time.Time `json:"deadline_at,omitempty"`
 	// Command is the argv array executed in the target box.
