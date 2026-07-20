@@ -1282,6 +1282,8 @@ definitions:
         type: string
       creator_primary_email:
         type: string
+      file_access_url:
+        type: string
       inuse_reason:
         $ref: '#/definitions/api.SnapInUseReason'
       last_used_at:

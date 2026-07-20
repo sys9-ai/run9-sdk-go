@@ -57,6 +57,27 @@ func ExampleClient_RunExec() {
 	_ = project
 }
 
+func ExampleClient_BoxFileSystem() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{
+		AK: "ak-...",
+		SK: "sk-...",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	files, err := client.WithProject("sandbox").BoxFileSystem(context.Background(), "devbox")
+	if err != nil {
+		panic(err)
+	}
+	reader, err := files.Open(context.Background(), "/work/site/index.html", run9.OpenFileOptions{})
+	if err != nil {
+		panic(err)
+	}
+	defer reader.Close()
+	_, _ = io.Copy(io.Discard, reader)
+}
+
 func ExampleClient_RunExecCapture() {
 	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{
 		AK: "ak-...",

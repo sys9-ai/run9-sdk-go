@@ -296,7 +296,8 @@ type BoxView struct {
 	PendingSecurityModeChange  bool              `json:"pending_security_mode_change"`
 }
 
-// SnapView describes one snap.
+// SnapView describes one snap. FileAccessURL reads a detached snap's immutable
+// filesystem or the owning Box filesystem while the snap is attached.
 type SnapView struct {
 	SnapID              string            `json:"snap_id"`
 	OrgID               string            `json:"org_id"`
@@ -313,6 +314,7 @@ type SnapView struct {
 	SourceImagePlatform string            `json:"source_image_platform,omitempty"`
 	Attached            bool              `json:"attached"`
 	AttachedBoxID       string            `json:"attached_box_id,omitempty"`
+	FileAccessURL       string            `json:"file_access_url,omitempty"`
 	Size                *SnapSize         `json:"size,omitempty"`
 	OwnedStorage        *SnapOwnedStorage `json:"owned_storage,omitempty"`
 }

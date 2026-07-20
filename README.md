@@ -92,6 +92,29 @@ if err == nil {
 }
 ```
 
+Resolve a reusable read-only filesystem and stream files without transfer jobs:
+
+```go
+files, err := project.BoxFileSystem(ctx, "devbox")
+if err != nil {
+	return err
+}
+
+page, err := files.ReadDir(ctx, "/work/site", run9.ReadDirRequest{Limit: 100})
+if err != nil {
+	return err
+}
+
+reader, err := files.Open(ctx, "/work/site/index.html", run9.OpenFileOptions{})
+if err != nil {
+	return err
+}
+defer reader.Close()
+_, err = io.Copy(os.Stdout, reader)
+```
+
+Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; an attached snap resolves to its owning box view. Resolve `FileSystem` once and reuse it for concurrent `Open`, `Stat`, and paginated `ReadDir` calls so ordinary file reads do not return to the control plane.
+
 Run one foreground exec and stream its output:
 
 ```go
@@ -172,6 +195,7 @@ Project-scoped APIs require `WithProject(...)`:
 - snaps
 - execs
 - file archive upload and download
+- reusable read-only box and snap filesystems
 - project members
 - project and box secrets
 - create-from-shared-snap flows
