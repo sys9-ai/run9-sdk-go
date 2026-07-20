@@ -53,6 +53,9 @@ type APIBoxView struct {
 	// desired shape
 	DesiredShape string `json:"desired_shape,omitempty"`
 
+	// file access url
+	FileAccessURL string `json:"file_access_url,omitempty"`
+
 	// labels
 	Labels map[string]string `json:"labels,omitempty"`
 

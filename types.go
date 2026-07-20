@@ -270,7 +270,7 @@ type ListBoxesRequest struct {
 	State BoxState
 }
 
-// BoxView describes one box.
+// BoxView describes one box. FileAccessURL is its stable read-only filesystem capability URL.
 type BoxView struct {
 	BoxID                      string            `json:"box_id"`
 	OrgID                      string            `json:"org_id"`
@@ -283,6 +283,7 @@ type BoxView struct {
 	State                      BoxState          `json:"state"`
 	Reason                     string            `json:"reason,omitempty"`
 	BoxSnapID                  string            `json:"box_snap_id"`
+	FileAccessURL              string            `json:"file_access_url,omitempty"`
 	DesiredShape               string            `json:"desired_shape"`
 	NetworkMode                BoxNetworkMode    `json:"network_mode"`
 	SecurityMode               BoxSecurityMode   `json:"security_mode"`

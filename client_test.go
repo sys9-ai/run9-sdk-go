@@ -51,13 +51,17 @@ func TestClientWithProjectListBoxesUsesWorkspacePath(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/api/projects/default/workspace/boxes", r.URL.Path)
 		require.Equal(t, http.MethodGet, r.Method)
-		writeJSONResponse(t, w, http.StatusOK, []BoxView{})
+		writeJSONResponse(t, w, http.StatusOK, []BoxView{{
+			BoxID:         "box-a",
+			FileAccessURL: "https://file-abc123def456.files.run9usercontent.com/",
+		}})
 	}))
 	defer server.Close()
 
 	views, err := newProjectTestClient(t, server.URL+"/api", "default").ListBoxes(context.Background(), ListBoxesRequest{})
 	require.NoError(t, err)
-	require.Empty(t, views)
+	require.Len(t, views, 1)
+	require.Equal(t, "https://file-abc123def456.files.run9usercontent.com/", views[0].FileAccessURL)
 }
 
 func TestClientCreateProjectPostsCanonicalPayload(t *testing.T) {
