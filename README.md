@@ -87,6 +87,9 @@ box, err := project.CreateBox(ctx, run9.CreateBoxRequest{
 	DesiredShape:   "2c4g",
 	SourceImageRef: "public.ecr.aws/docker/library/alpine:3.20",
 })
+if err == nil {
+	log.Printf("browse box files at %s", box.FileAccessURL)
+}
 ```
 
 Run one foreground exec and stream its output:

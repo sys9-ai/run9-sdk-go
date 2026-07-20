@@ -500,6 +500,8 @@ definitions:
         type: string
       desired_shape:
         type: string
+      file_access_url:
+        type: string
       labels:
         additionalProperties:
           type: string
