@@ -259,7 +259,7 @@ type ListBoxesRequest struct {
 	State BoxState
 }
 
-// BoxView describes one box.
+// BoxView describes one box. FileAccessURL is its stable read-only filesystem capability URL.
 type BoxView struct {
 	BoxID                     string            `json:"box_id"`
 	OrgID                     string            `json:"org_id"`
@@ -272,6 +272,7 @@ type BoxView struct {
 	State                     BoxState          `json:"state"`
 	Reason                    string            `json:"reason,omitempty"`
 	BoxSnapID                 string            `json:"box_snap_id"`
+	FileAccessURL             string            `json:"file_access_url,omitempty"`
 	DesiredShape              string            `json:"desired_shape"`
 	NetworkMode               BoxNetworkMode    `json:"network_mode"`
 	CurrentHostID             string            `json:"current_host_id,omitempty"`
@@ -281,7 +282,8 @@ type BoxView struct {
 	PendingNetworkModeChange  bool              `json:"pending_network_mode_change"`
 }
 
-// SnapView describes one snap.
+// SnapView describes one snap. FileAccessURL reads a detached snap's immutable
+// filesystem or the owning Box filesystem while the snap is attached.
 type SnapView struct {
 	SnapID              string            `json:"snap_id"`
 	OrgID               string            `json:"org_id"`
@@ -298,6 +300,7 @@ type SnapView struct {
 	SourceImagePlatform string            `json:"source_image_platform,omitempty"`
 	Attached            bool              `json:"attached"`
 	AttachedBoxID       string            `json:"attached_box_id,omitempty"`
+	FileAccessURL       string            `json:"file_access_url,omitempty"`
 	Size                *SnapSize         `json:"size,omitempty"`
 	OwnedStorage        *SnapOwnedStorage `json:"owned_storage,omitempty"`
 }

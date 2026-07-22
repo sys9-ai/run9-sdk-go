@@ -35,6 +35,9 @@ type APISnapView struct {
 	// creator primary email
 	CreatorPrimaryEmail string `json:"creator_primary_email,omitempty"`
 
+	// file access url
+	FileAccessURL string `json:"file_access_url,omitempty"`
+
 	// inuse reason
 	InuseReason APISnapInUseReason `json:"inuse_reason,omitempty"`
 
