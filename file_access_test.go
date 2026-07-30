@@ -2,6 +2,7 @@ package run9
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -119,6 +120,52 @@ func TestFileSystemRejectsInvalidPathsAndRanges(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "/work/ leading and trailing ", canonicalPath)
 	require.Equal(t, "https://static.run.sys9.ai/file-token/work/%20leading%20and%20trailing%20", targetURL)
+}
+
+func TestFileSystemRootedAtBindsEveryRequestToOneRoot(t *testing.T) {
+	var roots []string
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		roots = append(roots, request.Header.Get(fileRootHeader))
+		switch request.Method {
+		case http.MethodHead:
+			response.Header().Set("X-Run9-File-Type", "file")
+		default:
+			if request.URL.Query().Get("list") == "1" {
+				_ = json.NewEncoder(response).Encode(ReadDirPage{Entries: []FileEntry{}})
+				return
+			}
+			_, _ = response.Write([]byte("content"))
+		}
+	}))
+	defer server.Close()
+
+	files, err := newFileSystem(server.URL+"/access/", server.Client())
+	require.NoError(t, err)
+	workspace, err := files.RootedAt("/workspace")
+	require.NoError(t, err)
+
+	reader, err := workspace.Open(context.Background(), "/README.md", OpenFileOptions{})
+	require.NoError(t, err)
+	require.NoError(t, reader.Close())
+	_, err = workspace.Stat(context.Background(), "/README.md")
+	require.NoError(t, err)
+	_, err = workspace.ReadDir(context.Background(), "/", ReadDirRequest{})
+	require.NoError(t, err)
+
+	require.Equal(t, []string{"/workspace", "/workspace", "/workspace"}, roots)
+}
+
+func TestFileSystemRootedAtRejectsInvalidRootAndKeepsOriginalRoot(t *testing.T) {
+	files, err := newFileSystem("https://static.run.sys9.ai/file-token/", http.DefaultClient)
+	require.NoError(t, err)
+
+	_, err = files.RootedAt("/workspace/../etc")
+	require.EqualError(t, err, "file system root: file path must be canonical")
+
+	workspace, err := files.RootedAt("/workspace")
+	require.NoError(t, err)
+	require.Equal(t, "/", files.root)
+	require.Equal(t, "/workspace", workspace.root)
 }
 
 func basicAuthUser(request *http.Request) string {

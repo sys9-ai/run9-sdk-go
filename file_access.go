@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const fileRootHeader = "X-Run9-File-Root"
+
 // FileType identifies the kind of one filesystem entry.
 type FileType string
 
@@ -93,6 +95,7 @@ func (reader *FileReader) Info() FileInfo {
 type FileSystem struct {
 	baseURL *url.URL
 	http    *http.Client
+	root    string
 }
 
 // BoxFileSystem resolves one Box filesystem capability.
@@ -129,7 +132,22 @@ func newFileSystem(accessURL string, client *http.Client) (*FileSystem, error) {
 		return nil, errors.New("invalid file access URL")
 	}
 	parsed.Path = strings.TrimRight(parsed.Path, "/") + "/"
-	return &FileSystem{baseURL: parsed, http: client}, nil
+	return &FileSystem{baseURL: parsed, http: client, root: "/"}, nil
+}
+
+// RootedAt returns a filesystem whose "/" is rooted at root inside the Box or
+// Snap. The gateway also resolves symlinks inside that root.
+func (fileSystem *FileSystem) RootedAt(root string) (*FileSystem, error) {
+	if fileSystem == nil || fileSystem.baseURL == nil || fileSystem.http == nil {
+		return nil, errors.New("file system is not initialized")
+	}
+	canonicalRoot, err := canonicalFilePath(root)
+	if err != nil {
+		return nil, fmt.Errorf("file system root: %w", err)
+	}
+	rooted := *fileSystem
+	rooted.root = canonicalRoot
+	return &rooted, nil
 }
 
 // Open starts a streamed read of one regular file.
@@ -142,6 +160,7 @@ func (fileSystem *FileSystem) Open(ctx context.Context, filePath string, options
 	if err != nil {
 		return nil, err
 	}
+	request.Header.Set(fileRootHeader, fileSystem.root)
 	if byteRange := strings.TrimSpace(options.Range); byteRange != "" {
 		if !strings.HasPrefix(byteRange, "bytes=") {
 			return nil, errors.New("file range must start with bytes=")
@@ -168,6 +187,7 @@ func (fileSystem *FileSystem) Stat(ctx context.Context, filePath string) (FileIn
 	if err != nil {
 		return FileInfo{}, err
 	}
+	request.Header.Set(fileRootHeader, fileSystem.root)
 	response, err := fileSystem.http.Do(request)
 	if err != nil {
 		return FileInfo{}, err
@@ -199,6 +219,7 @@ func (fileSystem *FileSystem) ReadDir(ctx context.Context, directoryPath string,
 	if err != nil {
 		return ReadDirPage{}, err
 	}
+	httpRequest.Header.Set(fileRootHeader, fileSystem.root)
 	response, err := fileSystem.http.Do(httpRequest)
 	if err != nil {
 		return ReadDirPage{}, err

@@ -70,7 +70,11 @@ func ExampleClient_BoxFileSystem() {
 	if err != nil {
 		panic(err)
 	}
-	reader, err := files.Open(context.Background(), "/work/site/index.html", run9.OpenFileOptions{})
+	files, err = files.RootedAt("/workspace")
+	if err != nil {
+		panic(err)
+	}
+	reader, err := files.Open(context.Background(), "/site/index.html", run9.OpenFileOptions{})
 	if err != nil {
 		panic(err)
 	}

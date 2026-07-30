@@ -99,13 +99,17 @@ files, err := project.BoxFileSystem(ctx, "devbox")
 if err != nil {
 	return err
 }
-
-page, err := files.ReadDir(ctx, "/work/site", run9.ReadDirRequest{Limit: 100})
+files, err = files.RootedAt("/workspace")
 if err != nil {
 	return err
 }
 
-reader, err := files.Open(ctx, "/work/site/index.html", run9.OpenFileOptions{})
+page, err := files.ReadDir(ctx, "/site", run9.ReadDirRequest{Limit: 100})
+if err != nil {
+	return err
+}
+
+reader, err := files.Open(ctx, "/site/index.html", run9.OpenFileOptions{})
 if err != nil {
 	return err
 }
@@ -113,7 +117,7 @@ defer reader.Close()
 _, err = io.Copy(os.Stdout, reader)
 ```
 
-Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; an attached snap resolves to its owning box view. Resolve `FileSystem` once and reuse it for concurrent `Open`, `Stat`, and paginated `ReadDir` calls so ordinary file reads do not return to the control plane.
+Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; an attached snap resolves to its owning box view. `RootedAt` makes the selected directory the filesystem root, including for symlink resolution. Resolve `FileSystem` once and reuse it for concurrent `Open`, `Stat`, and paginated `ReadDir` calls so ordinary file reads do not return to the control plane.
 
 Run one foreground exec and stream its output:
 
