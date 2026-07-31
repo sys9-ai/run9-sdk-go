@@ -23,6 +23,9 @@ type APIAuth9ConfigView struct {
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
 
+	// password migration active
+	PasswordMigrationActive bool `json:"password_migration_active,omitempty"`
+
 	// redirect uri
 	RedirectURI string `json:"redirect_uri,omitempty"`
 }

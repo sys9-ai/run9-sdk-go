@@ -40,10 +40,11 @@ type portalAuth9SessionView struct {
 }
 
 type portalAuth9ConfigView struct {
-	Enabled      bool   `json:"enabled"`
-	AuthorizeURL string `json:"authorize_url,omitempty"`
-	ClientID     string `json:"client_id,omitempty"`
-	RedirectURI  string `json:"redirect_uri,omitempty"`
+	Enabled                 bool   `json:"enabled"`
+	PasswordMigrationActive bool   `json:"password_migration_active"`
+	AuthorizeURL            string `json:"authorize_url,omitempty"`
+	ClientID                string `json:"client_id,omitempty"`
+	RedirectURI             string `json:"redirect_uri,omitempty"`
 }
 
 type portalAuth9SignInRequest struct {
@@ -113,15 +114,17 @@ func TestAuth9SessionViewDecodesPortalWire(t *testing.T) {
 
 func TestAuth9ConfigViewDecodesPortalWire(t *testing.T) {
 	enabledWire, err := json.Marshal(portalAuth9ConfigView{
-		Enabled:      true,
-		AuthorizeURL: "https://auth9.example.com/v1/oauth/authorize",
-		ClientID:     "client-1",
-		RedirectURI:  "https://run9.example.com/auth/auth9/callback",
+		Enabled:                 true,
+		PasswordMigrationActive: true,
+		AuthorizeURL:            "https://auth9.example.com/v1/oauth/authorize",
+		ClientID:                "client-1",
+		RedirectURI:             "https://run9.example.com/auth/auth9/callback",
 	})
 	require.NoError(t, err)
 	var enabled genmodels.APIAuth9ConfigView
 	require.NoError(t, enabled.UnmarshalBinary(enabledWire))
 	require.True(t, enabled.Enabled)
+	require.True(t, enabled.PasswordMigrationActive)
 	require.Equal(t, "https://auth9.example.com/v1/oauth/authorize", enabled.AuthorizeURL)
 	require.Equal(t, "client-1", enabled.ClientID)
 	require.Equal(t, "https://run9.example.com/auth/auth9/callback", enabled.RedirectURI)
@@ -229,10 +232,11 @@ func TestAuth9SessionViewHugePayload(t *testing.T) {
 func TestAuth9EndpointsConcurrentAgainstPortalStub(t *testing.T) {
 	_, sessionWire := portalSessionFixture(t)
 	configWire, err := json.Marshal(portalAuth9ConfigView{
-		Enabled:      true,
-		AuthorizeURL: "https://auth9.example.com/v1/oauth/authorize",
-		ClientID:     "client-1",
-		RedirectURI:  "https://run9.example.com/auth/auth9/callback",
+		Enabled:                 true,
+		PasswordMigrationActive: true,
+		AuthorizeURL:            "https://auth9.example.com/v1/oauth/authorize",
+		ClientID:                "client-1",
+		RedirectURI:             "https://run9.example.com/auth/auth9/callback",
 	})
 	require.NoError(t, err)
 
@@ -291,7 +295,7 @@ func TestAuth9EndpointsConcurrentAgainstPortalStub(t *testing.T) {
 				var cfg genmodels.APIAuth9ConfigView
 				decodeErr := json.NewDecoder(resp.Body).Decode(&cfg)
 				resp.Body.Close()
-				if decodeErr != nil || !cfg.Enabled || cfg.ClientID != "client-1" {
+				if decodeErr != nil || !cfg.Enabled || !cfg.PasswordMigrationActive || cfg.ClientID != "client-1" {
 					t.Errorf("bad config response: err=%v view=%+v", decodeErr, cfg)
 					return
 				}

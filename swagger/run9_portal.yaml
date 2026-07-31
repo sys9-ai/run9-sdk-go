@@ -404,6 +404,8 @@ definitions:
         type: string
       enabled:
         type: boolean
+      password_migration_active:
+        type: boolean
       redirect_uri:
         type: string
     type: object
