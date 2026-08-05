@@ -109,8 +109,8 @@ if err != nil {
 	return err
 }
 
-matches, err := files.SearchFiles(ctx, "/", run9.SearchFilesRequest{
-	Query:              "index",
+matches, err := files.GlobFiles(ctx, "/", run9.GlobFilesRequest{
+	Pattern:            "**/*index*",
 	Limit:              20,
 	ExcludeDirectories: []string{".git", "node_modules"},
 })
@@ -126,7 +126,7 @@ defer reader.Close()
 _, err = io.Copy(os.Stdout, reader)
 ```
 
-Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; an attached snap resolves to its owning box view. `RootedAt` makes the selected directory the filesystem root, including for symlink resolution. Resolve `FileSystem` once and reuse it for concurrent `Open`, `Stat`, `SearchFiles`, and paginated `ReadDir` calls. `SearchFiles` performs traversal, fuzzy ranking, and bounding inside run9, so the caller uses one request rather than recursively listing remote directories.
+Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; an attached snap resolves to its owning box view. `RootedAt` makes the selected directory the filesystem root, including for symlink resolution. Resolve `FileSystem` once and reuse it for concurrent `Open`, `Stat`, `GlobFiles`, and paginated `ReadDir` calls. `GlobFiles` applies one case-sensitive doublestar pattern to regular-file paths relative to the requested directory; brace alternatives are not supported. Results are lexically ordered and bounded inside run9, so the caller uses one request rather than recursively listing remote directories.
 
 Run one foreground exec and stream its output:
 

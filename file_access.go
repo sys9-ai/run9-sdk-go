@@ -61,26 +61,25 @@ type ReadDirPage struct {
 	Cursor  string      `json:"cursor,omitempty"`
 }
 
-// SearchFilesRequest controls one bounded recursive file search.
-type SearchFilesRequest struct {
-	// Query is matched case-insensitively against file names and relative paths.
-	// An empty query lists the shallowest files first.
-	Query string
+// GlobFilesRequest controls one bounded recursive file glob.
+type GlobFilesRequest struct {
+	// Pattern is a case-sensitive doublestar glob relative to the requested directory.
+	Pattern string
 	// Limit is the maximum number of matches. Zero uses the gateway default.
 	Limit int
 	// ExcludeDirectories skips directories with these exact names at any depth.
 	ExcludeDirectories []string
 }
 
-// FileSearchMatch identifies one regular file relative to the searched directory.
-type FileSearchMatch struct {
+// FileGlobMatch identifies one regular file relative to the requested directory.
+type FileGlobMatch struct {
 	Path string `json:"path"`
 }
 
-// SearchFilesResult contains the best bounded matches from one filesystem view.
-type SearchFilesResult struct {
-	Matches   []FileSearchMatch `json:"matches"`
-	Truncated bool              `json:"truncated"`
+// GlobFilesResult contains lexical matches from one bounded filesystem view.
+type GlobFilesResult struct {
+	Matches   []FileGlobMatch `json:"matches"`
+	Truncated bool            `json:"truncated"`
 }
 
 // OpenFileOptions controls one streamed file read.
@@ -233,21 +232,9 @@ func (fileSystem *FileSystem) ReadDir(ctx context.Context, directoryPath string,
 	if cursor := strings.TrimSpace(request.Cursor); cursor != "" {
 		query.Set("cursor", cursor)
 	}
-	targetURL, _, err := fileSystem.requestURL(directoryPath, query)
+	response, err := fileSystem.getResponse(ctx, directoryPath, query)
 	if err != nil {
 		return ReadDirPage{}, err
-	}
-	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
-	if err != nil {
-		return ReadDirPage{}, err
-	}
-	httpRequest.Header.Set(fileRootHeader, fileSystem.root)
-	response, err := fileSystem.http.Do(httpRequest)
-	if err != nil {
-		return ReadDirPage{}, err
-	}
-	if response.StatusCode >= http.StatusBadRequest {
-		return ReadDirPage{}, responseError(response)
 	}
 	defer response.Body.Close()
 	var page ReadDirPage
@@ -260,55 +247,72 @@ func (fileSystem *FileSystem) ReadDir(ctx context.Context, directoryPath string,
 	return page, nil
 }
 
-// SearchFiles recursively searches regular files in one server-side operation.
-// Results are ranked by file-name match before relative-path match. Symlinks are
-// not returned or followed. Truncated reports either additional matches or an
-// incomplete scan caused by the gateway's safety bounds.
-func (fileSystem *FileSystem) SearchFiles(ctx context.Context, directoryPath string, request SearchFilesRequest) (SearchFilesResult, error) {
-	if len(request.Query) > 256 {
-		return SearchFilesResult{}, errors.New("file search query must be at most 256 bytes")
+// GlobFiles matches regular files in one server-side operation. Pattern uses
+// doublestar glob syntax and is relative to directoryPath. Results are
+// case-sensitive and lexically ordered. Symlinks are not returned or followed.
+// Truncated reports additional matches or a scan stopped by safety bounds.
+func (fileSystem *FileSystem) GlobFiles(ctx context.Context, directoryPath string, request GlobFilesRequest) (GlobFilesResult, error) {
+	if request.Pattern == "" {
+		return GlobFilesResult{}, errors.New("file glob pattern is required")
+	}
+	if len(request.Pattern) > 256 {
+		return GlobFilesResult{}, errors.New("file glob pattern must be at most 256 bytes")
+	}
+	if strings.HasPrefix(request.Pattern, "/") {
+		return GlobFilesResult{}, errors.New("file glob pattern must be relative to the requested directory")
+	}
+	if strings.Contains(request.Pattern, "{") {
+		return GlobFilesResult{}, errors.New("file glob brace alternatives are not supported")
 	}
 	if request.Limit < 0 || request.Limit > 200 {
-		return SearchFilesResult{}, errors.New("file search limit must be between 1 and 200, or zero for the default")
+		return GlobFilesResult{}, errors.New("file glob limit must be between 1 and 200, or zero for the default")
 	}
 	if len(request.ExcludeDirectories) > 32 {
-		return SearchFilesResult{}, errors.New("file search accepts at most 32 excluded directory names")
+		return GlobFilesResult{}, errors.New("file glob accepts at most 32 excluded directory names")
 	}
-	query := url.Values{"search": []string{"1"}, "q": []string{request.Query}}
+	query := url.Values{"glob": []string{request.Pattern}}
 	if request.Limit != 0 {
 		query.Set("limit", strconv.Itoa(request.Limit))
 	}
 	for _, name := range request.ExcludeDirectories {
 		if name == "" || name == "." || name == ".." || len(name) > 255 || strings.ContainsAny(name, "/\\\x00") {
-			return SearchFilesResult{}, errors.New("excluded directory names must be single path components")
+			return GlobFilesResult{}, errors.New("excluded directory names must be single path components")
 		}
 		query.Add("exclude_dir", name)
 	}
-	targetURL, _, err := fileSystem.requestURL(directoryPath, query)
+	response, err := fileSystem.getResponse(ctx, directoryPath, query)
 	if err != nil {
-		return SearchFilesResult{}, err
-	}
-	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
-	if err != nil {
-		return SearchFilesResult{}, err
-	}
-	httpRequest.Header.Set(fileRootHeader, fileSystem.root)
-	response, err := fileSystem.http.Do(httpRequest)
-	if err != nil {
-		return SearchFilesResult{}, err
-	}
-	if response.StatusCode >= http.StatusBadRequest {
-		return SearchFilesResult{}, responseError(response)
+		return GlobFilesResult{}, err
 	}
 	defer response.Body.Close()
-	var result SearchFilesResult
+	var result GlobFilesResult
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return SearchFilesResult{}, fmt.Errorf("decode file search: %w", err)
+		return GlobFilesResult{}, fmt.Errorf("decode file glob: %w", err)
 	}
 	if result.Matches == nil {
-		result.Matches = []FileSearchMatch{}
+		result.Matches = []FileGlobMatch{}
 	}
 	return result, nil
+}
+
+func (fileSystem *FileSystem) getResponse(ctx context.Context, filePath string, query url.Values) (*http.Response, error) {
+	targetURL, _, err := fileSystem.requestURL(filePath, query)
+	if err != nil {
+		return nil, err
+	}
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set(fileRootHeader, fileSystem.root)
+	response, err := fileSystem.http.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	if response.StatusCode >= http.StatusBadRequest {
+		return nil, responseError(response)
+	}
+	return response, nil
 }
 
 func (fileSystem *FileSystem) requestURL(filePath string, query url.Values) (string, string, error) {

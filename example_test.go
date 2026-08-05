@@ -74,8 +74,8 @@ func ExampleClient_BoxFileSystem() {
 	if err != nil {
 		panic(err)
 	}
-	_, err = files.SearchFiles(context.Background(), "/", run9.SearchFilesRequest{
-		Query:              "index",
+	_, err = files.GlobFiles(context.Background(), "/", run9.GlobFilesRequest{
+		Pattern:            "**/*index*",
 		Limit:              20,
 		ExcludeDirectories: []string{".git", "node_modules"},
 	})

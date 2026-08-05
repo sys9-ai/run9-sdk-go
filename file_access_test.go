@@ -105,19 +105,18 @@ func TestSnapFileSystemStatAndReadDir(t *testing.T) {
 	require.Equal(t, "next-b", page.Cursor)
 }
 
-func TestFileSystemSearchFilesUsesOneBoundedServerRequest(t *testing.T) {
+func TestFileSystemGlobFilesUsesOneBoundedServerRequest(t *testing.T) {
 	var requests atomic.Int64
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests.Add(1)
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Equal(t, "/access/work", r.URL.Path)
-		require.Equal(t, "1", r.URL.Query().Get("search"))
-		require.Equal(t, "srch", r.URL.Query().Get("q"))
+		require.Equal(t, "**/*srch*", r.URL.Query().Get("glob"))
 		require.Equal(t, "25", r.URL.Query().Get("limit"))
 		require.Equal(t, []string{".git", "node_modules"}, r.URL.Query()["exclude_dir"])
 		require.Equal(t, "/workspace", r.Header.Get(fileRootHeader))
-		writeJSONResponse(t, w, http.StatusOK, SearchFilesResult{
-			Matches:   []FileSearchMatch{{Path: "src/search.go"}},
+		writeJSONResponse(t, w, http.StatusOK, GlobFilesResult{
+			Matches:   []FileGlobMatch{{Path: "src/search.go"}},
 			Truncated: true,
 		})
 	}))
@@ -127,13 +126,13 @@ func TestFileSystemSearchFilesUsesOneBoundedServerRequest(t *testing.T) {
 	require.NoError(t, err)
 	files, err = files.RootedAt("/workspace")
 	require.NoError(t, err)
-	result, err := files.SearchFiles(context.Background(), "/work", SearchFilesRequest{
-		Query:              "srch",
+	result, err := files.GlobFiles(context.Background(), "/work", GlobFilesRequest{
+		Pattern:            "**/*srch*",
 		Limit:              25,
 		ExcludeDirectories: []string{".git", "node_modules"},
 	})
 	require.NoError(t, err)
-	require.Equal(t, []FileSearchMatch{{Path: "src/search.go"}}, result.Matches)
+	require.Equal(t, []FileGlobMatch{{Path: "src/search.go"}}, result.Matches)
 	require.True(t, result.Truncated)
 	require.Equal(t, int64(1), requests.Load())
 }
@@ -148,9 +147,15 @@ func TestFileSystemRejectsInvalidPathsAndRanges(t *testing.T) {
 	require.EqualError(t, err, "file range must start with bytes=")
 	_, err = files.ReadDir(context.Background(), "/", ReadDirRequest{Limit: 1001})
 	require.EqualError(t, err, "file list limit must be between 1 and 1000, or zero for the default")
-	_, err = files.SearchFiles(context.Background(), "/", SearchFilesRequest{Limit: 201})
-	require.EqualError(t, err, "file search limit must be between 1 and 200, or zero for the default")
-	_, err = files.SearchFiles(context.Background(), "/", SearchFilesRequest{ExcludeDirectories: []string{"src/generated"}})
+	_, err = files.GlobFiles(context.Background(), "/", GlobFilesRequest{})
+	require.EqualError(t, err, "file glob pattern is required")
+	_, err = files.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: "/**/*.go"})
+	require.EqualError(t, err, "file glob pattern must be relative to the requested directory")
+	_, err = files.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: "{src,lib}/**/*.go"})
+	require.EqualError(t, err, "file glob brace alternatives are not supported")
+	_, err = files.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: "**/*.go", Limit: 201})
+	require.EqualError(t, err, "file glob limit must be between 1 and 200, or zero for the default")
+	_, err = files.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: "**/*.go", ExcludeDirectories: []string{"src/generated"}})
 	require.EqualError(t, err, "excluded directory names must be single path components")
 
 	targetURL, canonicalPath, err := files.requestURL("/work/ leading and trailing ", nil)
@@ -167,8 +172,8 @@ func TestFileSystemRootedAtBindsEveryRequestToOneRoot(t *testing.T) {
 		case http.MethodHead:
 			response.Header().Set("X-Run9-File-Type", "file")
 		default:
-			if request.URL.Query().Get("search") == "1" {
-				_ = json.NewEncoder(response).Encode(SearchFilesResult{Matches: []FileSearchMatch{}})
+			if request.URL.Query().Has("glob") {
+				_ = json.NewEncoder(response).Encode(GlobFilesResult{Matches: []FileGlobMatch{}})
 				return
 			}
 			if request.URL.Query().Get("list") == "1" {
@@ -192,7 +197,7 @@ func TestFileSystemRootedAtBindsEveryRequestToOneRoot(t *testing.T) {
 	require.NoError(t, err)
 	_, err = workspace.ReadDir(context.Background(), "/", ReadDirRequest{})
 	require.NoError(t, err)
-	_, err = workspace.SearchFiles(context.Background(), "/", SearchFilesRequest{})
+	_, err = workspace.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: "**/*"})
 	require.NoError(t, err)
 
 	require.Equal(t, []string{"/workspace", "/workspace", "/workspace", "/workspace"}, roots)
