@@ -61,6 +61,28 @@ type ReadDirPage struct {
 	Cursor  string      `json:"cursor,omitempty"`
 }
 
+// SearchFilesRequest controls one bounded recursive file search.
+type SearchFilesRequest struct {
+	// Query is matched case-insensitively against file names and relative paths.
+	// An empty query lists the shallowest files first.
+	Query string
+	// Limit is the maximum number of matches. Zero uses the gateway default.
+	Limit int
+	// ExcludeDirectories skips directories with these exact names at any depth.
+	ExcludeDirectories []string
+}
+
+// FileSearchMatch identifies one regular file relative to the searched directory.
+type FileSearchMatch struct {
+	Path string `json:"path"`
+}
+
+// SearchFilesResult contains the best bounded matches from one filesystem view.
+type SearchFilesResult struct {
+	Matches   []FileSearchMatch `json:"matches"`
+	Truncated bool              `json:"truncated"`
+}
+
 // OpenFileOptions controls one streamed file read.
 type OpenFileOptions struct {
 	// Range is an optional HTTP byte range, for example "bytes=0-1023".
@@ -236,6 +258,57 @@ func (fileSystem *FileSystem) ReadDir(ctx context.Context, directoryPath string,
 		page.Entries = []FileEntry{}
 	}
 	return page, nil
+}
+
+// SearchFiles recursively searches regular files in one server-side operation.
+// Results are ranked by file-name match before relative-path match. Symlinks are
+// not returned or followed. Truncated reports either additional matches or an
+// incomplete scan caused by the gateway's safety bounds.
+func (fileSystem *FileSystem) SearchFiles(ctx context.Context, directoryPath string, request SearchFilesRequest) (SearchFilesResult, error) {
+	if len(request.Query) > 256 {
+		return SearchFilesResult{}, errors.New("file search query must be at most 256 bytes")
+	}
+	if request.Limit < 0 || request.Limit > 200 {
+		return SearchFilesResult{}, errors.New("file search limit must be between 1 and 200, or zero for the default")
+	}
+	if len(request.ExcludeDirectories) > 32 {
+		return SearchFilesResult{}, errors.New("file search accepts at most 32 excluded directory names")
+	}
+	query := url.Values{"search": []string{"1"}, "q": []string{request.Query}}
+	if request.Limit != 0 {
+		query.Set("limit", strconv.Itoa(request.Limit))
+	}
+	for _, name := range request.ExcludeDirectories {
+		if name == "" || name == "." || name == ".." || len(name) > 255 || strings.ContainsAny(name, "/\\\x00") {
+			return SearchFilesResult{}, errors.New("excluded directory names must be single path components")
+		}
+		query.Add("exclude_dir", name)
+	}
+	targetURL, _, err := fileSystem.requestURL(directoryPath, query)
+	if err != nil {
+		return SearchFilesResult{}, err
+	}
+	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
+	if err != nil {
+		return SearchFilesResult{}, err
+	}
+	httpRequest.Header.Set(fileRootHeader, fileSystem.root)
+	response, err := fileSystem.http.Do(httpRequest)
+	if err != nil {
+		return SearchFilesResult{}, err
+	}
+	if response.StatusCode >= http.StatusBadRequest {
+		return SearchFilesResult{}, responseError(response)
+	}
+	defer response.Body.Close()
+	var result SearchFilesResult
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return SearchFilesResult{}, fmt.Errorf("decode file search: %w", err)
+	}
+	if result.Matches == nil {
+		result.Matches = []FileSearchMatch{}
+	}
+	return result, nil
 }
 
 func (fileSystem *FileSystem) requestURL(filePath string, query url.Values) (string, string, error) {

@@ -74,6 +74,14 @@ func ExampleClient_BoxFileSystem() {
 	if err != nil {
 		panic(err)
 	}
+	_, err = files.SearchFiles(context.Background(), "/", run9.SearchFilesRequest{
+		Query:              "index",
+		Limit:              20,
+		ExcludeDirectories: []string{".git", "node_modules"},
+	})
+	if err != nil {
+		panic(err)
+	}
 	reader, err := files.Open(context.Background(), "/site/index.html", run9.OpenFileOptions{})
 	if err != nil {
 		panic(err)

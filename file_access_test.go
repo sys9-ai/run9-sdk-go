@@ -105,6 +105,39 @@ func TestSnapFileSystemStatAndReadDir(t *testing.T) {
 	require.Equal(t, "next-b", page.Cursor)
 }
 
+func TestFileSystemSearchFilesUsesOneBoundedServerRequest(t *testing.T) {
+	var requests atomic.Int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/access/work", r.URL.Path)
+		require.Equal(t, "1", r.URL.Query().Get("search"))
+		require.Equal(t, "srch", r.URL.Query().Get("q"))
+		require.Equal(t, "25", r.URL.Query().Get("limit"))
+		require.Equal(t, []string{".git", "node_modules"}, r.URL.Query()["exclude_dir"])
+		require.Equal(t, "/workspace", r.Header.Get(fileRootHeader))
+		writeJSONResponse(t, w, http.StatusOK, SearchFilesResult{
+			Matches:   []FileSearchMatch{{Path: "src/search.go"}},
+			Truncated: true,
+		})
+	}))
+	defer server.Close()
+
+	files, err := newFileSystem(server.URL+"/access/", server.Client())
+	require.NoError(t, err)
+	files, err = files.RootedAt("/workspace")
+	require.NoError(t, err)
+	result, err := files.SearchFiles(context.Background(), "/work", SearchFilesRequest{
+		Query:              "srch",
+		Limit:              25,
+		ExcludeDirectories: []string{".git", "node_modules"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, []FileSearchMatch{{Path: "src/search.go"}}, result.Matches)
+	require.True(t, result.Truncated)
+	require.Equal(t, int64(1), requests.Load())
+}
+
 func TestFileSystemRejectsInvalidPathsAndRanges(t *testing.T) {
 	files, err := newFileSystem("https://static.run.sys9.ai/file-token/", http.DefaultClient)
 	require.NoError(t, err)
@@ -115,6 +148,10 @@ func TestFileSystemRejectsInvalidPathsAndRanges(t *testing.T) {
 	require.EqualError(t, err, "file range must start with bytes=")
 	_, err = files.ReadDir(context.Background(), "/", ReadDirRequest{Limit: 1001})
 	require.EqualError(t, err, "file list limit must be between 1 and 1000, or zero for the default")
+	_, err = files.SearchFiles(context.Background(), "/", SearchFilesRequest{Limit: 201})
+	require.EqualError(t, err, "file search limit must be between 1 and 200, or zero for the default")
+	_, err = files.SearchFiles(context.Background(), "/", SearchFilesRequest{ExcludeDirectories: []string{"src/generated"}})
+	require.EqualError(t, err, "excluded directory names must be single path components")
 
 	targetURL, canonicalPath, err := files.requestURL("/work/ leading and trailing ", nil)
 	require.NoError(t, err)
@@ -130,6 +167,10 @@ func TestFileSystemRootedAtBindsEveryRequestToOneRoot(t *testing.T) {
 		case http.MethodHead:
 			response.Header().Set("X-Run9-File-Type", "file")
 		default:
+			if request.URL.Query().Get("search") == "1" {
+				_ = json.NewEncoder(response).Encode(SearchFilesResult{Matches: []FileSearchMatch{}})
+				return
+			}
 			if request.URL.Query().Get("list") == "1" {
 				_ = json.NewEncoder(response).Encode(ReadDirPage{Entries: []FileEntry{}})
 				return
@@ -151,8 +192,10 @@ func TestFileSystemRootedAtBindsEveryRequestToOneRoot(t *testing.T) {
 	require.NoError(t, err)
 	_, err = workspace.ReadDir(context.Background(), "/", ReadDirRequest{})
 	require.NoError(t, err)
+	_, err = workspace.SearchFiles(context.Background(), "/", SearchFilesRequest{})
+	require.NoError(t, err)
 
-	require.Equal(t, []string{"/workspace", "/workspace", "/workspace"}, roots)
+	require.Equal(t, []string{"/workspace", "/workspace", "/workspace", "/workspace"}, roots)
 }
 
 func TestFileSystemRootedAtRejectsInvalidRootAndKeepsOriginalRoot(t *testing.T) {
