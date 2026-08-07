@@ -137,6 +137,25 @@ func TestFileSystemGlobFilesUsesOneBoundedServerRequest(t *testing.T) {
 	require.Equal(t, int64(1), requests.Load())
 }
 
+func TestFileSystemGlobFilesAllowsEscapedLiteralBrace(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Contains(t, []string{`\{foo\}.go`, `[{]foo[}].go`}, r.URL.Query().Get("glob"))
+		writeJSONResponse(t, w, http.StatusOK, GlobFilesResult{
+			Matches: []FileGlobMatch{{Path: "{foo}.go"}},
+		})
+	}))
+	defer server.Close()
+
+	files, err := newFileSystem(server.URL+"/access/", server.Client())
+	require.NoError(t, err)
+	result, err := files.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: `\{foo\}.go`})
+	require.NoError(t, err)
+	require.Equal(t, []FileGlobMatch{{Path: "{foo}.go"}}, result.Matches)
+	result, err = files.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: `[{]foo[}].go`})
+	require.NoError(t, err)
+	require.Equal(t, []FileGlobMatch{{Path: "{foo}.go"}}, result.Matches)
+}
+
 func TestFileSystemRejectsInvalidPathsAndRanges(t *testing.T) {
 	files, err := newFileSystem("https://static.run.sys9.ai/file-token/", http.DefaultClient)
 	require.NoError(t, err)

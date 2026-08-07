@@ -261,7 +261,7 @@ func (fileSystem *FileSystem) GlobFiles(ctx context.Context, directoryPath strin
 	if strings.HasPrefix(request.Pattern, "/") {
 		return GlobFilesResult{}, errors.New("file glob pattern must be relative to the requested directory")
 	}
-	if strings.Contains(request.Pattern, "{") {
+	if hasGlobBraceAlternative(request.Pattern) {
 		return GlobFilesResult{}, errors.New("file glob brace alternatives are not supported")
 	}
 	if request.Limit < 0 || request.Limit > 200 {
@@ -293,6 +293,28 @@ func (fileSystem *FileSystem) GlobFiles(ctx context.Context, directoryPath strin
 		result.Matches = []FileGlobMatch{}
 	}
 	return result, nil
+}
+
+func hasGlobBraceAlternative(pattern string) bool {
+	inCharacterClass := false
+	for index := 0; index < len(pattern); index++ {
+		if pattern[index] == '\\' {
+			index++
+			continue
+		}
+		if pattern[index] == '[' && !inCharacterClass {
+			inCharacterClass = true
+			continue
+		}
+		if pattern[index] == ']' && inCharacterClass {
+			inCharacterClass = false
+			continue
+		}
+		if pattern[index] == '{' && !inCharacterClass {
+			return true
+		}
+	}
+	return false
 }
 
 func (fileSystem *FileSystem) getResponse(ctx context.Context, filePath string, query url.Values) (*http.Response, error) {
