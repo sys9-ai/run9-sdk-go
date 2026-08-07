@@ -243,8 +243,7 @@ func (c *Client) StartExecStream(ctx context.Context, boxID string, req ExecRequ
 	resp, err := c.doWorkspaceRaw(ctx, http.MethodPost, "/boxes/"+url.PathEscape(cleanBoxID)+"/execs/stream", requestOptions{
 		body: req,
 		headers: map[string]string{
-			"Accept":                  "application/x-ndjson",
-			"X-Run9-Exec-Stream-Mode": "inline",
+			"Accept": "application/x-ndjson",
 		},
 	})
 	if err != nil {
@@ -253,7 +252,7 @@ func (c *Client) StartExecStream(ctx context.Context, boxID string, req ExecRequ
 	return newExecStream(strings.TrimSpace(resp.Header.Get("X-Run9-Exec-ID")), resp.Body), nil
 }
 
-// RunExec starts one inline foreground exec, pumps its output, and returns the terminal result.
+// RunExec starts one foreground exec, pumps its output, and returns the terminal result.
 func (c *Client) RunExec(ctx context.Context, boxID string, req ExecRequest, writers ExecOutputWriters) (ExecTerminalResult, error) {
 	stream, err := c.StartExecStream(ctx, boxID, req)
 	if err != nil {

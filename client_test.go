@@ -424,13 +424,13 @@ func TestClientUploadArchivePreservesExplicitTarContentType(t *testing.T) {
 	require.Equal(t, "prepared", view.State)
 }
 
-func TestClientStartExecStreamFollowsRedirectAndKeepsFinalExecIDHeader(t *testing.T) {
+func TestClientStartExecStreamUsesRelayHandoffAndKeepsFinalExecIDHeader(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/projects/default/workspace/boxes/box-1/execs/stream":
 			require.Equal(t, http.MethodPost, r.Method)
 			require.Equal(t, "application/x-ndjson", r.Header.Get("Accept"))
-			require.Equal(t, "inline", r.Header.Get("X-Run9-Exec-Stream-Mode"))
+			require.Empty(t, r.Header.Get("X-Run9-Exec-Stream-Mode"))
 			http.Redirect(w, r, "/foreground-relay/execs/ticket-1/exec-stream", http.StatusSeeOther)
 		case "/foreground-relay/execs/ticket-1/exec-stream":
 			require.Equal(t, http.MethodGet, r.Method)

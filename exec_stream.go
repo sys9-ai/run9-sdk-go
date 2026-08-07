@@ -7,7 +7,7 @@ import (
 	"io"
 )
 
-// ExecStream reads one inline foreground exec event stream.
+// ExecStream reads one foreground exec event stream.
 type ExecStream struct {
 	// ExecID is the durable exec identifier assigned by the control plane.
 	ExecID  string
@@ -23,7 +23,7 @@ func newExecStream(execID string, body io.ReadCloser) *ExecStream {
 	}
 }
 
-// ReadEvent reads the next inline foreground exec event.
+// ReadEvent reads the next foreground exec event.
 func (s *ExecStream) ReadEvent() (ExecStreamEvent, error) {
 	var event ExecStreamEvent
 	if err := s.decoder.Decode(&event); err != nil {
