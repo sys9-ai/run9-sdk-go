@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -113,6 +114,7 @@ func TestFileSystemGlobFilesUsesOneBoundedServerRequest(t *testing.T) {
 		require.Equal(t, "/access/work", r.URL.Path)
 		require.Equal(t, "**/*srch*", r.URL.Query().Get("glob"))
 		require.Equal(t, "25", r.URL.Query().Get("limit"))
+		require.Equal(t, "srch", r.URL.Query().Get("ranking_query"))
 		require.Equal(t, []string{".git", "node_modules"}, r.URL.Query()["exclude_dir"])
 		require.Equal(t, "/workspace", r.Header.Get(fileRootHeader))
 		writeJSONResponse(t, w, http.StatusOK, GlobFilesResult{
@@ -130,6 +132,7 @@ func TestFileSystemGlobFilesUsesOneBoundedServerRequest(t *testing.T) {
 		Pattern:            "**/*srch*",
 		Limit:              25,
 		ExcludeDirectories: []string{".git", "node_modules"},
+		RankingQuery:       "srch",
 	})
 	require.NoError(t, err)
 	require.Equal(t, []FileGlobMatch{{Path: "src/search.go"}}, result.Matches)
@@ -174,6 +177,8 @@ func TestFileSystemRejectsInvalidPathsAndRanges(t *testing.T) {
 	require.EqualError(t, err, "file glob brace alternatives are not supported")
 	_, err = files.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: "**/*.go", Limit: 201})
 	require.EqualError(t, err, "file glob limit must be between 1 and 200, or zero for the default")
+	_, err = files.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: "**/*.go", RankingQuery: strings.Repeat("a", 257)})
+	require.EqualError(t, err, "file glob ranking query must be at most 256 bytes")
 	_, err = files.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: "**/*.go", ExcludeDirectories: []string{"src/generated"}})
 	require.EqualError(t, err, "excluded directory names must be single path components")
 

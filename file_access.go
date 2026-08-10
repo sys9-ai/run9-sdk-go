@@ -69,6 +69,9 @@ type GlobFilesRequest struct {
 	Limit int
 	// ExcludeDirectories skips directories with these exact names at any depth.
 	ExcludeDirectories []string
+	// RankingQuery requests VS Code File Quick Open-style relevance ordering
+	// before Limit is applied. Empty keeps lexical ordering.
+	RankingQuery string
 }
 
 // FileGlobMatch identifies one regular file relative to the requested directory.
@@ -76,7 +79,7 @@ type FileGlobMatch struct {
 	Path string `json:"path"`
 }
 
-// GlobFilesResult contains lexical matches from one bounded filesystem view.
+// GlobFilesResult contains ordered matches from one bounded filesystem view.
 type GlobFilesResult struct {
 	Matches   []FileGlobMatch `json:"matches"`
 	Truncated bool            `json:"truncated"`
@@ -249,7 +252,8 @@ func (fileSystem *FileSystem) ReadDir(ctx context.Context, directoryPath string,
 
 // GlobFiles matches regular files in one server-side operation. Pattern uses
 // doublestar glob syntax and is relative to directoryPath. Results are
-// case-sensitive and lexically ordered. Symlinks are not returned or followed.
+// case-sensitive. Results are lexical unless RankingQuery requests relevance
+// ordering. Symlinks are not returned or followed.
 // Truncated reports additional matches or a scan stopped by safety bounds.
 func (fileSystem *FileSystem) GlobFiles(ctx context.Context, directoryPath string, request GlobFilesRequest) (GlobFilesResult, error) {
 	if request.Pattern == "" {
@@ -267,12 +271,18 @@ func (fileSystem *FileSystem) GlobFiles(ctx context.Context, directoryPath strin
 	if request.Limit < 0 || request.Limit > 200 {
 		return GlobFilesResult{}, errors.New("file glob limit must be between 1 and 200, or zero for the default")
 	}
+	if len(request.RankingQuery) > 256 {
+		return GlobFilesResult{}, errors.New("file glob ranking query must be at most 256 bytes")
+	}
 	if len(request.ExcludeDirectories) > 32 {
 		return GlobFilesResult{}, errors.New("file glob accepts at most 32 excluded directory names")
 	}
 	query := url.Values{"glob": []string{request.Pattern}}
 	if request.Limit != 0 {
 		query.Set("limit", strconv.Itoa(request.Limit))
+	}
+	if request.RankingQuery != "" {
+		query.Set("ranking_query", request.RankingQuery)
 	}
 	for _, name := range request.ExcludeDirectories {
 		if name == "" || name == "." || name == ".." || len(name) > 255 || strings.ContainsAny(name, "/\\\x00") {
