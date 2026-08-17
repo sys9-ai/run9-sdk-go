@@ -33,6 +33,14 @@ type ExecTerminalResult struct {
 	ExitCode *int
 	// Reason carries the terminal cancellation or failure reason when one is available.
 	Reason string
+	// CacheAccess reports JuiceFS cache and object-store deltas when the runtime exposes them.
+	CacheAccess *CacheAccessStats
+	// PrewarmProfileID identifies the profile selected for this exec.
+	PrewarmProfileID string
+	// PrewarmProfileName is the profile name selected for this exec.
+	PrewarmProfileName string
+	// PrewarmRecording describes the artifact finalized by a recording exec.
+	PrewarmRecording *PrewarmRecordingResult
 }
 
 type execEventReader interface {
@@ -84,13 +92,21 @@ func pumpExecEvents(ctx context.Context, reader execEventReader, writers ExecOut
 		case "exit":
 			exitCode := int(event.ExitCode)
 			return ExecTerminalResult{
-				Status:   ExecTerminalStatusExited,
-				ExitCode: &exitCode,
+				Status:             ExecTerminalStatusExited,
+				ExitCode:           &exitCode,
+				CacheAccess:        event.CacheAccess,
+				PrewarmProfileID:   event.PrewarmProfileID,
+				PrewarmProfileName: event.PrewarmProfileName,
+				PrewarmRecording:   event.PrewarmRecording,
 			}, nil
 		case "cancelled":
 			return ExecTerminalResult{
-				Status: ExecTerminalStatusCancelled,
-				Reason: event.CancelReason,
+				Status:             ExecTerminalStatusCancelled,
+				Reason:             event.CancelReason,
+				CacheAccess:        event.CacheAccess,
+				PrewarmProfileID:   event.PrewarmProfileID,
+				PrewarmProfileName: event.PrewarmProfileName,
+				PrewarmRecording:   event.PrewarmRecording,
 			}, nil
 		case "error":
 			return ExecTerminalResult{

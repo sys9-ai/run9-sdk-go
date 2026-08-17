@@ -692,6 +692,102 @@ type ExecStreamEvent struct {
 	FailureReason string `json:"failure_reason,omitempty"`
 	// CancelReason is set when the stream terminates with a cancelled event.
 	CancelReason string `json:"cancel_reason,omitempty"`
+	// CacheAccess reports JuiceFS cache and object-store deltas for this exec.
+	CacheAccess *CacheAccessStats `json:"cache_access,omitempty"`
+	// PrewarmProfileID identifies the profile selected for this exec.
+	PrewarmProfileID string `json:"prewarm_profile_id,omitempty"`
+	// PrewarmProfileName is the user-visible profile name selected for this exec.
+	PrewarmProfileName string `json:"prewarm_profile_name,omitempty"`
+	// PrewarmRecording describes the immutable artifact produced by a recording exec.
+	PrewarmRecording *PrewarmRecordingResult `json:"prewarm_recording,omitempty"`
+}
+
+// CacheAccessStats reports per-exec JuiceFS access counter deltas.
+type CacheAccessStats struct {
+	PrivateCacheHits     uint64 `json:"private_cache_hits"`
+	PrivateCacheHitBytes uint64 `json:"private_cache_hit_bytes"`
+	PrewarmCacheHits     uint64 `json:"prewarm_cache_hits"`
+	PrewarmCacheHitBytes uint64 `json:"prewarm_cache_hit_bytes"`
+	PrewarmCacheMisses   uint64 `json:"prewarm_cache_misses"`
+	PrewarmCacheErrors   uint64 `json:"prewarm_cache_errors"`
+	ObjectGets           uint64 `json:"object_gets"`
+	ObjectGetBytes       uint64 `json:"object_get_bytes"`
+	UnavailableReason    string `json:"unavailable_reason,omitempty"`
+}
+
+// PrewarmRecordingResult describes the recorded artifact finalized after a workload exits or is cancelled.
+type PrewarmRecordingResult struct {
+	ProfileID  string `json:"profile_id"`
+	Generation string `json:"generation"`
+	SHA256     string `json:"sha256"`
+	VolumeUUID string `json:"volume_uuid"`
+	Blocks     uint64 `json:"blocks"`
+	Bytes      uint64 `json:"bytes"`
+	Error      string `json:"error,omitempty"`
+}
+
+// PrewarmProfileState identifies the recorded artifact lifecycle.
+type PrewarmProfileState string
+
+const (
+	// PrewarmProfileStateRecording means the standard workload is still running.
+	PrewarmProfileStateRecording PrewarmProfileState = "recording"
+	// PrewarmProfileStateFinalizing means block collection and upload continue after workload cancellation.
+	PrewarmProfileStateFinalizing PrewarmProfileState = "finalizing"
+	// PrewarmProfileStateReady means the immutable artifact can be selected by new execs.
+	PrewarmProfileStateReady PrewarmProfileState = "ready"
+	// PrewarmProfileStateError means artifact finalization failed.
+	PrewarmProfileStateError PrewarmProfileState = "error"
+)
+
+// PrewarmProfileHostView describes installation of a profile artifact on one target host.
+type PrewarmProfileHostView struct {
+	HostID      string     `json:"host_id"`
+	Connected   bool       `json:"connected"`
+	Ready       bool       `json:"ready"`
+	State       string     `json:"state"`
+	LastError   string     `json:"last_error,omitempty"`
+	InstalledAt *time.Time `json:"installed_at,omitempty"`
+}
+
+// PrewarmProfileView describes one exact-base recorded prewarm profile.
+type PrewarmProfileView struct {
+	ProfileID          string                   `json:"profile_id"`
+	Name               string                   `json:"name"`
+	OrgID              string                   `json:"org_id"`
+	ProjectID          string                   `json:"project_id"`
+	BaseSnapID         string                   `json:"base_snap_id"`
+	State              PrewarmProfileState      `json:"state"`
+	Enabled            bool                     `json:"enabled"`
+	Workload           []string                 `json:"workload"`
+	ArtifactGeneration string                   `json:"artifact_generation,omitempty"`
+	ArtifactSHA256     string                   `json:"artifact_sha256,omitempty"`
+	ArtifactBlocks     uint64                   `json:"artifact_blocks"`
+	ArtifactBytes      uint64                   `json:"artifact_bytes"`
+	RecordingExecID    string                   `json:"recording_exec_id,omitempty"`
+	UseCount           uint64                   `json:"use_count"`
+	LastUsedAt         *time.Time               `json:"last_used_at,omitempty"`
+	LastError          string                   `json:"last_error,omitempty"`
+	ReadyHosts         int                      `json:"ready_hosts"`
+	TargetHosts        int                      `json:"target_hosts"`
+	Hosts              []PrewarmProfileHostView `json:"hosts,omitempty"`
+	CreatedAt          time.Time                `json:"created_at"`
+	UpdatedAt          time.Time                `json:"updated_at"`
+}
+
+// RecordPrewarmProfileRequest starts one standard workload recording for an exact base snap.
+type RecordPrewarmProfileRequest struct {
+	Name       string     `json:"name"`
+	BaseSnapID string     `json:"base_snap_id"`
+	Command    []string   `json:"command"`
+	DeadlineAt *time.Time `json:"deadline_at,omitempty"`
+}
+
+// PrewarmRecordingStream identifies the new profile and exposes its live workload stream.
+type PrewarmRecordingStream struct {
+	ProfileID string
+	ExecID    string
+	Stream    *ExecStream
 }
 
 // ExecAttachInput describes one input message sent over exec attach.
