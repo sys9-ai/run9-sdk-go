@@ -76,18 +76,30 @@ func terminalResultFromExecEvent(event ExecStreamEvent) (ExecTerminalResult, boo
 	case "exit":
 		exitCode := int(event.ExitCode)
 		return ExecTerminalResult{
-			Status:   ExecTerminalStatusExited,
-			ExitCode: &exitCode,
+			Status:             ExecTerminalStatusExited,
+			ExitCode:           &exitCode,
+			CacheAccess:        event.CacheAccess,
+			PrewarmProfileID:   event.PrewarmProfileID,
+			PrewarmProfileName: event.PrewarmProfileName,
+			PrewarmRecording:   event.PrewarmRecording,
 		}, true
 	case "cancelled":
 		return ExecTerminalResult{
-			Status: ExecTerminalStatusCancelled,
-			Reason: event.CancelReason,
+			Status:             ExecTerminalStatusCancelled,
+			Reason:             event.CancelReason,
+			CacheAccess:        event.CacheAccess,
+			PrewarmProfileID:   event.PrewarmProfileID,
+			PrewarmProfileName: event.PrewarmProfileName,
+			PrewarmRecording:   event.PrewarmRecording,
 		}, true
 	case "error":
 		return ExecTerminalResult{
-			Status: ExecTerminalStatusError,
-			Reason: event.FailureReason,
+			Status:             ExecTerminalStatusError,
+			Reason:             event.FailureReason,
+			CacheAccess:        event.CacheAccess,
+			PrewarmProfileID:   event.PrewarmProfileID,
+			PrewarmProfileName: event.PrewarmProfileName,
+			PrewarmRecording:   event.PrewarmRecording,
 		}, true
 	default:
 		return ExecTerminalResult{}, false

@@ -182,6 +182,23 @@ Persist one stable `IdempotencyKey` for each logical daemon generation and reuse
 
 `result.NextCursor` is still exposed for explicit replay use cases, but callers that only want to keep tailing can let the follower manage it.
 
+Record and manage a low-latency workload profile for an exact base snap:
+
+```go
+recording, err := project.StartPrewarmRecording(ctx, run9.RecordPrewarmProfileRequest{
+	Name:       "typescript",
+	BaseSnapID: "snap-base",
+	Command:    []string{"npx", "tsc", "--version"},
+})
+if err != nil {
+	return err
+}
+result, err := recording.Stream.Pump(ctx, run9.ExecOutputWriters{Stdout: os.Stdout, Stderr: os.Stderr})
+profile, err := project.GetPrewarmProfile(context.Background(), recording.ProfileID)
+```
+
+Cancelling the recording context stops the workload but does not discard blocks already observed. Use a fresh context to poll the profile until it becomes `ready` or `error`. Ready profiles are enabled by default; `SetPrewarmProfileEnabled` changes automatic selection and enabling also converges already-running tenant hosts.
+
 If you want one merged transcript in event order, call `Read(...)` and then `WriteMergedOutput(...)`:
 
 ```go
@@ -208,6 +225,7 @@ Project-scoped APIs require `WithProject(...)`:
 - boxes
 - snaps
 - execs
+- recorded prewarm profiles
 - file archive upload and download
 - reusable read-only box and snap filesystems
 - project members

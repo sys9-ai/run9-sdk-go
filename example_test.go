@@ -57,6 +57,21 @@ func ExampleClient_RunExec() {
 	_ = project
 }
 
+func ExampleClient_StartPrewarmRecording() {
+	client, _ := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "ak-example", SK: "sk-example"})
+	project := client.WithProject("sandbox")
+	recording, err := project.StartPrewarmRecording(context.Background(), run9.RecordPrewarmProfileRequest{
+		Name:       "typescript",
+		BaseSnapID: "snap-base",
+		Command:    []string{"npx", "tsc", "--version"},
+	})
+	if err != nil {
+		return
+	}
+	defer recording.Stream.Close()
+	_ = recording.ProfileID
+}
+
 func ExampleClient_BoxFileSystem() {
 	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{
 		AK: "ak-...",

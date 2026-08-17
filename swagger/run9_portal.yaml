@@ -611,10 +611,12 @@ definitions:
     enum:
     - api
     - ssh
+    - prewarm_recording
     type: string
     x-enum-varnames:
     - ExecSourceAPI
     - ExecSourceSSH
+    - ExecSourcePrewarmRecording
   api.ExecState:
     enum:
     - pending
@@ -954,6 +956,88 @@ definitions:
         type: string
       role:
         $ref: '#/definitions/api.MembershipRole'
+    type: object
+  api.PrewarmProfileHostState:
+    enum:
+    - pending
+    - ready
+    - error
+    type: string
+    x-enum-varnames:
+    - PrewarmProfileHostStatePending
+    - PrewarmProfileHostStateReady
+    - PrewarmProfileHostStateError
+  api.PrewarmProfileHostView:
+    properties:
+      host_id:
+        type: string
+      installed_at:
+        type: string
+      last_error:
+        type: string
+      state:
+        $ref: '#/definitions/api.PrewarmProfileHostState'
+    type: object
+  api.PrewarmProfileState:
+    enum:
+    - recording
+    - finalizing
+    - ready
+    - error
+    type: string
+    x-enum-varnames:
+    - PrewarmProfileStateRecording
+    - PrewarmProfileStateFinalizing
+    - PrewarmProfileStateReady
+    - PrewarmProfileStateError
+  api.PrewarmProfileView:
+    properties:
+      artifact_blocks:
+        type: integer
+      artifact_bytes:
+        type: integer
+      artifact_generation:
+        type: string
+      artifact_sha256:
+        type: string
+      base_snap_id:
+        type: string
+      created_at:
+        type: string
+      enabled:
+        type: boolean
+      hosts:
+        items:
+          $ref: '#/definitions/api.PrewarmProfileHostView'
+        type: array
+      last_error:
+        type: string
+      last_used_at:
+        type: string
+      name:
+        type: string
+      org_id:
+        type: string
+      profile_id:
+        type: string
+      project_id:
+        type: string
+      ready_hosts:
+        type: integer
+      recording_exec_id:
+        type: string
+      state:
+        $ref: '#/definitions/api.PrewarmProfileState'
+      target_hosts:
+        type: integer
+      updated_at:
+        type: string
+      use_count:
+        type: integer
+      workload:
+        items:
+          type: string
+        type: array
     type: object
   api.ProjectMembershipView:
     properties:
@@ -1430,6 +1514,24 @@ definitions:
         type: string
       path_summary:
         type: string
+    type: object
+  api.recordPrewarmProfilePayload:
+    properties:
+      base_snap_id:
+        type: string
+      command:
+        items:
+          type: string
+        type: array
+      deadline_at:
+        type: string
+      name:
+        type: string
+    type: object
+  api.updatePrewarmProfilePayload:
+    properties:
+      enabled:
+        type: boolean
     type: object
   pb.SnapSize:
     properties:
@@ -3944,6 +4046,163 @@ paths:
       summary: Write stdin to a background exec
       tags:
       - Execs
+  /projects/{project_cid}/workspace/prewarm-profiles:
+    get:
+      operationId: listPrewarmProfiles
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Prewarm profiles.
+          schema:
+            items:
+              $ref: '#/definitions/api.PrewarmProfileView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List recorded prewarm profiles
+      tags:
+      - Prewarm Profiles
+  /projects/{project_cid}/workspace/prewarm-profiles/{id}:
+    get:
+      operationId: getPrewarmProfile
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Profile name or id.
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The prewarm profile.
+          schema:
+            $ref: '#/definitions/api.PrewarmProfileView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Get a recorded prewarm profile
+      tags:
+      - Prewarm Profiles
+    patch:
+      consumes:
+      - application/json
+      operationId: updatePrewarmProfile
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Profile name or id.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Requested enabled state.
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.updatePrewarmProfilePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The updated prewarm profile.
+          schema:
+            $ref: '#/definitions/api.PrewarmProfileView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Enable or disable a recorded prewarm profile
+      tags:
+      - Prewarm Profiles
+  /projects/{project_cid}/workspace/prewarm-profiles/record:
+    post:
+      consumes:
+      - application/json
+      description: Creates an enabled profile for one exact base snap and streams
+        the recording workload. Cancelling the stream stops the workload while artifact
+        finalization continues.
+      operationId: recordPrewarmProfile
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Profile and workload.
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.recordPrewarmProfilePayload'
+      produces:
+      - application/x-ndjson
+      responses:
+        "200":
+          description: NDJSON stream of foreground exec events.
+          headers:
+            X-Run9-Exec-ID:
+              description: Accepted recording exec id.
+              type: string
+            X-Run9-Prewarm-Profile-ID:
+              description: Created prewarm profile id.
+              type: string
+          schema:
+            type: string
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Record a workload prewarm profile
+      tags:
+      - Prewarm Profiles
   /projects/{project_cid}/workspace/shared-snaps/{name}/boxes:
     post:
       consumes:
