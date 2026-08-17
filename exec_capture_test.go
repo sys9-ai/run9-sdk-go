@@ -35,6 +35,24 @@ func TestExecViewTerminalResult(t *testing.T) {
 	require.Nil(t, running.TerminalResult())
 }
 
+func TestTerminalResultFromExecEventPreservesPrewarmDiagnostics(t *testing.T) {
+	cacheAccess := &CacheAccessStats{PrewarmCacheHits: 4, PrewarmCacheHitBytes: 8192}
+	recording := &PrewarmRecordingResult{ProfileID: "profile-a", Generation: "generation-a"}
+
+	result, ok := terminalResultFromExecEvent(ExecStreamEvent{
+		Type: "error", FailureReason: "runtime failed", CacheAccess: cacheAccess,
+		PrewarmProfileID: "profile-a", PrewarmProfileName: "typescript", PrewarmRecording: recording,
+	})
+
+	require.True(t, ok)
+	require.Equal(t, ExecTerminalStatusError, result.Status)
+	require.Equal(t, "runtime failed", result.Reason)
+	require.Same(t, cacheAccess, result.CacheAccess)
+	require.Equal(t, "profile-a", result.PrewarmProfileID)
+	require.Equal(t, "typescript", result.PrewarmProfileName)
+	require.Same(t, recording, result.PrewarmRecording)
+}
+
 func TestClientRunExecCaptureReturnsTerminalResultAndMergedLog(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

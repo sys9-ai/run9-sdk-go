@@ -94,8 +94,12 @@ func terminalResultFromExecEvent(event ExecStreamEvent) (ExecTerminalResult, boo
 		}, true
 	case "error":
 		return ExecTerminalResult{
-			Status: ExecTerminalStatusError,
-			Reason: event.FailureReason,
+			Status:             ExecTerminalStatusError,
+			Reason:             event.FailureReason,
+			CacheAccess:        event.CacheAccess,
+			PrewarmProfileID:   event.PrewarmProfileID,
+			PrewarmProfileName: event.PrewarmProfileName,
+			PrewarmRecording:   event.PrewarmRecording,
 		}, true
 	default:
 		return ExecTerminalResult{}, false

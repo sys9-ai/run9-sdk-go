@@ -957,20 +957,26 @@ definitions:
       role:
         $ref: '#/definitions/api.MembershipRole'
     type: object
+  api.PrewarmProfileHostState:
+    enum:
+    - pending
+    - ready
+    - error
+    type: string
+    x-enum-varnames:
+    - PrewarmProfileHostStatePending
+    - PrewarmProfileHostStateReady
+    - PrewarmProfileHostStateError
   api.PrewarmProfileHostView:
     properties:
-      connected:
-        type: boolean
       host_id:
         type: string
       installed_at:
         type: string
       last_error:
         type: string
-      ready:
-        type: boolean
       state:
-        type: string
+        $ref: '#/definitions/api.PrewarmProfileHostState'
     type: object
   api.PrewarmProfileState:
     enum:

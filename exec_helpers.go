@@ -89,30 +89,10 @@ func pumpExecEvents(ctx context.Context, reader execEventReader, writers ExecOut
 			if _, err := writers.Stderr.Write(event.Data); err != nil {
 				return ExecTerminalResult{}, err
 			}
-		case "exit":
-			exitCode := int(event.ExitCode)
-			return ExecTerminalResult{
-				Status:             ExecTerminalStatusExited,
-				ExitCode:           &exitCode,
-				CacheAccess:        event.CacheAccess,
-				PrewarmProfileID:   event.PrewarmProfileID,
-				PrewarmProfileName: event.PrewarmProfileName,
-				PrewarmRecording:   event.PrewarmRecording,
-			}, nil
-		case "cancelled":
-			return ExecTerminalResult{
-				Status:             ExecTerminalStatusCancelled,
-				Reason:             event.CancelReason,
-				CacheAccess:        event.CacheAccess,
-				PrewarmProfileID:   event.PrewarmProfileID,
-				PrewarmProfileName: event.PrewarmProfileName,
-				PrewarmRecording:   event.PrewarmRecording,
-			}, nil
-		case "error":
-			return ExecTerminalResult{
-				Status: ExecTerminalStatusError,
-				Reason: event.FailureReason,
-			}, nil
+		default:
+			if terminal, ok := terminalResultFromExecEvent(event); ok {
+				return terminal, nil
+			}
 		}
 	}
 }

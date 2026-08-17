@@ -742,13 +742,23 @@ const (
 
 // PrewarmProfileHostView describes installation of a profile artifact on one target host.
 type PrewarmProfileHostView struct {
-	HostID      string     `json:"host_id"`
-	Connected   bool       `json:"connected"`
-	Ready       bool       `json:"ready"`
-	State       string     `json:"state"`
-	LastError   string     `json:"last_error,omitempty"`
-	InstalledAt *time.Time `json:"installed_at,omitempty"`
+	HostID      string                  `json:"host_id"`
+	State       PrewarmProfileHostState `json:"state"`
+	LastError   string                  `json:"last_error,omitempty"`
+	InstalledAt *time.Time              `json:"installed_at,omitempty"`
 }
+
+// PrewarmProfileHostState describes installation of one artifact generation on a host.
+type PrewarmProfileHostState string
+
+const (
+	// PrewarmProfileHostStatePending means the current artifact is not installed yet.
+	PrewarmProfileHostStatePending PrewarmProfileHostState = "pending"
+	// PrewarmProfileHostStateReady means the current artifact is installed and usable.
+	PrewarmProfileHostStateReady PrewarmProfileHostState = "ready"
+	// PrewarmProfileHostStateError means the latest installation attempt failed.
+	PrewarmProfileHostStateError PrewarmProfileHostState = "error"
+)
 
 // PrewarmProfileView describes one exact-base recorded prewarm profile.
 type PrewarmProfileView struct {
