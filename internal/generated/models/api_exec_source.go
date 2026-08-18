@@ -32,6 +32,9 @@ const (
 
 	// APIExecSourceSSH captures enum value "ssh"
 	APIExecSourceSSH APIExecSource = "ssh"
+
+	// APIExecSourcePrewarmRecording captures enum value "prewarm_recording"
+	APIExecSourcePrewarmRecording APIExecSource = "prewarm_recording"
 )
 
 // for schema
@@ -39,7 +42,7 @@ var apiExecSourceEnum []any
 
 func init() {
 	var res []APIExecSource
-	if err := json.Unmarshal([]byte(`["api","ssh"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["api","ssh","prewarm_recording"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

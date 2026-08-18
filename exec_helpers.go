@@ -79,7 +79,7 @@ func pumpExecEvents(ctx context.Context, reader execEventReader, writers ExecOut
 		}
 
 		switch event.Type {
-		case "keepalive", "started":
+		case "keepalive", "started", "finalizing":
 			continue
 		case "stdout":
 			if _, err := writers.Stdout.Write(event.Data); err != nil {

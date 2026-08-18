@@ -1014,6 +1014,8 @@ definitions:
         type: string
       last_used_at:
         type: string
+      max_runtime_seconds:
+        type: integer
       name:
         type: string
       org_id:
@@ -1025,6 +1027,8 @@ definitions:
       ready_hosts:
         type: integer
       recording_exec_id:
+        type: string
+      recording_stop_reason:
         type: string
       state:
         $ref: '#/definitions/api.PrewarmProfileState'
@@ -1523,8 +1527,8 @@ definitions:
         items:
           type: string
         type: array
-      deadline_at:
-        type: string
+      max_runtime_seconds:
+        type: integer
       name:
         type: string
     type: object
@@ -4160,7 +4164,8 @@ paths:
       consumes:
       - application/json
       description: Creates an enabled profile for one exact base snap and streams
-        the recording workload. Cancelling the stream stops the workload while artifact
+        the recording workload. The workload runs for at most max_runtime_seconds
+        (60 by default); timeout or stream cancellation stops the command while artifact
         finalization continues.
       operationId: recordPrewarmProfile
       parameters:
