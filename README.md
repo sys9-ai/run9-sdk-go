@@ -200,6 +200,8 @@ profile, err := project.GetPrewarmProfile(context.Background(), recording.Profil
 
 `MaxRuntime` limits only the user workload and defaults to one minute; runtime preparation and artifact finalization are outside that interval. Reaching the limit, or cancelling the recording context, stops the workload but does not discard blocks already observed. Use a fresh context to poll the profile until it becomes `ready` or `error`. Ready profiles are enabled by default; `SetPrewarmProfileEnabled` changes automatic selection and enabling also converges already-running tenant hosts.
 
+A ready, enabled profile is selected automatically for boxes created from its base snap or any descendant. If several profiles are present on that ancestor chain, the nearest ready, enabled profile wins.
+
 If you want one merged transcript in event order, call `Read(...)` and then `WriteMergedOutput(...)`:
 
 ```go

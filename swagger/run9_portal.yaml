@@ -4164,7 +4164,8 @@ paths:
       consumes:
       - application/json
       description: Creates an enabled profile for one exact base snap and streams
-        the recording workload. The workload runs for at most max_runtime_seconds
+        the recording workload. Ready profiles automatically apply to boxes created
+        from that base or any descendant. The workload runs for at most max_runtime_seconds
         (60 by default); timeout or stream cancellation stops the command while artifact
         finalization continues.
       operationId: recordPrewarmProfile
