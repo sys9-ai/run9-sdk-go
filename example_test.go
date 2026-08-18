@@ -64,6 +64,7 @@ func ExampleClient_StartPrewarmRecording() {
 		Name:       "typescript",
 		BaseSnapID: "snap-base",
 		Command:    []string{"npx", "tsc", "--version"},
+		MaxRuntime: time.Minute,
 	})
 	if err != nil {
 		return

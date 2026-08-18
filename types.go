@@ -680,7 +680,7 @@ type ExecRequest struct {
 // ExecStreamEvent describes one event emitted by exec streaming APIs.
 type ExecStreamEvent struct {
 	// Type identifies the event kind. Common values include started, keepalive, stdout,
-	// stderr, exit, error, and cancelled.
+	// stderr, finalizing, exit, error, and cancelled.
 	Type string `json:"type"`
 	// ExecID carries the durable exec identifier on events that include it.
 	ExecID string `json:"exec_id,omitempty"`
@@ -729,6 +729,9 @@ type PrewarmRecordingResult struct {
 // PrewarmProfileState identifies the recorded artifact lifecycle.
 type PrewarmProfileState string
 
+// PrewarmRecordingStopReasonMaxRuntime identifies a recording workload stopped by its configured limit.
+const PrewarmRecordingStopReasonMaxRuntime = "prewarm_max_runtime_reached"
+
 const (
 	// PrewarmProfileStateRecording means the standard workload is still running.
 	PrewarmProfileStateRecording PrewarmProfileState = "recording"
@@ -762,35 +765,38 @@ const (
 
 // PrewarmProfileView describes one exact-base recorded prewarm profile.
 type PrewarmProfileView struct {
-	ProfileID          string                   `json:"profile_id"`
-	Name               string                   `json:"name"`
-	OrgID              string                   `json:"org_id"`
-	ProjectID          string                   `json:"project_id"`
-	BaseSnapID         string                   `json:"base_snap_id"`
-	State              PrewarmProfileState      `json:"state"`
-	Enabled            bool                     `json:"enabled"`
-	Workload           []string                 `json:"workload"`
-	ArtifactGeneration string                   `json:"artifact_generation,omitempty"`
-	ArtifactSHA256     string                   `json:"artifact_sha256,omitempty"`
-	ArtifactBlocks     uint64                   `json:"artifact_blocks"`
-	ArtifactBytes      uint64                   `json:"artifact_bytes"`
-	RecordingExecID    string                   `json:"recording_exec_id,omitempty"`
-	UseCount           uint64                   `json:"use_count"`
-	LastUsedAt         *time.Time               `json:"last_used_at,omitempty"`
-	LastError          string                   `json:"last_error,omitempty"`
-	ReadyHosts         int                      `json:"ready_hosts"`
-	TargetHosts        int                      `json:"target_hosts"`
-	Hosts              []PrewarmProfileHostView `json:"hosts,omitempty"`
-	CreatedAt          time.Time                `json:"created_at"`
-	UpdatedAt          time.Time                `json:"updated_at"`
+	ProfileID           string                   `json:"profile_id"`
+	Name                string                   `json:"name"`
+	OrgID               string                   `json:"org_id"`
+	ProjectID           string                   `json:"project_id"`
+	BaseSnapID          string                   `json:"base_snap_id"`
+	State               PrewarmProfileState      `json:"state"`
+	Enabled             bool                     `json:"enabled"`
+	Workload            []string                 `json:"workload"`
+	MaxRuntimeSeconds   uint64                   `json:"max_runtime_seconds"`
+	RecordingStopReason string                   `json:"recording_stop_reason,omitempty"`
+	ArtifactGeneration  string                   `json:"artifact_generation,omitempty"`
+	ArtifactSHA256      string                   `json:"artifact_sha256,omitempty"`
+	ArtifactBlocks      uint64                   `json:"artifact_blocks"`
+	ArtifactBytes       uint64                   `json:"artifact_bytes"`
+	RecordingExecID     string                   `json:"recording_exec_id,omitempty"`
+	UseCount            uint64                   `json:"use_count"`
+	LastUsedAt          *time.Time               `json:"last_used_at,omitempty"`
+	LastError           string                   `json:"last_error,omitempty"`
+	ReadyHosts          int                      `json:"ready_hosts"`
+	TargetHosts         int                      `json:"target_hosts"`
+	Hosts               []PrewarmProfileHostView `json:"hosts,omitempty"`
+	CreatedAt           time.Time                `json:"created_at"`
+	UpdatedAt           time.Time                `json:"updated_at"`
 }
 
 // RecordPrewarmProfileRequest starts one standard workload recording for an exact base snap.
 type RecordPrewarmProfileRequest struct {
-	Name       string     `json:"name"`
-	BaseSnapID string     `json:"base_snap_id"`
-	Command    []string   `json:"command"`
-	DeadlineAt *time.Time `json:"deadline_at,omitempty"`
+	Name       string   `json:"name"`
+	BaseSnapID string   `json:"base_snap_id"`
+	Command    []string `json:"command"`
+	// MaxRuntime limits only the recorded workload. Zero uses the service default of one minute.
+	MaxRuntime time.Duration `json:"-"`
 }
 
 // PrewarmRecordingStream identifies the new profile and exposes its live workload stream.

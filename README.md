@@ -189,6 +189,7 @@ recording, err := project.StartPrewarmRecording(ctx, run9.RecordPrewarmProfileRe
 	Name:       "typescript",
 	BaseSnapID: "snap-base",
 	Command:    []string{"npx", "tsc", "--version"},
+	MaxRuntime: time.Minute,
 })
 if err != nil {
 	return err
@@ -197,7 +198,7 @@ result, err := recording.Stream.Pump(ctx, run9.ExecOutputWriters{Stdout: os.Stdo
 profile, err := project.GetPrewarmProfile(context.Background(), recording.ProfileID)
 ```
 
-Cancelling the recording context stops the workload but does not discard blocks already observed. Use a fresh context to poll the profile until it becomes `ready` or `error`. Ready profiles are enabled by default; `SetPrewarmProfileEnabled` changes automatic selection and enabling also converges already-running tenant hosts.
+`MaxRuntime` limits only the user workload and defaults to one minute; runtime preparation and artifact finalization are outside that interval. Reaching the limit, or cancelling the recording context, stops the workload but does not discard blocks already observed. Use a fresh context to poll the profile until it becomes `ready` or `error`. Ready profiles are enabled by default; `SetPrewarmProfileEnabled` changes automatic selection and enabling also converges already-running tenant hosts.
 
 If you want one merged transcript in event order, call `Read(...)` and then `WriteMergedOutput(...)`:
 

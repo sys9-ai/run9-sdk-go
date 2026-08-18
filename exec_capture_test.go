@@ -65,6 +65,7 @@ func TestClientRunExecCaptureReturnsTerminalResultAndMergedLog(t *testing.T) {
 			require.NoError(t, json.NewEncoder(w).Encode(ExecStreamEvent{Type: "started"}))
 			require.NoError(t, json.NewEncoder(w).Encode(ExecStreamEvent{Type: "stdout", Data: []byte("hello\n")}))
 			require.NoError(t, json.NewEncoder(w).Encode(ExecStreamEvent{Type: "stderr", Data: []byte("warn\n")}))
+			require.NoError(t, json.NewEncoder(w).Encode(ExecStreamEvent{Type: "finalizing", ExitCode: 0}))
 			require.NoError(t, json.NewEncoder(w).Encode(ExecStreamEvent{Type: "exit", ExitCode: 0}))
 		case "/projects/default/workspace/execs/exec-1/log-download":
 			require.Equal(t, http.MethodGet, r.Method)
