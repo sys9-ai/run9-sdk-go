@@ -114,6 +114,7 @@ matches, err := files.GlobFiles(ctx, "/", run9.GlobFilesRequest{
 	Limit:              20,
 	ExcludeDirectories: []string{".git", "node_modules"},
 	RankingQuery:       "index",
+	RespectGitIgnore:   true,
 })
 if err != nil {
 	return err
@@ -127,7 +128,7 @@ defer reader.Close()
 _, err = io.Copy(os.Stdout, reader)
 ```
 
-Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; an attached snap resolves to its owning box view. `RootedAt` makes the selected directory the filesystem root, including for symlink resolution. Resolve `FileSystem` once and reuse it for concurrent `Open`, `Stat`, `GlobFiles`, and paginated `ReadDir` calls. `GlobFiles` applies one case-sensitive doublestar pattern to regular-file paths relative to the requested directory; brace alternatives are not supported. Results are lexically ordered by default. `RankingQuery` instead applies VS Code File Quick Open-style relevance before the limit, so the caller still uses one bounded request rather than recursively listing remote directories.
+Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; an attached snap resolves to its owning box view. `RootedAt` makes the selected directory the filesystem root, including for symlink resolution. Resolve `FileSystem` once and reuse it for concurrent `Open`, `Stat`, `GlobFiles`, and paginated `ReadDir` calls. `GlobFiles` applies one case-sensitive doublestar pattern to regular-file paths relative to the requested directory; brace alternatives are not supported. Results are lexically ordered by default. `RankingQuery` instead applies VS Code File Quick Open-style relevance before the limit. `RespectGitIgnore` applies the requested directory's root and nested `.gitignore` files before matching, ranking, and limiting. Both options keep the operation to one bounded request rather than recursively listing remote directories.
 
 Run one foreground exec and stream its output:
 

@@ -116,6 +116,7 @@ func TestFileSystemGlobFilesUsesOneBoundedServerRequest(t *testing.T) {
 		require.Equal(t, "25", r.URL.Query().Get("limit"))
 		require.Equal(t, "srch", r.URL.Query().Get("ranking_query"))
 		require.Equal(t, []string{".git", "node_modules"}, r.URL.Query()["exclude_dir"])
+		require.Equal(t, "1", r.URL.Query().Get("respect_gitignore"))
 		require.Equal(t, "/workspace", r.Header.Get(fileRootHeader))
 		writeJSONResponse(t, w, http.StatusOK, GlobFilesResult{
 			Matches:   []FileGlobMatch{{Path: "src/search.go"}},
@@ -133,6 +134,7 @@ func TestFileSystemGlobFilesUsesOneBoundedServerRequest(t *testing.T) {
 		Limit:              25,
 		ExcludeDirectories: []string{".git", "node_modules"},
 		RankingQuery:       "srch",
+		RespectGitIgnore:   true,
 	})
 	require.NoError(t, err)
 	require.Equal(t, []FileGlobMatch{{Path: "src/search.go"}}, result.Matches)

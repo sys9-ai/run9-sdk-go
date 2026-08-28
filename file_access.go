@@ -72,6 +72,9 @@ type GlobFilesRequest struct {
 	// RankingQuery requests VS Code File Quick Open-style relevance ordering
 	// before Limit is applied. Empty keeps lexical ordering.
 	RankingQuery string
+	// RespectGitIgnore applies hierarchical .gitignore files rooted at the
+	// requested directory before matching, ranking, and limiting results.
+	RespectGitIgnore bool
 }
 
 // FileGlobMatch identifies one regular file relative to the requested directory.
@@ -283,6 +286,9 @@ func (fileSystem *FileSystem) GlobFiles(ctx context.Context, directoryPath strin
 	}
 	if request.RankingQuery != "" {
 		query.Set("ranking_query", request.RankingQuery)
+	}
+	if request.RespectGitIgnore {
+		query.Set("respect_gitignore", "1")
 	}
 	for _, name := range request.ExcludeDirectories {
 		if name == "" || name == "." || name == ".." || len(name) > 255 || strings.ContainsAny(name, "/\\\x00") {
