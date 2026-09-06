@@ -16,12 +16,12 @@ func ExampleClient_CreateBox() {
 	}
 	box, err := client.WithProject("default").CreateBox(context.Background(), run9.CreateBoxRequest{
 		SourceImageRef: "alpine:3.20",
-		DataMountPath:  "/state",
+		DataVolumes:    []run9.DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Box %s stores persistent state at %s", box.BoxID, box.DataMountPath)
+	log.Printf("Box %s has persistent disks %v", box.BoxID, box.DataVolumes)
 }
 
 func ExampleClient_CreateBoxFromSharedSnap() {
@@ -32,12 +32,12 @@ func ExampleClient_CreateBoxFromSharedSnap() {
 	// The latest shared version supplies Root only. This Box gets its own
 	// empty disk; neither the data nor this option is inherited from a Snap.
 	box, err := client.WithProject("default").CreateBoxFromSharedSnap(context.Background(), "python-dev", run9.CreateBoxFromSharedSnapRequest{
-		DataMountPath: "/state",
+		DataVolumes: []run9.DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Box %s stores persistent state at %s", box.BoxID, box.DataMountPath)
+	log.Printf("Box %s has persistent disks %v", box.BoxID, box.DataVolumes)
 }
 
 func ExampleNewClient() {

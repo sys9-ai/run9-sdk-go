@@ -272,17 +272,17 @@ type BoxView struct {
 	State       BoxState          `json:"state"`
 	Reason      string            `json:"reason,omitempty"`
 	BoxSnapID   string            `json:"box_snap_id"`
-	// DataMountPath is the fixed Box-owned data disk mount, or empty if disabled.
+	// DataVolumes lists the fixed Box-owned data disk mounts; empty means none.
 	// It describes configuration, not whether a runtime is currently mounted.
-	DataMountPath             string         `json:"data_mount_path,omitempty"`
-	FileAccessURL             string         `json:"file_access_url,omitempty"`
-	DesiredShape              string         `json:"desired_shape"`
-	NetworkMode               BoxNetworkMode `json:"network_mode"`
-	CurrentHostID             string         `json:"current_host_id,omitempty"`
-	CurrentRuntimeShape       string         `json:"current_runtime_shape,omitempty"`
-	CurrentRuntimeNetworkMode BoxNetworkMode `json:"current_runtime_network_mode,omitempty"`
-	PendingShapeChange        bool           `json:"pending_shape_change"`
-	PendingNetworkModeChange  bool           `json:"pending_network_mode_change"`
+	DataVolumes               []DataVolumeConfig `json:"data_volumes,omitempty"`
+	FileAccessURL             string             `json:"file_access_url,omitempty"`
+	DesiredShape              string             `json:"desired_shape"`
+	NetworkMode               BoxNetworkMode     `json:"network_mode"`
+	CurrentHostID             string             `json:"current_host_id,omitempty"`
+	CurrentRuntimeShape       string             `json:"current_runtime_shape,omitempty"`
+	CurrentRuntimeNetworkMode BoxNetworkMode     `json:"current_runtime_network_mode,omitempty"`
+	PendingShapeChange        bool               `json:"pending_shape_change"`
+	PendingNetworkModeChange  bool               `json:"pending_network_mode_change"`
 }
 
 // SnapView describes one snap. FileAccessURL reads a detached snap's immutable
@@ -522,16 +522,23 @@ type TTYSize struct {
 	Cols uint32 `json:"cols,omitempty"`
 }
 
-// CreateBoxRequest creates a new box from an image or snap.
-type CreateBoxRequest struct {
-	// DataMountPath enables one new empty Box-owned data disk; empty disables it.
+// DataVolumeConfig creates one independent, empty, Box-owned persistent disk.
+type DataVolumeConfig struct {
+	// MountPath is a fixed directory inside the Box.
 	// Use a canonical absolute Linux path other than root, without a trailing
 	// slash or dot components. The source directory must be absent or empty,
 	// must not traverse symlinks, and must not overlap runtime-managed paths.
 	// The mount is fixed at creation. Data survives Stop and runtime replacement,
 	// is deleted with the Box, and is excluded from Root Snap forks along with
 	// its mount configuration. The server validates the path and source contents.
-	DataMountPath string `json:"data_mount_path,omitempty"`
+	MountPath string `json:"mount_path"`
+}
+
+// CreateBoxRequest creates a new box from an image or snap.
+type CreateBoxRequest struct {
+	// DataVolumes creates independent empty data disks. Omit to create none.
+	// Mount paths must not overlap, including ancestor/descendant paths.
+	DataVolumes []DataVolumeConfig `json:"data_volumes,omitempty"`
 	// BoxID requests one specific box identifier. When empty, the control plane generates one.
 	BoxID string `json:"box_id,omitempty"`
 	// DesiredShape requests the compute shape for the box.
@@ -550,10 +557,9 @@ type CreateBoxRequest struct {
 
 // CreateBoxFromSharedSnapRequest creates a box from a published shared snap.
 type CreateBoxFromSharedSnapRequest struct {
-	// DataMountPath enables a new empty persistent disk, independently of the shared snap.
-	// Empty disables it. Path, lifecycle, and immutability rules are identical
-	// to CreateBoxRequest.DataMountPath, including when Version selects latest.
-	DataMountPath string `json:"data_mount_path,omitempty"`
+	// DataVolumes creates independent empty disks, not inherited from the shared
+	// snap. Rules match CreateBoxRequest.DataVolumes, including latest versions.
+	DataVolumes []DataVolumeConfig `json:"data_volumes,omitempty"`
 	// Version selects one published version. When nil, the latest version is used.
 	Version *int `json:"version,omitempty"`
 	// BoxID requests one specific box identifier. When empty, the control plane generates one.

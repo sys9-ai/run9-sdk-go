@@ -222,7 +222,7 @@ func (c *Client) GetSnap(ctx context.Context, snapID string) (SnapView, error) {
 
 // ForkSnap creates a writable child snap from an existing snap.
 // Forking a Box's Root Snap excludes its data disk and mount configuration.
-// To give a derived Box a new empty disk, set CreateBoxRequest.DataMountPath.
+// To give a derived Box a new empty disk, set CreateBoxRequest.DataVolumes.
 func (c *Client) ForkSnap(ctx context.Context, snapID string) (SnapView, error) {
 	return projectGeneratedResult[SnapView](c, func(projectCID string) (any, error) {
 		return c.portal.Snaps.ForkSnapContext(ctx, &snaps.ForkSnapParams{

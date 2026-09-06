@@ -5,6 +5,7 @@ package models
 import (
 	"context"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -17,11 +18,8 @@ import (
 // swagger:model pb.StopBoxResult
 type PbStopBoxResult struct {
 
-	// data size error
-	DataSizeError string `json:"data_size_error,omitempty"`
-
-	// released data size
-	ReleasedDataSize *PbSnapSize `json:"released_data_size,omitempty"`
+	// released data sizes
+	ReleasedDataSizes []*PbBoxDataVolumeSize `json:"released_data_sizes"`
 
 	// released snap size
 	ReleasedSnapSize *PbSnapSize `json:"released_snap_size,omitempty"`
@@ -34,7 +32,7 @@ type PbStopBoxResult struct {
 func (m *PbStopBoxResult) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateReleasedDataSize(formats); err != nil {
+	if err := m.validateReleasedDataSizes(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -48,24 +46,31 @@ func (m *PbStopBoxResult) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *PbStopBoxResult) validateReleasedDataSize(formats strfmt.Registry) error {
-	if typeutils.IsZero(m.ReleasedDataSize) { // not required
+func (m *PbStopBoxResult) validateReleasedDataSizes(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.ReleasedDataSizes) { // not required
 		return nil
 	}
 
-	if m.ReleasedDataSize != nil {
-		if err := m.ReleasedDataSize.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("released_data_size")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("released_data_size")
-			}
-
-			return err
+	for i := 0; i < len(m.ReleasedDataSizes); i++ {
+		if typeutils.IsZero(m.ReleasedDataSizes[i]) { // not required
+			continue
 		}
+
+		if m.ReleasedDataSizes[i] != nil {
+			if err := m.ReleasedDataSizes[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("released_data_sizes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("released_data_sizes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil
@@ -98,7 +103,7 @@ func (m *PbStopBoxResult) validateReleasedSnapSize(formats strfmt.Registry) erro
 func (m *PbStopBoxResult) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateReleasedDataSize(ctx, formats); err != nil {
+	if err := m.contextValidateReleasedDataSizes(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -112,26 +117,30 @@ func (m *PbStopBoxResult) ContextValidate(ctx context.Context, formats strfmt.Re
 	return nil
 }
 
-func (m *PbStopBoxResult) contextValidateReleasedDataSize(ctx context.Context, formats strfmt.Registry) error {
+func (m *PbStopBoxResult) contextValidateReleasedDataSizes(ctx context.Context, formats strfmt.Registry) error {
 
-	if m.ReleasedDataSize != nil {
+	for i := 0; i < len(m.ReleasedDataSizes); i++ {
 
-		if typeutils.IsZero(m.ReleasedDataSize) { // not required
-			return nil
-		}
+		if m.ReleasedDataSizes[i] != nil {
 
-		if err := m.ReleasedDataSize.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("released_data_size")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("released_data_size")
+			if typeutils.IsZero(m.ReleasedDataSizes[i]) { // not required
+				return nil
 			}
 
-			return err
+			if err := m.ReleasedDataSizes[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("released_data_sizes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("released_data_sizes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
 		}
+
 	}
 
 	return nil

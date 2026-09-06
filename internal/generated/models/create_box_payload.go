@@ -5,6 +5,7 @@ package models
 import (
 	"context"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -20,12 +21,10 @@ type CreateBoxPayload struct {
 	// box id
 	BoxID string `json:"box_id,omitempty"`
 
-	// DataMountPath optionally creates one new empty Box-owned data disk. Omit or use an empty string to disable it.
-	// Use a canonical absolute Linux path other than root, with no trailing slash, dot components, or runtime-managed path overlap.
-	// The source directory must be absent or empty and must not traverse symlinks. The fixed mount cannot be changed later.
-	// Data survives Stop and runtime replacement, is deleted with the Box, and is never inherited from or included in Root Snap forks.
-	// Example: /state
-	DataMountPath string `json:"data_mount_path,omitempty"`
+	// DataVolumes creates independent empty Box-owned data disks. Omit or use an empty list to disable them.
+	// Each mount is fixed at creation. Data survives Stop and runtime replacement, is deleted with the Box,
+	// and is never inherited from or included in Root Snap forks. Mount paths cannot overlap.
+	DataVolumes []*APIDataVolumeConfig `json:"data_volumes,omitempty"`
 
 	// description
 	Description string `json:"description,omitempty"`
@@ -56,6 +55,10 @@ type CreateBoxPayload struct {
 func (m *CreateBoxPayload) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateDataVolumes(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateNetworkMode(formats); err != nil {
 		res = append(res, err)
 	}
@@ -63,6 +66,36 @@ func (m *CreateBoxPayload) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *CreateBoxPayload) validateDataVolumes(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.DataVolumes) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.DataVolumes); i++ {
+		if typeutils.IsZero(m.DataVolumes[i]) { // not required
+			continue
+		}
+
+		if m.DataVolumes[i] != nil {
+			if err := m.DataVolumes[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("data_volumes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("data_volumes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -91,6 +124,10 @@ func (m *CreateBoxPayload) validateNetworkMode(formats strfmt.Registry) error {
 func (m *CreateBoxPayload) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateDataVolumes(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateNetworkMode(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -98,6 +135,35 @@ func (m *CreateBoxPayload) ContextValidate(ctx context.Context, formats strfmt.R
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *CreateBoxPayload) contextValidateDataVolumes(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.DataVolumes); i++ {
+
+		if m.DataVolumes[i] != nil {
+
+			if typeutils.IsZero(m.DataVolumes[i]) { // not required
+				return nil
+			}
+
+			if err := m.DataVolumes[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("data_volumes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("data_volumes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

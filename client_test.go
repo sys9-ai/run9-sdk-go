@@ -248,15 +248,15 @@ func TestClientCreateBoxWithDataDisk(t *testing.T) {
 		require.Equal(t, http.MethodPost, r.Method)
 		var req CreateBoxRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-		require.Equal(t, "/state", req.DataMountPath)
-		writeJSONResponse(t, w, http.StatusCreated, BoxView{BoxID: "box-1", DataMountPath: "/state"})
+		require.Equal(t, []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}}, req.DataVolumes)
+		writeJSONResponse(t, w, http.StatusCreated, BoxView{BoxID: "box-1", DataVolumes: []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}}})
 	}))
 	defer server.Close()
 	box, err := newProjectTestClient(t, server.URL, "default").CreateBox(t.Context(), CreateBoxRequest{
-		SourceSnapID: "snap-1", DataMountPath: "/state",
+		SourceSnapID: "snap-1", DataVolumes: []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
 	})
 	require.NoError(t, err)
-	require.Equal(t, "/state", box.DataMountPath)
+	require.Equal(t, "/state", box.DataVolumes[0].MountPath)
 }
 
 func TestClientCreateBoxOmitsDisabledDataDisk(t *testing.T) {
@@ -271,10 +271,10 @@ func TestClientCreateBoxOmitsDisabledDataDisk(t *testing.T) {
 	client := newProjectTestClient(t, server.URL, "default")
 	box, err := client.CreateBox(t.Context(), CreateBoxRequest{})
 	require.NoError(t, err)
-	require.Empty(t, box.DataMountPath)
+	require.Empty(t, box.DataVolumes)
 	box, err = client.CreateBoxFromSharedSnap(t.Context(), "python-dev", CreateBoxFromSharedSnapRequest{})
 	require.NoError(t, err)
-	require.Empty(t, box.DataMountPath)
+	require.Empty(t, box.DataVolumes)
 }
 
 func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
@@ -284,26 +284,26 @@ func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 
 		var req CreateBoxFromSharedSnapRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-		require.Equal(t, "/state", req.DataMountPath)
+		require.Equal(t, []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}}, req.DataVolumes)
 		require.Equal(t, "box-1", req.BoxID)
 		require.Equal(t, "2c4g", req.DesiredShape)
 
 		writeJSONResponse(t, w, http.StatusCreated, BoxView{
-			DataMountPath: "/state",
-			BoxID:         "box-1",
-			DesiredShape:  "2c4g",
+			DataVolumes:  []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
+			BoxID:        "box-1",
+			DesiredShape: "2c4g",
 		})
 	}))
 	defer server.Close()
 
 	view, err := newProjectTestClient(t, server.URL, "sandbox").CreateBoxFromSharedSnap(context.Background(), "python-dev", CreateBoxFromSharedSnapRequest{
-		DataMountPath: "/state",
-		BoxID:         "box-1",
-		DesiredShape:  "2c4g",
+		DataVolumes:  []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
+		BoxID:        "box-1",
+		DesiredShape: "2c4g",
 	})
 	require.NoError(t, err)
 	require.Equal(t, "box-1", view.BoxID)
-	require.Equal(t, "/state", view.DataMountPath)
+	require.Equal(t, "/state", view.DataVolumes[0].MountPath)
 }
 
 func TestClientListExecsIncludesExtendedFilters(t *testing.T) {

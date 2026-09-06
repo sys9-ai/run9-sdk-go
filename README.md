@@ -65,27 +65,30 @@ The SDK models the public control-plane contract. It does not include local conf
 
 ## Common Workflows
 
-Create a Box with a persistent data disk:
+Create a Box with independent persistent data disks:
 
 ```go
 box, err := client.WithProject("default").CreateBox(ctx, run9.CreateBoxRequest{
     SourceImageRef: "alpine:3.20",
-    DataMountPath:  "/state",
+    DataVolumes: []run9.DataVolumeConfig{
+        {MountPath: "/state"},
+        {MountPath: "/cache"},
+    },
 })
 ```
 
 The mount must be absent or empty in the source filesystem. The disk survives
 Stop and runtime replacement, but is deleted with the Box. Root Snap forks do
 not include its contents or mount configuration. Each derived Box must opt in
-again to receive a fresh empty disk. One disk per Box; the mount cannot be
-changed after creation.
+again to receive fresh empty disks. The disks and mounts cannot be changed
+after creation. Mount paths must be distinct and must not nest inside one another.
 
-`DataMountPath` is optional: leave it empty to disable the data disk. Paths are
+`DataVolumes` is optional: omit it or use an empty slice to create no data disks. Paths are
 Linux paths inside the Box, not directories on the caller's machine. Use a
 canonical absolute path such as `/state`, with no trailing slash or `.` / `..`
 components. Symlinks and runtime-managed paths are rejected by the server.
 The same option works with `CreateBoxFromSharedSnapRequest`, for both a pinned
-version and the latest version. `BoxView.DataMountPath` reports the configuration
+version and the latest version. `BoxView.DataVolumes` reports the configuration
 in create, get, list, and stop responses; it is not a runtime readiness signal.
 
 Use the existing Box exec, upload/download, and `BoxFileSystem` methods to access
