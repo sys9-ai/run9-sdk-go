@@ -20,7 +20,11 @@ type CreateBoxPayload struct {
 	// box id
 	BoxID string `json:"box_id,omitempty"`
 
-	// DataMountPath enables a fresh, Box-owned persistent filesystem at this fixed path.
+	// DataMountPath optionally creates one new empty Box-owned data disk. Omit or use an empty string to disable it.
+	// Use a canonical absolute Linux path other than root, with no trailing slash, dot components, or runtime-managed path overlap.
+	// The source directory must be absent or empty and must not traverse symlinks. The fixed mount cannot be changed later.
+	// Data survives Stop and runtime replacement, is deleted with the Box, and is never inherited from or included in Root Snap forks.
+	// Example: /state
 	DataMountPath string `json:"data_mount_path,omitempty"`
 
 	// description

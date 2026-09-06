@@ -160,6 +160,7 @@ func (c *Client) GetBox(ctx context.Context, boxID string) (BoxView, error) {
 }
 
 // StopBox requests a graceful stop for one box.
+// It finalizes and retains Root and the optional data disk for subsequent execution.
 func (c *Client) StopBox(ctx context.Context, boxID string) (BoxView, error) {
 	return projectGeneratedResult[BoxView](c, func(projectCID string) (any, error) {
 		return c.portal.Boxes.StopBoxContext(ctx, &boxes.StopBoxParams{
@@ -170,6 +171,8 @@ func (c *Client) StopBox(ctx context.Context, boxID string) (BoxView, error) {
 }
 
 // DeleteBox deletes one box.
+// It also deletes the Box's Root and optional data disk; the data disk cannot
+// be recovered independently. Use StopBox to retain data while releasing compute.
 func (c *Client) DeleteBox(ctx context.Context, boxID string) (BoxView, error) {
 	return projectGeneratedResult[BoxView](c, func(projectCID string) (any, error) {
 		return c.portal.Boxes.DeleteBoxContext(ctx, &boxes.DeleteBoxParams{
@@ -218,6 +221,8 @@ func (c *Client) GetSnap(ctx context.Context, snapID string) (SnapView, error) {
 }
 
 // ForkSnap creates a writable child snap from an existing snap.
+// Forking a Box's Root Snap excludes its data disk and mount configuration.
+// To give a derived Box a new empty disk, set CreateBoxRequest.DataMountPath.
 func (c *Client) ForkSnap(ctx context.Context, snapID string) (SnapView, error) {
 	return projectGeneratedResult[SnapView](c, func(projectCID string) (any, error) {
 		return c.portal.Snaps.ForkSnapContext(ctx, &snaps.ForkSnapParams{

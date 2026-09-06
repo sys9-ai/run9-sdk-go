@@ -31,6 +31,12 @@ definitions:
       box_id:
         type: string
       data_mount_path:
+        description: |-
+          DataMountPath optionally creates one new empty Box-owned data disk. Omit or use an empty string to disable it.
+          Use a canonical absolute Linux path other than root, with no trailing slash, dot components, or runtime-managed path overlap.
+          The source directory must be absent or empty and must not traverse symlinks. The fixed mount cannot be changed later.
+          Data survives Stop and runtime replacement, is deleted with the Box, and is never inherited from or included in Root Snap forks.
+        example: /state
         type: string
       description:
         type: string
@@ -67,8 +73,12 @@ definitions:
       box_id:
         type: string
       data_mount_path:
-        description: DataMountPath enables a fresh, Box-owned persistent filesystem
-          at this fixed path.
+        description: |-
+          DataMountPath optionally creates one new empty Box-owned data disk. Omit or use an empty string to disable it.
+          Use a canonical absolute Linux path other than root, with no trailing slash, dot components, or runtime-managed path overlap.
+          The source directory must be absent or empty and must not traverse symlinks. The fixed mount cannot be changed later.
+          Data survives Stop and runtime replacement, is deleted with the Box, and is never inherited from or included in Root Snap forks.
+        example: /state
         type: string
       description:
         type: string
@@ -485,8 +495,9 @@ definitions:
       current_runtime_shape:
         type: string
       data_mount_path:
-        description: DataMountPath is the fixed location of the optional Box-owned
-          data filesystem.
+        description: |-
+          DataMountPath is the fixed mount of the Box-owned data disk; omitted when disabled.
+          This is configuration, not runtime mount readiness. Stop retains this disk; deleting the Box deletes it. Root Snap forks exclude it.
         type: string
       description:
         type: string
@@ -3152,6 +3163,9 @@ paths:
       - Boxes
   /projects/{project_cid}/workspace/boxes/{id}:
     delete:
+      description: Deletes the logical Box, its Root, and its optional data disk.
+        Storage reclamation may be asynchronous. Use Stop instead to release compute
+        while retaining data; the data disk has no independent recovery capability.
       operationId: deleteBox
       parameters:
       - description: Project handle (`project_cid`).
@@ -3693,6 +3707,9 @@ paths:
       - Boxes
   /projects/{project_cid}/workspace/boxes/{id}/stop:
     post:
+      description: Stops the runtime and completes storage finalization while preserving
+        the logical Box, its Root, and its optional data disk. A subsequent execution
+        uses the same storage.
       operationId: stopBox
       parameters:
       - description: Project handle (`project_cid`).
@@ -4416,6 +4433,9 @@ paths:
       - Snaps
   /projects/{project_cid}/workspace/snaps/{id}/fork:
     post:
+      description: Forks only the source Snap filesystem. For a Box Root Snap, neither
+        the data disk nor its mount configuration is included. A derived Box must
+        explicitly request its own new empty data disk.
       operationId: forkSnap
       parameters:
       - description: Project handle (`project_cid`).

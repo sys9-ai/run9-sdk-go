@@ -80,6 +80,21 @@ not include its contents or mount configuration. Each derived Box must opt in
 again to receive a fresh empty disk. One disk per Box; the mount cannot be
 changed after creation.
 
+`DataMountPath` is optional: leave it empty to disable the data disk. Paths are
+Linux paths inside the Box, not directories on the caller's machine. Use a
+canonical absolute path such as `/state`, with no trailing slash or `.` / `..`
+components. Symlinks and runtime-managed paths are rejected by the server.
+The same option works with `CreateBoxFromSharedSnapRequest`, for both a pinned
+version and the latest version. `BoxView.DataMountPath` reports the configuration
+in create, get, list, and stop responses; it is not a runtime readiness signal.
+
+Use the existing Box exec, upload/download, and `BoxFileSystem` methods to access
+data under the mount path, including read-only access while stopped. There is no
+separate volume handle, attachment API, or data Snap to manage. A failed mount
+does not fall back to writing the Root directory. The disk uses Run9's existing
+durability contract; it adds no cross-disk transaction or zero-loss host-crash
+guarantee.
+
 Load the current authenticated identity:
 
 ```go

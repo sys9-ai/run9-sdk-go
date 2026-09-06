@@ -259,6 +259,24 @@ func TestClientCreateBoxWithDataDisk(t *testing.T) {
 	require.Equal(t, "/state", box.DataMountPath)
 }
 
+func TestClientCreateBoxOmitsDisabledDataDisk(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		require.JSONEq(t, `{}`, string(body))
+		writeJSONResponse(t, w, http.StatusCreated, BoxView{BoxID: "box-1"})
+	}))
+	defer server.Close()
+	client := newProjectTestClient(t, server.URL, "default")
+	box, err := client.CreateBox(t.Context(), CreateBoxRequest{})
+	require.NoError(t, err)
+	require.Empty(t, box.DataMountPath)
+	box, err = client.CreateBoxFromSharedSnap(t.Context(), "python-dev", CreateBoxFromSharedSnapRequest{})
+	require.NoError(t, err)
+	require.Empty(t, box.DataMountPath)
+}
+
 func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/projects/sandbox/workspace/shared-snaps/python-dev/boxes", r.URL.Path)
@@ -271,8 +289,9 @@ func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 		require.Equal(t, "2c4g", req.DesiredShape)
 
 		writeJSONResponse(t, w, http.StatusCreated, BoxView{
-			BoxID:        "box-1",
-			DesiredShape: "2c4g",
+			DataMountPath: "/state",
+			BoxID:         "box-1",
+			DesiredShape:  "2c4g",
 		})
 	}))
 	defer server.Close()
@@ -284,6 +303,7 @@ func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, "box-1", view.BoxID)
+	require.Equal(t, "/state", view.DataMountPath)
 }
 
 func TestClientListExecsIncludesExtendedFilters(t *testing.T) {

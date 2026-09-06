@@ -272,7 +272,8 @@ type BoxView struct {
 	State       BoxState          `json:"state"`
 	Reason      string            `json:"reason,omitempty"`
 	BoxSnapID   string            `json:"box_snap_id"`
-	// DataMountPath is the fixed persistent data disk mount, or empty if disabled.
+	// DataMountPath is the fixed Box-owned data disk mount, or empty if disabled.
+	// It describes configuration, not whether a runtime is currently mounted.
 	DataMountPath             string         `json:"data_mount_path,omitempty"`
 	FileAccessURL             string         `json:"file_access_url,omitempty"`
 	DesiredShape              string         `json:"desired_shape"`
@@ -523,8 +524,13 @@ type TTYSize struct {
 
 // CreateBoxRequest creates a new box from an image or snap.
 type CreateBoxRequest struct {
-	// DataMountPath enables a new empty persistent disk at this absolute path.
-	// It survives Stop but is deleted with the Box and is never included in Root forks.
+	// DataMountPath enables one new empty Box-owned data disk; empty disables it.
+	// Use a canonical absolute Linux path other than root, without a trailing
+	// slash or dot components. The source directory must be absent or empty,
+	// must not traverse symlinks, and must not overlap runtime-managed paths.
+	// The mount is fixed at creation. Data survives Stop and runtime replacement,
+	// is deleted with the Box, and is excluded from Root Snap forks along with
+	// its mount configuration. The server validates the path and source contents.
 	DataMountPath string `json:"data_mount_path,omitempty"`
 	// BoxID requests one specific box identifier. When empty, the control plane generates one.
 	BoxID string `json:"box_id,omitempty"`
@@ -545,6 +551,8 @@ type CreateBoxRequest struct {
 // CreateBoxFromSharedSnapRequest creates a box from a published shared snap.
 type CreateBoxFromSharedSnapRequest struct {
 	// DataMountPath enables a new empty persistent disk, independently of the shared snap.
+	// Empty disables it. Path, lifecycle, and immutability rules are identical
+	// to CreateBoxRequest.DataMountPath, including when Version selects latest.
 	DataMountPath string `json:"data_mount_path,omitempty"`
 	// Version selects one published version. When nil, the latest version is used.
 	Version *int `json:"version,omitempty"`

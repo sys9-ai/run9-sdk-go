@@ -24,6 +24,22 @@ func ExampleClient_CreateBox() {
 	log.Printf("Box %s stores persistent state at %s", box.BoxID, box.DataMountPath)
 }
 
+func ExampleClient_CreateBoxFromSharedSnap() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "ak-example", SK: "sk-example"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	// The latest shared version supplies Root only. This Box gets its own
+	// empty disk; neither the data nor this option is inherited from a Snap.
+	box, err := client.WithProject("default").CreateBoxFromSharedSnap(context.Background(), "python-dev", run9.CreateBoxFromSharedSnapRequest{
+		DataMountPath: "/state",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Box %s stores persistent state at %s", box.BoxID, box.DataMountPath)
+}
+
 func ExampleNewClient() {
 	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{
 		AK: "ak-...",

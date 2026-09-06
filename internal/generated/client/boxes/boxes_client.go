@@ -258,6 +258,8 @@ func (a *Client) CreateBoxSecretContext(ctx context.Context, params *CreateBoxSe
 /*
 DeleteBoxdeletes a box.
 
+Deletes the logical Box, its Root, and its optional data disk. Storage reclamation may be asynchronous. Use Stop instead to release compute while retaining data; the data disk has no independent recovery capability..
+
 This method does not support injected context.
 However, timeout and opentracing contexts are honored whenever enabled.
 
@@ -276,6 +278,8 @@ func (a *Client) DeleteBox(params *DeleteBoxParams, authInfo runtime.ClientAuthI
 
 /*
 DeleteBoxContextdeletes a box.
+
+Deletes the logical Box, its Root, and its optional data disk. Storage reclamation may be asynchronous. Use Stop instead to release compute while retaining data; the data disk has no independent recovery capability..
 
 Do not use the deprecated [DeleteBoxParams.Context] with this method: it would be ignored.
 */
@@ -593,6 +597,8 @@ func (a *Client) ListBoxesContext(ctx context.Context, params *ListBoxesParams, 
 /*
 StopBoxstops a box s runtime.
 
+Stops the runtime and completes storage finalization while preserving the logical Box, its Root, and its optional data disk. A subsequent execution uses the same storage..
+
 This method does not support injected context.
 However, timeout and opentracing contexts are honored whenever enabled.
 
@@ -611,6 +617,8 @@ func (a *Client) StopBox(params *StopBoxParams, authInfo runtime.ClientAuthInfoW
 
 /*
 StopBoxContextstops a box s runtime.
+
+Stops the runtime and completes storage finalization while preserving the logical Box, its Root, and its optional data disk. A subsequent execution uses the same storage..
 
 Do not use the deprecated [StopBoxParams.Context] with this method: it would be ignored.
 */

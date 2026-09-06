@@ -44,7 +44,8 @@ type APIBoxView struct {
 	// current runtime shape
 	CurrentRuntimeShape string `json:"current_runtime_shape,omitempty"`
 
-	// DataMountPath is the fixed location of the optional Box-owned data filesystem.
+	// DataMountPath is the fixed mount of the Box-owned data disk; omitted when disabled.
+	// This is configuration, not runtime mount readiness. Stop retains this disk; deleting the Box deletes it. Root Snap forks exclude it.
 	DataMountPath string `json:"data_mount_path,omitempty"`
 
 	// description
