@@ -30,6 +30,8 @@ definitions:
     properties:
       box_id:
         type: string
+      data_mount_path:
+        type: string
       description:
         type: string
       desired_shape:
@@ -63,6 +65,10 @@ definitions:
   CreateBoxPayload:
     properties:
       box_id:
+        type: string
+      data_mount_path:
+        description: DataMountPath enables a fresh, Box-owned persistent filesystem
+          at this fixed path.
         type: string
       description:
         type: string
@@ -477,6 +483,10 @@ definitions:
       current_runtime_network_mode:
         $ref: '#/definitions/api.BoxNetworkMode'
       current_runtime_shape:
+        type: string
+      data_mount_path:
+        description: DataMountPath is the fixed location of the optional Box-owned
+          data filesystem.
         type: string
       description:
         type: string
@@ -1548,6 +1558,10 @@ definitions:
     type: object
   pb.StopBoxResult:
     properties:
+      data_size_error:
+        type: string
+      released_data_size:
+        $ref: '#/definitions/pb.SnapSize'
       released_snap_size:
         $ref: '#/definitions/pb.SnapSize'
       size_error:

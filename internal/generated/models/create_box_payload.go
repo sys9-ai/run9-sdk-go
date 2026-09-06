@@ -20,6 +20,9 @@ type CreateBoxPayload struct {
 	// box id
 	BoxID string `json:"box_id,omitempty"`
 
+	// DataMountPath enables a fresh, Box-owned persistent filesystem at this fixed path.
+	DataMountPath string `json:"data_mount_path,omitempty"`
+
 	// description
 	Description string `json:"description,omitempty"`
 

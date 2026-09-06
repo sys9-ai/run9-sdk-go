@@ -3,10 +3,26 @@ package run9_test
 import (
 	"context"
 	"io"
+	"log"
 	"time"
 
 	run9 "github.com/sys9-ai/run9-sdk-go"
 )
+
+func ExampleClient_CreateBox() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "ak-example", SK: "sk-example"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	box, err := client.WithProject("default").CreateBox(context.Background(), run9.CreateBoxRequest{
+		SourceImageRef: "alpine:3.20",
+		DataMountPath:  "/state",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Box %s stores persistent state at %s", box.BoxID, box.DataMountPath)
+}
 
 func ExampleNewClient() {
 	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{

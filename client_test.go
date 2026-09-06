@@ -242,6 +242,23 @@ func TestClientUpdateBoxSecretOmitsAllowedHostsWhenUnset(t *testing.T) {
 	require.Equal(t, "secret-1", view.SecretID)
 }
 
+func TestClientCreateBoxWithDataDisk(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/projects/default/workspace/boxes", r.URL.Path)
+		require.Equal(t, http.MethodPost, r.Method)
+		var req CreateBoxRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
+		require.Equal(t, "/state", req.DataMountPath)
+		writeJSONResponse(t, w, http.StatusCreated, BoxView{BoxID: "box-1", DataMountPath: "/state"})
+	}))
+	defer server.Close()
+	box, err := newProjectTestClient(t, server.URL, "default").CreateBox(t.Context(), CreateBoxRequest{
+		SourceSnapID: "snap-1", DataMountPath: "/state",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "/state", box.DataMountPath)
+}
+
 func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/projects/sandbox/workspace/shared-snaps/python-dev/boxes", r.URL.Path)
@@ -249,6 +266,7 @@ func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 
 		var req CreateBoxFromSharedSnapRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
+		require.Equal(t, "/state", req.DataMountPath)
 		require.Equal(t, "box-1", req.BoxID)
 		require.Equal(t, "2c4g", req.DesiredShape)
 
@@ -260,8 +278,9 @@ func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 	defer server.Close()
 
 	view, err := newProjectTestClient(t, server.URL, "sandbox").CreateBoxFromSharedSnap(context.Background(), "python-dev", CreateBoxFromSharedSnapRequest{
-		BoxID:        "box-1",
-		DesiredShape: "2c4g",
+		DataMountPath: "/state",
+		BoxID:         "box-1",
+		DesiredShape:  "2c4g",
 	})
 	require.NoError(t, err)
 	require.Equal(t, "box-1", view.BoxID)

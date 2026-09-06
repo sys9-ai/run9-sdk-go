@@ -261,25 +261,27 @@ type ListBoxesRequest struct {
 
 // BoxView describes one box. FileAccessURL is its stable read-only filesystem capability URL.
 type BoxView struct {
-	BoxID                     string            `json:"box_id"`
-	OrgID                     string            `json:"org_id"`
-	ProjectID                 string            `json:"project_id"`
-	Creator                   string            `json:"creator"`
-	CreatedAt                 time.Time         `json:"created_at"`
-	LastUsedAt                time.Time         `json:"last_used_at"`
-	Description               string            `json:"description,omitempty"`
-	Labels                    map[string]string `json:"labels,omitempty"`
-	State                     BoxState          `json:"state"`
-	Reason                    string            `json:"reason,omitempty"`
-	BoxSnapID                 string            `json:"box_snap_id"`
-	FileAccessURL             string            `json:"file_access_url,omitempty"`
-	DesiredShape              string            `json:"desired_shape"`
-	NetworkMode               BoxNetworkMode    `json:"network_mode"`
-	CurrentHostID             string            `json:"current_host_id,omitempty"`
-	CurrentRuntimeShape       string            `json:"current_runtime_shape,omitempty"`
-	CurrentRuntimeNetworkMode BoxNetworkMode    `json:"current_runtime_network_mode,omitempty"`
-	PendingShapeChange        bool              `json:"pending_shape_change"`
-	PendingNetworkModeChange  bool              `json:"pending_network_mode_change"`
+	BoxID       string            `json:"box_id"`
+	OrgID       string            `json:"org_id"`
+	ProjectID   string            `json:"project_id"`
+	Creator     string            `json:"creator"`
+	CreatedAt   time.Time         `json:"created_at"`
+	LastUsedAt  time.Time         `json:"last_used_at"`
+	Description string            `json:"description,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	State       BoxState          `json:"state"`
+	Reason      string            `json:"reason,omitempty"`
+	BoxSnapID   string            `json:"box_snap_id"`
+	// DataMountPath is the fixed persistent data disk mount, or empty if disabled.
+	DataMountPath             string         `json:"data_mount_path,omitempty"`
+	FileAccessURL             string         `json:"file_access_url,omitempty"`
+	DesiredShape              string         `json:"desired_shape"`
+	NetworkMode               BoxNetworkMode `json:"network_mode"`
+	CurrentHostID             string         `json:"current_host_id,omitempty"`
+	CurrentRuntimeShape       string         `json:"current_runtime_shape,omitempty"`
+	CurrentRuntimeNetworkMode BoxNetworkMode `json:"current_runtime_network_mode,omitempty"`
+	PendingShapeChange        bool           `json:"pending_shape_change"`
+	PendingNetworkModeChange  bool           `json:"pending_network_mode_change"`
 }
 
 // SnapView describes one snap. FileAccessURL reads a detached snap's immutable
@@ -521,6 +523,9 @@ type TTYSize struct {
 
 // CreateBoxRequest creates a new box from an image or snap.
 type CreateBoxRequest struct {
+	// DataMountPath enables a new empty persistent disk at this absolute path.
+	// It survives Stop but is deleted with the Box and is never included in Root forks.
+	DataMountPath string `json:"data_mount_path,omitempty"`
 	// BoxID requests one specific box identifier. When empty, the control plane generates one.
 	BoxID string `json:"box_id,omitempty"`
 	// DesiredShape requests the compute shape for the box.
@@ -539,6 +544,8 @@ type CreateBoxRequest struct {
 
 // CreateBoxFromSharedSnapRequest creates a box from a published shared snap.
 type CreateBoxFromSharedSnapRequest struct {
+	// DataMountPath enables a new empty persistent disk, independently of the shared snap.
+	DataMountPath string `json:"data_mount_path,omitempty"`
 	// Version selects one published version. When nil, the latest version is used.
 	Version *int `json:"version,omitempty"`
 	// BoxID requests one specific box identifier. When empty, the control plane generates one.

@@ -65,6 +65,21 @@ The SDK models the public control-plane contract. It does not include local conf
 
 ## Common Workflows
 
+Create a Box with a persistent data disk:
+
+```go
+box, err := client.WithProject("default").CreateBox(ctx, run9.CreateBoxRequest{
+    SourceImageRef: "alpine:3.20",
+    DataMountPath:  "/state",
+})
+```
+
+The mount must be absent or empty in the source filesystem. The disk survives
+Stop and runtime replacement, but is deleted with the Box. Root Snap forks do
+not include its contents or mount configuration. Each derived Box must opt in
+again to receive a fresh empty disk. One disk per Box; the mount cannot be
+changed after creation.
+
 Load the current authenticated identity:
 
 ```go

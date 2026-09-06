@@ -44,6 +44,9 @@ type APIBoxView struct {
 	// current runtime shape
 	CurrentRuntimeShape string `json:"current_runtime_shape,omitempty"`
 
+	// DataMountPath is the fixed location of the optional Box-owned data filesystem.
+	DataMountPath string `json:"data_mount_path,omitempty"`
+
 	// description
 	Description string `json:"description,omitempty"`
 

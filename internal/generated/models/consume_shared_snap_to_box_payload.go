@@ -20,6 +20,9 @@ type ConsumeSharedSnapToBoxPayload struct {
 	// box id
 	BoxID string `json:"box_id,omitempty"`
 
+	// data mount path
+	DataMountPath string `json:"data_mount_path,omitempty"`
+
 	// description
 	Description string `json:"description,omitempty"`
 

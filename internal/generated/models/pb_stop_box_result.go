@@ -17,6 +17,12 @@ import (
 // swagger:model pb.StopBoxResult
 type PbStopBoxResult struct {
 
+	// data size error
+	DataSizeError string `json:"data_size_error,omitempty"`
+
+	// released data size
+	ReleasedDataSize *PbSnapSize `json:"released_data_size,omitempty"`
+
 	// released snap size
 	ReleasedSnapSize *PbSnapSize `json:"released_snap_size,omitempty"`
 
@@ -28,6 +34,10 @@ type PbStopBoxResult struct {
 func (m *PbStopBoxResult) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateReleasedDataSize(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateReleasedSnapSize(formats); err != nil {
 		res = append(res, err)
 	}
@@ -35,6 +45,29 @@ func (m *PbStopBoxResult) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *PbStopBoxResult) validateReleasedDataSize(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.ReleasedDataSize) { // not required
+		return nil
+	}
+
+	if m.ReleasedDataSize != nil {
+		if err := m.ReleasedDataSize.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("released_data_size")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("released_data_size")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -65,6 +98,10 @@ func (m *PbStopBoxResult) validateReleasedSnapSize(formats strfmt.Registry) erro
 func (m *PbStopBoxResult) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateReleasedDataSize(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateReleasedSnapSize(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -72,6 +109,31 @@ func (m *PbStopBoxResult) ContextValidate(ctx context.Context, formats strfmt.Re
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *PbStopBoxResult) contextValidateReleasedDataSize(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ReleasedDataSize != nil {
+
+		if typeutils.IsZero(m.ReleasedDataSize) { // not required
+			return nil
+		}
+
+		if err := m.ReleasedDataSize.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("released_data_size")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("released_data_size")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
