@@ -160,7 +160,7 @@ func (c *Client) GetBox(ctx context.Context, boxID string) (BoxView, error) {
 }
 
 // StopBox requests a graceful stop for one box.
-// It finalizes and retains Root and the optional data disk for subsequent execution.
+// It finalizes and retains the Attached Snap and all Volumes for subsequent execution.
 func (c *Client) StopBox(ctx context.Context, boxID string) (BoxView, error) {
 	return projectGeneratedResult[BoxView](c, func(projectCID string) (any, error) {
 		return c.portal.Boxes.StopBoxContext(ctx, &boxes.StopBoxParams{
@@ -171,8 +171,8 @@ func (c *Client) StopBox(ctx context.Context, boxID string) (BoxView, error) {
 }
 
 // DeleteBox deletes one box.
-// It also deletes the Box's Root and optional data disk; the data disk cannot
-// be recovered independently. Use StopBox to retain data while releasing compute.
+// It also deletes the Attached Snap and all Volumes. Detached Snaps previously
+// forked from them survive. Use StopBox to retain data while releasing compute.
 func (c *Client) DeleteBox(ctx context.Context, boxID string) (BoxView, error) {
 	return projectGeneratedResult[BoxView](c, func(projectCID string) (any, error) {
 		return c.portal.Boxes.DeleteBoxContext(ctx, &boxes.DeleteBoxParams{
@@ -220,9 +220,9 @@ func (c *Client) GetSnap(ctx context.Context, snapID string) (SnapView, error) {
 	})
 }
 
-// ForkSnap creates a writable child snap from an existing snap.
-// Forking a Box's Root Snap excludes its data disk and mount configuration.
-// To give a derived Box a new empty disk, set CreateBoxRequest.DataVolumes.
+// ForkSnap creates an independent detached Snap from the selected Snap's contents.
+// For a Box's Attached Snap or Volume, stop the owning Box and let storage settle
+// first. Other mounts and mount configuration are not included in the fork.
 func (c *Client) ForkSnap(ctx context.Context, snapID string) (SnapView, error) {
 	return projectGeneratedResult[SnapView](c, func(projectCID string) (any, error) {
 		return c.portal.Snaps.ForkSnapContext(ctx, &snaps.ForkSnapParams{

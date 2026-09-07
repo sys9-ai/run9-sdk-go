@@ -242,24 +242,25 @@ func TestClientUpdateBoxSecretOmitsAllowedHostsWhenUnset(t *testing.T) {
 	require.Equal(t, "secret-1", view.SecretID)
 }
 
-func TestClientCreateBoxWithDataDisk(t *testing.T) {
+func TestClientCreateBoxWithVolumes(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/projects/default/workspace/boxes", r.URL.Path)
 		require.Equal(t, http.MethodPost, r.Method)
 		var req CreateBoxRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-		require.Equal(t, []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}}, req.DataVolumes)
-		writeJSONResponse(t, w, http.StatusCreated, BoxView{BoxID: "box-1", DataVolumes: []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}}})
+		require.Equal(t, []VolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}}, req.Volumes)
+		writeJSONResponse(t, w, http.StatusCreated, BoxView{BoxID: "box-1", Volumes: []VolumeView{{SnapID: "svolume01", MountPath: "/state"}, {SnapID: "svolume02", MountPath: "/cache"}}})
 	}))
 	defer server.Close()
 	box, err := newProjectTestClient(t, server.URL, "default").CreateBox(t.Context(), CreateBoxRequest{
-		SourceSnapID: "snap-1", DataVolumes: []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
+		SourceSnapID: "snap-1", Volumes: []VolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
 	})
 	require.NoError(t, err)
-	require.Equal(t, "/state", box.DataVolumes[0].MountPath)
+	require.Equal(t, "/state", box.Volumes[0].MountPath)
+	require.Equal(t, "svolume01", box.Volumes[0].SnapID)
 }
 
-func TestClientCreateBoxOmitsDisabledDataDisk(t *testing.T) {
+func TestClientCreateBoxOmitsDisabledVolumes(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		body, err := io.ReadAll(r.Body)
@@ -271,10 +272,10 @@ func TestClientCreateBoxOmitsDisabledDataDisk(t *testing.T) {
 	client := newProjectTestClient(t, server.URL, "default")
 	box, err := client.CreateBox(t.Context(), CreateBoxRequest{})
 	require.NoError(t, err)
-	require.Empty(t, box.DataVolumes)
+	require.Empty(t, box.Volumes)
 	box, err = client.CreateBoxFromSharedSnap(t.Context(), "python-dev", CreateBoxFromSharedSnapRequest{})
 	require.NoError(t, err)
-	require.Empty(t, box.DataVolumes)
+	require.Empty(t, box.Volumes)
 }
 
 func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
@@ -284,12 +285,12 @@ func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 
 		var req CreateBoxFromSharedSnapRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-		require.Equal(t, []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}}, req.DataVolumes)
+		require.Equal(t, []VolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}}, req.Volumes)
 		require.Equal(t, "box-1", req.BoxID)
 		require.Equal(t, "2c4g", req.DesiredShape)
 
 		writeJSONResponse(t, w, http.StatusCreated, BoxView{
-			DataVolumes:  []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
+			Volumes:      []VolumeView{{SnapID: "svolume01", MountPath: "/state"}, {SnapID: "svolume02", MountPath: "/cache"}},
 			BoxID:        "box-1",
 			DesiredShape: "2c4g",
 		})
@@ -297,13 +298,13 @@ func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 	defer server.Close()
 
 	view, err := newProjectTestClient(t, server.URL, "sandbox").CreateBoxFromSharedSnap(context.Background(), "python-dev", CreateBoxFromSharedSnapRequest{
-		DataVolumes:  []DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
+		Volumes:      []VolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
 		BoxID:        "box-1",
 		DesiredShape: "2c4g",
 	})
 	require.NoError(t, err)
 	require.Equal(t, "box-1", view.BoxID)
-	require.Equal(t, "/state", view.DataVolumes[0].MountPath)
+	require.Equal(t, "/state", view.Volumes[0].MountPath)
 }
 
 func TestClientListExecsIncludesExtendedFilters(t *testing.T) {

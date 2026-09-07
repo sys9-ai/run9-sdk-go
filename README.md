@@ -65,12 +65,12 @@ The SDK models the public control-plane contract. It does not include local conf
 
 ## Common Workflows
 
-Create a Box with independent persistent data disks:
+Create a Box with independent persistent Volumes:
 
 ```go
 box, err := client.WithProject("default").CreateBox(ctx, run9.CreateBoxRequest{
     SourceImageRef: "alpine:3.20",
-    DataVolumes: []run9.DataVolumeConfig{
+    Volumes: []run9.VolumeConfig{
         {MountPath: "/state"},
         {MountPath: "/cache"},
     },
@@ -80,20 +80,37 @@ box, err := client.WithProject("default").CreateBox(ctx, run9.CreateBoxRequest{
 The mount must be absent or empty in the source filesystem. The disk survives
 Stop and runtime replacement, but is deleted with the Box. Root Snap forks do
 not include its contents or mount configuration. Each derived Box must opt in
-again to receive fresh empty disks. The disks and mounts cannot be changed
+again to receive fresh empty Volumes. The disks and mounts cannot be changed
 after creation. Mount paths must be distinct and must not nest inside one another.
 
-`DataVolumes` is optional: omit it or use an empty slice to create no data disks. Paths are
+`Volumes` is optional: omit it or use an empty slice to create no Volumes. Paths are
 Linux paths inside the Box, not directories on the caller's machine. Use a
 canonical absolute path such as `/state`, with no trailing slash or `.` / `..`
 components. Symlinks and runtime-managed paths are rejected by the server.
 The same option works with `CreateBoxFromSharedSnapRequest`, for both a pinned
-version and the latest version. `BoxView.DataVolumes` reports the configuration
+version and the latest version. `BoxView.Volumes` reports each `SnapID` and `MountPath`
 in create, get, list, and stop responses; it is not a runtime readiness signal.
 
 Use the existing Box exec, upload/download, and `BoxFileSystem` methods to access
 data under the mount path, including read-only access while stopped. There is no
-separate volume handle, attachment API, or data Snap to manage. A failed mount
+separate attachment API. Each Volume is an attached Snap and appears in
+`ListSnaps` with `Attached: true`, its owning Box, and its mount path. `SnapFileSystem`
+reads that Volume's own filesystem, without other Box mounts. Stop the Box before
+forking a Volume by its Snap ID:
+
+```go
+_, err = client.WithProject("default").StopBox(ctx, box.BoxID)
+if err == nil {
+    saved, forkErr := client.WithProject("default").ForkSnap(ctx, box.Volumes[0].SnapID)
+    // saved is an independent detached Snap; deleting the Box does not delete it.
+    _ = saved
+    _ = forkErr
+}
+```
+
+Volumes cannot be deleted independently or initialized from a Snap in this MVP.
+A saved Snap may contain only application files, not a bootable root filesystem.
+A failed mount
 does not fall back to writing the Root directory. The disk uses Run9's existing
 durability contract; it adds no cross-disk transaction or zero-loss host-crash
 guarantee.
@@ -161,7 +178,7 @@ defer reader.Close()
 _, err = io.Copy(os.Stdout, reader)
 ```
 
-Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; an attached snap resolves to its owning box view. `RootedAt` makes the selected directory the filesystem root, including for symlink resolution. Resolve `FileSystem` once and reuse it for concurrent `Open`, `Stat`, `GlobFiles`, and paginated `ReadDir` calls. `GlobFiles` applies one case-sensitive doublestar pattern to regular-file paths relative to the requested directory; brace alternatives are not supported. Results are lexically ordered by default. `RankingQuery` instead applies VS Code File Quick Open-style relevance before the limit. `RespectGitIgnore` applies the requested directory's root and nested `.gitignore` files before matching, ranking, and limiting. Both options keep the operation to one bounded request rather than recursively listing remote directories.
+Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; a Volume reads only its own filesystem, excluding other mounts. The original root Attached Snap retains its owning Box's composed view. `RootedAt` makes the selected directory the filesystem root, including for symlink resolution. Resolve `FileSystem` once and reuse it for concurrent `Open`, `Stat`, `GlobFiles`, and paginated `ReadDir` calls. `GlobFiles` applies one case-sensitive doublestar pattern to regular-file paths relative to the requested directory; brace alternatives are not supported. Results are lexically ordered by default. `RankingQuery` instead applies VS Code File Quick Open-style relevance before the limit. `RespectGitIgnore` applies the requested directory's root and nested `.gitignore` files before matching, ranking, and limiting. Both options keep the operation to one bounded request rather than recursively listing remote directories.
 
 Run one foreground exec and stream its output:
 

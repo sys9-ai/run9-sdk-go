@@ -23,6 +23,9 @@ type APISnapTreeAttachedBoxView struct {
 	// desired shape
 	DesiredShape string `json:"desired_shape,omitempty"`
 
+	// mount path
+	MountPath string `json:"mount_path,omitempty"`
+
 	// state
 	State APIBoxState `json:"state,omitempty"`
 }

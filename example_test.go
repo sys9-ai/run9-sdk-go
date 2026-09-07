@@ -16,12 +16,12 @@ func ExampleClient_CreateBox() {
 	}
 	box, err := client.WithProject("default").CreateBox(context.Background(), run9.CreateBoxRequest{
 		SourceImageRef: "alpine:3.20",
-		DataVolumes:    []run9.DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
+		Volumes:        []run9.VolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Box %s has persistent disks %v", box.BoxID, box.DataVolumes)
+	log.Printf("Box %s has persistent Volumes %v", box.BoxID, box.Volumes)
 }
 
 func ExampleClient_CreateBoxFromSharedSnap() {
@@ -30,14 +30,32 @@ func ExampleClient_CreateBoxFromSharedSnap() {
 		log.Fatal(err)
 	}
 	// The latest shared version supplies Root only. This Box gets its own
-	// empty disk; neither the data nor this option is inherited from a Snap.
+	// empty Volume; neither the data nor this option is inherited from a Snap.
 	box, err := client.WithProject("default").CreateBoxFromSharedSnap(context.Background(), "python-dev", run9.CreateBoxFromSharedSnapRequest{
-		DataVolumes: []run9.DataVolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
+		Volumes: []run9.VolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Box %s has persistent disks %v", box.BoxID, box.DataVolumes)
+	log.Printf("Box %s has persistent Volumes %v", box.BoxID, box.Volumes)
+}
+
+func ExampleClient_ForkSnap() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "ak-example", SK: "sk-example"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	project := client.WithProject("default")
+	box, err := project.StopBox(context.Background(), "stateful-box")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Select exactly one Volume; forking does not include the Box's other mounts.
+	saved, err := project.ForkSnap(context.Background(), box.Volumes[0].SnapID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Saved independent detached Snap %s", saved.SnapID)
 }
 
 func ExampleNewClient() {

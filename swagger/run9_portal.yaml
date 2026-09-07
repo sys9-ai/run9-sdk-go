@@ -30,15 +30,6 @@ definitions:
     properties:
       box_id:
         type: string
-      data_volumes:
-        description: |-
-          DataVolumes creates independent empty Box-owned data disks. Omit or use an empty list to disable them.
-          Each mount is fixed at creation. Data survives Stop and runtime replacement, is deleted with the Box,
-          and is never inherited from or included in Root Snap forks. Mount paths cannot overlap.
-        items:
-          $ref: '#/definitions/api.DataVolumeConfig'
-        type: array
-        x-omitempty: true
       description:
         type: string
       desired_shape:
@@ -52,6 +43,15 @@ definitions:
       version:
         type: integer
         x-nullable: true
+      volumes:
+        description: |-
+          DataVolumes creates independent empty Box-owned volumes. Omit or use an empty list to disable them.
+          Each mount is fixed at creation. Data survives Stop and runtime replacement, is deleted with the Box,
+          and is never inherited from or included in Root Snap forks. Mount paths cannot overlap.
+        items:
+          $ref: '#/definitions/api.VolumeConfig'
+        type: array
+        x-omitempty: true
     type: object
   ConsumeSharedSnapToSnapPayload:
     properties:
@@ -73,15 +73,6 @@ definitions:
     properties:
       box_id:
         type: string
-      data_volumes:
-        description: |-
-          DataVolumes creates independent empty Box-owned data disks. Omit or use an empty list to disable them.
-          Each mount is fixed at creation. Data survives Stop and runtime replacement, is deleted with the Box,
-          and is never inherited from or included in Root Snap forks. Mount paths cannot overlap.
-        items:
-          $ref: '#/definitions/api.DataVolumeConfig'
-        type: array
-        x-omitempty: true
       description:
         type: string
       desired_shape:
@@ -100,6 +91,15 @@ definitions:
         type: string
       source_snap_id:
         type: string
+      volumes:
+        description: |-
+          DataVolumes creates independent empty Box-owned volumes. Omit or use an empty list to disable them.
+          Each mount is fixed at creation. Data survives Stop and runtime replacement, is deleted with the Box,
+          and is never inherited from or included in Root Snap forks. Mount paths cannot overlap.
+        items:
+          $ref: '#/definitions/api.VolumeConfig'
+        type: array
+        x-omitempty: true
     type: object
   CreateInvitationPayload:
     properties:
@@ -496,15 +496,6 @@ definitions:
         $ref: '#/definitions/api.BoxNetworkMode'
       current_runtime_shape:
         type: string
-      data_volumes:
-        description: |-
-          DataVolumes describes the fixed Box-owned data disks; omitted when disabled.
-          This is configuration, not runtime mount readiness. Stop retains every disk;
-          deleting the Box deletes them. Root Snap forks exclude data and configuration.
-        items:
-          $ref: '#/definitions/api.DataVolumeConfig'
-        type: array
-        x-omitempty: true
       description:
         type: string
       desired_shape:
@@ -533,6 +524,15 @@ definitions:
         type: string
       state:
         $ref: '#/definitions/api.BoxState'
+      volumes:
+        description: |-
+          DataVolumes describes the fixed Box-owned volumes; omitted when disabled.
+          This is configuration, not runtime mount readiness. Stop retains every disk;
+          deleting the Box deletes them. Root Snap forks exclude data and configuration.
+        items:
+          $ref: '#/definitions/api.VolumeView'
+        type: array
+        x-omitempty: true
     type: object
   api.CreatedAPIKeyView:
     properties:
@@ -605,16 +605,6 @@ definitions:
     - DataTransferStateSucceeded
     - DataTransferStateError
     - DataTransferStateCancelled
-  api.DataVolumeConfig:
-    properties:
-      mount_path:
-        description: |-
-          MountPath is a canonical absolute Linux directory inside the Box.
-          Its Root location must be absent or empty and cannot traverse symlinks,
-          overlap runtime-managed paths, or overlap another data mount.
-        example: /state
-        type: string
-    type: object
   api.DeleteInvitationResult:
     properties:
       invitation_id:
@@ -1330,6 +1320,8 @@ definitions:
         type: string
       desired_shape:
         type: string
+      mount_path:
+        type: string
       state:
         $ref: '#/definitions/api.BoxState'
     type: object
@@ -1390,6 +1382,10 @@ definitions:
       inuse_reason:
         $ref: '#/definitions/api.SnapInUseReason'
       last_used_at:
+        type: string
+      mount_path:
+        description: MountPath is the fixed path in the owning Box; absent for detached
+          Snaps.
         type: string
       org_id:
         type: string
@@ -1545,6 +1541,23 @@ definitions:
     - VerifyUserEmailStatusVerified
     - VerifyUserEmailStatusExpired
     - VerifyUserEmailStatusInvalid
+  api.VolumeConfig:
+    properties:
+      mount_path:
+        description: |-
+          MountPath is a canonical absolute Linux directory inside the Box.
+          Its Root location must be absent or empty and cannot traverse symlinks,
+          overlap runtime-managed paths, or overlap another data mount.
+        example: /state
+        type: string
+    type: object
+  api.VolumeView:
+    properties:
+      mount_path:
+        type: string
+      snap_id:
+        type: string
+    type: object
   api.elasticityDataTransfer:
     properties:
       accepted_at:

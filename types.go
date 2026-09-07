@@ -272,40 +272,44 @@ type BoxView struct {
 	State       BoxState          `json:"state"`
 	Reason      string            `json:"reason,omitempty"`
 	BoxSnapID   string            `json:"box_snap_id"`
-	// DataVolumes lists the fixed Box-owned data disk mounts; empty means none.
+	// Volumes lists the fixed Box-owned Snap mounts; empty means none.
 	// It describes configuration, not whether a runtime is currently mounted.
-	DataVolumes               []DataVolumeConfig `json:"data_volumes,omitempty"`
-	FileAccessURL             string             `json:"file_access_url,omitempty"`
-	DesiredShape              string             `json:"desired_shape"`
-	NetworkMode               BoxNetworkMode     `json:"network_mode"`
-	CurrentHostID             string             `json:"current_host_id,omitempty"`
-	CurrentRuntimeShape       string             `json:"current_runtime_shape,omitempty"`
-	CurrentRuntimeNetworkMode BoxNetworkMode     `json:"current_runtime_network_mode,omitempty"`
-	PendingShapeChange        bool               `json:"pending_shape_change"`
-	PendingNetworkModeChange  bool               `json:"pending_network_mode_change"`
+	Volumes                   []VolumeView   `json:"volumes,omitempty"`
+	FileAccessURL             string         `json:"file_access_url,omitempty"`
+	DesiredShape              string         `json:"desired_shape"`
+	NetworkMode               BoxNetworkMode `json:"network_mode"`
+	CurrentHostID             string         `json:"current_host_id,omitempty"`
+	CurrentRuntimeShape       string         `json:"current_runtime_shape,omitempty"`
+	CurrentRuntimeNetworkMode BoxNetworkMode `json:"current_runtime_network_mode,omitempty"`
+	PendingShapeChange        bool           `json:"pending_shape_change"`
+	PendingNetworkModeChange  bool           `json:"pending_network_mode_change"`
 }
 
-// SnapView describes one snap. FileAccessURL reads a detached snap's immutable
-// filesystem or the owning Box filesystem while the snap is attached.
+// SnapView describes one snap. FileAccessURL reads a detached Snap's immutable
+// filesystem or a Volume's own filesystem. The original root Attached Snap
+// retains the owning Box's composed filesystem view.
 type SnapView struct {
-	SnapID              string            `json:"snap_id"`
-	OrgID               string            `json:"org_id"`
-	ProjectID           string            `json:"project_id"`
-	Creator             string            `json:"creator"`
-	CreatedAt           time.Time         `json:"created_at"`
-	LastUsedAt          time.Time         `json:"last_used_at"`
-	State               SnapState         `json:"state"`
-	InUseReason         string            `json:"inuse_reason,omitempty"`
-	Reason              string            `json:"reason,omitempty"`
-	ParentChain         []string          `json:"parent_chain,omitempty"`
-	SourceImageRef      string            `json:"source_image_ref,omitempty"`
-	SourceImageDigest   string            `json:"source_image_digest,omitempty"`
-	SourceImagePlatform string            `json:"source_image_platform,omitempty"`
-	Attached            bool              `json:"attached"`
-	AttachedBoxID       string            `json:"attached_box_id,omitempty"`
-	FileAccessURL       string            `json:"file_access_url,omitempty"`
-	Size                *SnapSize         `json:"size,omitempty"`
-	OwnedStorage        *SnapOwnedStorage `json:"owned_storage,omitempty"`
+	SnapID              string    `json:"snap_id"`
+	OrgID               string    `json:"org_id"`
+	ProjectID           string    `json:"project_id"`
+	Creator             string    `json:"creator"`
+	CreatedAt           time.Time `json:"created_at"`
+	LastUsedAt          time.Time `json:"last_used_at"`
+	State               SnapState `json:"state"`
+	InUseReason         string    `json:"inuse_reason,omitempty"`
+	Reason              string    `json:"reason,omitempty"`
+	ParentChain         []string  `json:"parent_chain,omitempty"`
+	SourceImageRef      string    `json:"source_image_ref,omitempty"`
+	SourceImageDigest   string    `json:"source_image_digest,omitempty"`
+	SourceImagePlatform string    `json:"source_image_platform,omitempty"`
+	Attached            bool      `json:"attached"`
+	AttachedBoxID       string    `json:"attached_box_id,omitempty"`
+	// MountPath is the fixed path in the owning Box; root is "/".
+	// Detached Snaps omit it.
+	MountPath     string            `json:"mount_path,omitempty"`
+	FileAccessURL string            `json:"file_access_url,omitempty"`
+	Size          *SnapSize         `json:"size,omitempty"`
+	OwnedStorage  *SnapOwnedStorage `json:"owned_storage,omitempty"`
 }
 
 // SnapTreeView describes the ancestry tree returned for one snap.
@@ -333,7 +337,9 @@ type SnapTreeNodeView struct {
 
 // SnapTreeAttachedBoxView describes the box attached to one snap tree node.
 type SnapTreeAttachedBoxView struct {
-	BoxID        string   `json:"box_id"`
+	BoxID string `json:"box_id"`
+	// MountPath identifies this Snap's mount in the Box, including "/" for root.
+	MountPath    string   `json:"mount_path"`
 	DesiredShape string   `json:"desired_shape"`
 	State        BoxState `json:"state"`
 }
@@ -522,8 +528,16 @@ type TTYSize struct {
 	Cols uint32 `json:"cols,omitempty"`
 }
 
-// DataVolumeConfig creates one independent, empty, Box-owned persistent disk.
-type DataVolumeConfig struct {
+// VolumeView describes a Box-owned writable Snap and its fixed mount.
+// Stop preserves it; deleting the Box deletes it. ForkSnap saves an independent
+// detached Snap while the Box is stopped and storage has settled.
+type VolumeView struct {
+	SnapID    string `json:"snap_id"`
+	MountPath string `json:"mount_path"`
+}
+
+// VolumeConfig creates one independent, empty, Box-owned persistent Snap.
+type VolumeConfig struct {
 	// MountPath is a fixed directory inside the Box.
 	// Use a canonical absolute Linux path other than root, without a trailing
 	// slash or dot components. The source directory must be absent or empty,
@@ -536,9 +550,9 @@ type DataVolumeConfig struct {
 
 // CreateBoxRequest creates a new box from an image or snap.
 type CreateBoxRequest struct {
-	// DataVolumes creates independent empty data disks. Omit to create none.
+	// Volumes creates independent empty Volumes. Omit to create none.
 	// Mount paths must not overlap, including ancestor/descendant paths.
-	DataVolumes []DataVolumeConfig `json:"data_volumes,omitempty"`
+	Volumes []VolumeConfig `json:"volumes,omitempty"`
 	// BoxID requests one specific box identifier. When empty, the control plane generates one.
 	BoxID string `json:"box_id,omitempty"`
 	// DesiredShape requests the compute shape for the box.
@@ -557,9 +571,9 @@ type CreateBoxRequest struct {
 
 // CreateBoxFromSharedSnapRequest creates a box from a published shared snap.
 type CreateBoxFromSharedSnapRequest struct {
-	// DataVolumes creates independent empty disks, not inherited from the shared
-	// snap. Rules match CreateBoxRequest.DataVolumes, including latest versions.
-	DataVolumes []DataVolumeConfig `json:"data_volumes,omitempty"`
+	// Volumes creates independent empty Volumes, not inherited from the shared
+	// snap. Rules match CreateBoxRequest.Volumes, including latest versions.
+	Volumes []VolumeConfig `json:"volumes,omitempty"`
 	// Version selects one published version. When nil, the latest version is used.
 	Version *int `json:"version,omitempty"`
 	// BoxID requests one specific box identifier. When empty, the control plane generates one.

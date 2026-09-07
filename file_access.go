@@ -134,8 +134,9 @@ func (c *Client) BoxFileSystem(ctx context.Context, boxID string) (*FileSystem, 
 	return newFileSystem(view.FileAccessURL, c.http)
 }
 
-// SnapFileSystem resolves one Snap filesystem capability. Detached snaps use
-// their immutable read view; attached snaps resolve to their owning Box view.
+// SnapFileSystem resolves a Snap's read-only filesystem capability. A detached
+// Snap reads its immutable view; a Volume reads only its own contents. The
+// original root Attached Snap retains the owning Box's composed view.
 func (c *Client) SnapFileSystem(ctx context.Context, snapID string) (*FileSystem, error) {
 	view, err := c.GetSnap(ctx, snapID)
 	if err != nil {

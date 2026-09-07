@@ -69,7 +69,7 @@ func TestSnapFileSystemStatAndReadDir(t *testing.T) {
 	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/projects/default/workspace/snaps/snap-a":
-			writeJSONResponse(t, w, http.StatusOK, SnapView{SnapID: "snap-a", FileAccessURL: server.URL + "/snap-token/"})
+			writeJSONResponse(t, w, http.StatusOK, SnapView{SnapID: "snap-a", Attached: true, AttachedBoxID: "box-a", MountPath: "/state", FileAccessURL: server.URL + "/snap-token/"})
 		case "/snap-token/work/site/index.html":
 			require.Equal(t, http.MethodHead, r.Method)
 			w.Header().Set("X-Run9-File-Type", "file")

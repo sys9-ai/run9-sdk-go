@@ -9,10 +9,10 @@ import (
 	"github.com/go-openapi/swag/jsonutils"
 )
 
-// APIDataVolumeConfig api data volume config
+// APIVolumeConfig api volume config
 //
-// swagger:model api.DataVolumeConfig
-type APIDataVolumeConfig struct {
+// swagger:model api.VolumeConfig
+type APIVolumeConfig struct {
 
 	// MountPath is a canonical absolute Linux directory inside the Box.
 	// Its Root location must be absent or empty and cannot traverse symlinks,
@@ -21,18 +21,18 @@ type APIDataVolumeConfig struct {
 	MountPath string `json:"mount_path,omitempty"`
 }
 
-// Validate validates this api data volume config
-func (m *APIDataVolumeConfig) Validate(formats strfmt.Registry) error {
+// Validate validates this api volume config
+func (m *APIVolumeConfig) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this api data volume config based on context it is used
-func (m *APIDataVolumeConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this api volume config based on context it is used
+func (m *APIVolumeConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *APIDataVolumeConfig) MarshalBinary() ([]byte, error) {
+func (m *APIVolumeConfig) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -40,8 +40,8 @@ func (m *APIDataVolumeConfig) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *APIDataVolumeConfig) UnmarshalBinary(b []byte) error {
-	var res APIDataVolumeConfig
+func (m *APIVolumeConfig) UnmarshalBinary(b []byte) error {
+	var res APIVolumeConfig
 	if err := jsonutils.ReadJSON(b, &res); err != nil {
 		return err
 	}

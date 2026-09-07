@@ -44,6 +44,9 @@ type APISnapView struct {
 	// last used at
 	LastUsedAt string `json:"last_used_at,omitempty"`
 
+	// MountPath is the fixed path in the owning Box; absent for detached Snaps.
+	MountPath string `json:"mount_path,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 

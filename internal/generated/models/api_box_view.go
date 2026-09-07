@@ -45,11 +45,6 @@ type APIBoxView struct {
 	// current runtime shape
 	CurrentRuntimeShape string `json:"current_runtime_shape,omitempty"`
 
-	// DataVolumes describes the fixed Box-owned data disks; omitted when disabled.
-	// This is configuration, not runtime mount readiness. Stop retains every disk;
-	// deleting the Box deletes them. Root Snap forks exclude data and configuration.
-	DataVolumes []*APIDataVolumeConfig `json:"data_volumes,omitempty"`
-
 	// description
 	Description string `json:"description,omitempty"`
 
@@ -88,6 +83,11 @@ type APIBoxView struct {
 
 	// state
 	State APIBoxState `json:"state,omitempty"`
+
+	// DataVolumes describes the fixed Box-owned volumes; omitted when disabled.
+	// This is configuration, not runtime mount readiness. Stop retains every disk;
+	// deleting the Box deletes them. Root Snap forks exclude data and configuration.
+	Volumes []*APIVolumeView `json:"volumes,omitempty"`
 }
 
 // Validate validates this api box view
@@ -95,10 +95,6 @@ func (m *APIBoxView) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCurrentRuntimeNetworkMode(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateDataVolumes(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -111,6 +107,10 @@ func (m *APIBoxView) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateState(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateVolumes(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -136,36 +136,6 @@ func (m *APIBoxView) validateCurrentRuntimeNetworkMode(formats strfmt.Registry) 
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *APIBoxView) validateDataVolumes(formats strfmt.Registry) error {
-	if typeutils.IsZero(m.DataVolumes) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(m.DataVolumes); i++ {
-		if typeutils.IsZero(m.DataVolumes[i]) { // not required
-			continue
-		}
-
-		if m.DataVolumes[i] != nil {
-			if err := m.DataVolumes[i].Validate(formats); err != nil {
-				ve := new(errors.Validation)
-				if stderrors.As(err, &ve) {
-					return ve.ValidateName("data_volumes" + "." + strconv.Itoa(i))
-				}
-				ce := new(errors.CompositeError)
-				if stderrors.As(err, &ce) {
-					return ce.ValidateName("data_volumes" + "." + strconv.Itoa(i))
-				}
-
-				return err
-			}
-		}
-
 	}
 
 	return nil
@@ -236,15 +206,41 @@ func (m *APIBoxView) validateState(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *APIBoxView) validateVolumes(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.Volumes) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Volumes); i++ {
+		if typeutils.IsZero(m.Volumes[i]) { // not required
+			continue
+		}
+
+		if m.Volumes[i] != nil {
+			if err := m.Volumes[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("volumes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("volumes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this api box view based on the context it is used
 func (m *APIBoxView) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateCurrentRuntimeNetworkMode(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateDataVolumes(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -257,6 +253,10 @@ func (m *APIBoxView) ContextValidate(ctx context.Context, formats strfmt.Registr
 	}
 
 	if err := m.contextValidateState(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVolumes(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -283,35 +283,6 @@ func (m *APIBoxView) contextValidateCurrentRuntimeNetworkMode(ctx context.Contex
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *APIBoxView) contextValidateDataVolumes(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.DataVolumes); i++ {
-
-		if m.DataVolumes[i] != nil {
-
-			if typeutils.IsZero(m.DataVolumes[i]) { // not required
-				return nil
-			}
-
-			if err := m.DataVolumes[i].ContextValidate(ctx, formats); err != nil {
-				ve := new(errors.Validation)
-				if stderrors.As(err, &ve) {
-					return ve.ValidateName("data_volumes" + "." + strconv.Itoa(i))
-				}
-				ce := new(errors.CompositeError)
-				if stderrors.As(err, &ce) {
-					return ce.ValidateName("data_volumes" + "." + strconv.Itoa(i))
-				}
-
-				return err
-			}
-		}
-
 	}
 
 	return nil
@@ -381,6 +352,35 @@ func (m *APIBoxView) contextValidateState(ctx context.Context, formats strfmt.Re
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *APIBoxView) contextValidateVolumes(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Volumes); i++ {
+
+		if m.Volumes[i] != nil {
+
+			if typeutils.IsZero(m.Volumes[i]) { // not required
+				return nil
+			}
+
+			if err := m.Volumes[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("volumes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("volumes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

@@ -21,11 +21,6 @@ type ConsumeSharedSnapToBoxPayload struct {
 	// box id
 	BoxID string `json:"box_id,omitempty"`
 
-	// DataVolumes creates independent empty Box-owned data disks. Omit or use an empty list to disable them.
-	// Each mount is fixed at creation. Data survives Stop and runtime replacement, is deleted with the Box,
-	// and is never inherited from or included in Root Snap forks. Mount paths cannot overlap.
-	DataVolumes []*APIDataVolumeConfig `json:"data_volumes,omitempty"`
-
 	// description
 	Description string `json:"description,omitempty"`
 
@@ -40,53 +35,28 @@ type ConsumeSharedSnapToBoxPayload struct {
 
 	// version
 	Version *int64 `json:"version,omitempty"`
+
+	// DataVolumes creates independent empty Box-owned volumes. Omit or use an empty list to disable them.
+	// Each mount is fixed at creation. Data survives Stop and runtime replacement, is deleted with the Box,
+	// and is never inherited from or included in Root Snap forks. Mount paths cannot overlap.
+	Volumes []*APIVolumeConfig `json:"volumes,omitempty"`
 }
 
 // Validate validates this consume shared snap to box payload
 func (m *ConsumeSharedSnapToBoxPayload) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateDataVolumes(formats); err != nil {
+	if err := m.validateNetworkMode(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateNetworkMode(formats); err != nil {
+	if err := m.validateVolumes(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ConsumeSharedSnapToBoxPayload) validateDataVolumes(formats strfmt.Registry) error {
-	if typeutils.IsZero(m.DataVolumes) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(m.DataVolumes); i++ {
-		if typeutils.IsZero(m.DataVolumes[i]) { // not required
-			continue
-		}
-
-		if m.DataVolumes[i] != nil {
-			if err := m.DataVolumes[i].Validate(formats); err != nil {
-				ve := new(errors.Validation)
-				if stderrors.As(err, &ve) {
-					return ve.ValidateName("data_volumes" + "." + strconv.Itoa(i))
-				}
-				ce := new(errors.CompositeError)
-				if stderrors.As(err, &ce) {
-					return ce.ValidateName("data_volumes" + "." + strconv.Itoa(i))
-				}
-
-				return err
-			}
-		}
-
-	}
-
 	return nil
 }
 
@@ -111,42 +81,25 @@ func (m *ConsumeSharedSnapToBoxPayload) validateNetworkMode(formats strfmt.Regis
 	return nil
 }
 
-// ContextValidate validate this consume shared snap to box payload based on the context it is used
-func (m *ConsumeSharedSnapToBoxPayload) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateDataVolumes(ctx, formats); err != nil {
-		res = append(res, err)
+func (m *ConsumeSharedSnapToBoxPayload) validateVolumes(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.Volumes) { // not required
+		return nil
 	}
 
-	if err := m.contextValidateNetworkMode(ctx, formats); err != nil {
-		res = append(res, err)
-	}
+	for i := 0; i < len(m.Volumes); i++ {
+		if typeutils.IsZero(m.Volumes[i]) { // not required
+			continue
+		}
 
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *ConsumeSharedSnapToBoxPayload) contextValidateDataVolumes(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.DataVolumes); i++ {
-
-		if m.DataVolumes[i] != nil {
-
-			if typeutils.IsZero(m.DataVolumes[i]) { // not required
-				return nil
-			}
-
-			if err := m.DataVolumes[i].ContextValidate(ctx, formats); err != nil {
+		if m.Volumes[i] != nil {
+			if err := m.Volumes[i].Validate(formats); err != nil {
 				ve := new(errors.Validation)
 				if stderrors.As(err, &ve) {
-					return ve.ValidateName("data_volumes" + "." + strconv.Itoa(i))
+					return ve.ValidateName("volumes" + "." + strconv.Itoa(i))
 				}
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
-					return ce.ValidateName("data_volumes" + "." + strconv.Itoa(i))
+					return ce.ValidateName("volumes" + "." + strconv.Itoa(i))
 				}
 
 				return err
@@ -155,6 +108,24 @@ func (m *ConsumeSharedSnapToBoxPayload) contextValidateDataVolumes(ctx context.C
 
 	}
 
+	return nil
+}
+
+// ContextValidate validate this consume shared snap to box payload based on the context it is used
+func (m *ConsumeSharedSnapToBoxPayload) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateNetworkMode(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVolumes(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
@@ -175,6 +146,35 @@ func (m *ConsumeSharedSnapToBoxPayload) contextValidateNetworkMode(ctx context.C
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *ConsumeSharedSnapToBoxPayload) contextValidateVolumes(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Volumes); i++ {
+
+		if m.Volumes[i] != nil {
+
+			if typeutils.IsZero(m.Volumes[i]) { // not required
+				return nil
+			}
+
+			if err := m.Volumes[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("volumes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("volumes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil
