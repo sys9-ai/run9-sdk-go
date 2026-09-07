@@ -14,10 +14,14 @@ import (
 // swagger:model api.VolumeView
 type APIVolumeView struct {
 
-	// mount path
+	// MountPath is the exact fixed mount point in the Box, not a path in the Snap.
+	// The Volume's own file API reads its contents from "/".
+	// Example: /state
 	MountPath string `json:"mount_path,omitempty"`
 
-	// snap id
+	// SnapID is the owned Snap identity used by ordinary Snap query, file and Fork APIs.
+	// It cannot be deleted independently. A Fork result survives deletion of this Box.
+	// Example: s12345678
 	SnapID string `json:"snap_id,omitempty"`
 }
 

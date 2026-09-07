@@ -167,7 +167,7 @@ func (a *Client) DeleteSnapContext(ctx context.Context, params *DeleteSnapParams
 /*
 ForkSnapforks a snap.
 
-Forks only the source Snap filesystem. For a Box Root Snap, neither the data disk nor its mount configuration is included. A derived Box must explicitly request its own new empty data disk..
+Creates an independent detached Snap from exactly one source Snap, including a Volume's snap_id. For any Box-owned Snap, the Box must already be stopped with persistence settled; this operation never stops it implicitly. Other filesystems and mount configuration are excluded. The result survives later source writes and deletion of the source Box. A data-only Snap is valid but is not necessarily a bootable root filesystem..
 
 This method does not support injected context.
 However, timeout and opentracing contexts are honored whenever enabled.
@@ -188,7 +188,7 @@ func (a *Client) ForkSnap(params *ForkSnapParams, authInfo runtime.ClientAuthInf
 /*
 ForkSnapContextforks a snap.
 
-Forks only the source Snap filesystem. For a Box Root Snap, neither the data disk nor its mount configuration is included. A derived Box must explicitly request its own new empty data disk..
+Creates an independent detached Snap from exactly one source Snap, including a Volume's snap_id. For any Box-owned Snap, the Box must already be stopped with persistence settled; this operation never stops it implicitly. Other filesystems and mount configuration are excluded. The result survives later source writes and deletion of the source Box. A data-only Snap is valid but is not necessarily a bootable root filesystem..
 
 Do not use the deprecated [ForkSnapParams.Context] with this method: it would be ignored.
 */

@@ -99,14 +99,26 @@ reads that Volume's own filesystem, without other Box mounts. Stop the Box befor
 forking a Volume by its Snap ID:
 
 ```go
-_, err = client.WithProject("default").StopBox(ctx, box.BoxID)
-if err == nil {
-    saved, forkErr := client.WithProject("default").ForkSnap(ctx, box.Volumes[0].SnapID)
-    // saved is an independent detached Snap; deleting the Box does not delete it.
-    _ = saved
-    _ = forkErr
+project := client.WithProject("default")
+box, err = project.StopBox(ctx, box.BoxID)
+if err != nil {
+    return err
 }
+snapID, err := box.SnapIDAtMount("/state")
+if err != nil {
+    return err
+}
+saved, err := project.ForkSnap(ctx, snapID)
+// saved is an independent detached Snap; deleting the Box does not delete it.
 ```
+
+`SnapIDAtMount` is a local lookup on a `BoxView`, not a network request. It accepts
+an exact configured mount path or `/` for the original Attached Snap. It does not
+normalize paths or select a containing Volume for a subdirectory. Missing mounts
+return an error. Reuse the selected ID with `GetSnap`, `SnapFileSystem`, or
+`ForkSnap`; the server checks current readiness and ownership for each operation.
+`ListSnaps` defaults to detached Snaps; set `Attached` to a pointer to `true` to
+list the original Attached Snaps and Volumes instead.
 
 Volumes cannot be deleted independently or initialized from a Snap in this MVP.
 A saved Snap may contain only application files, not a bootable root filesystem.

@@ -50,8 +50,12 @@ func ExampleClient_ForkSnap() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Select exactly one Volume; forking does not include the Box's other mounts.
-	saved, err := project.ForkSnap(context.Background(), box.Volumes[0].SnapID)
+	// Select an exact mount, not an array position or a directory inside a Volume.
+	snapID, err := box.SnapIDAtMount("/state")
+	if err != nil {
+		log.Fatal(err)
+	}
+	saved, err := project.ForkSnap(context.Background(), snapID)
 	if err != nil {
 		log.Fatal(err)
 	}

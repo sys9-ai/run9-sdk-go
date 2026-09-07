@@ -271,7 +271,8 @@ type BoxView struct {
 	Labels      map[string]string `json:"labels,omitempty"`
 	State       BoxState          `json:"state"`
 	Reason      string            `json:"reason,omitempty"`
-	BoxSnapID   string            `json:"box_snap_id"`
+	// BoxSnapID identifies this Box's writable Attached Snap, not its source.
+	BoxSnapID string `json:"box_snap_id"`
 	// Volumes lists the fixed Box-owned Snap mounts; empty means none.
 	// It describes configuration, not whether a runtime is currently mounted.
 	Volumes                   []VolumeView   `json:"volumes,omitempty"`
@@ -596,7 +597,9 @@ type ImportSnapRequest struct {
 
 // ListSnapsRequest describes optional filters for ListSnaps.
 type ListSnapsRequest struct {
-	// Attached filters by whether a snap is currently attached to a box.
+	// Attached selects attached Snaps (true) or detached Snaps (false).
+	// Nil defaults to detached Snaps. Attached includes the original Attached
+	// Snap and every Volume, with their owning Box and mount paths.
 	Attached *bool
 }
 

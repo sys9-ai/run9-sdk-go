@@ -21,7 +21,7 @@ type APIBoxView struct {
 	// box id
 	BoxID string `json:"box_id,omitempty"`
 
-	// box snap id
+	// BoxSnapID is this Box's writable root Attached Snap, not the source used to create it.
 	BoxSnapID string `json:"box_snap_id,omitempty"`
 
 	// created at

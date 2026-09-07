@@ -481,6 +481,8 @@ definitions:
       box_id:
         type: string
       box_snap_id:
+        description: BoxSnapID is this Box's writable root Attached Snap, not the
+          source used to create it.
         type: string
       created_at:
         type: string
@@ -1378,14 +1380,19 @@ definitions:
       creator_primary_email:
         type: string
       file_access_url:
+        description: |-
+          FileAccessURL reads a detached Snap or Volume from its own filesystem root.
+          Volume reads exclude the Box Root and other mounts. The original root
+          Attached Snap retains the owning Box's composed filesystem view.
         type: string
       inuse_reason:
         $ref: '#/definitions/api.SnapInUseReason'
       last_used_at:
         type: string
       mount_path:
-        description: MountPath is the fixed path in the owning Box; absent for detached
-          Snaps.
+        description: |-
+          MountPath is the fixed path in the owning Box: "/" for its original Attached
+          Snap, or the configured Volume mount point. Detached Snaps omit it.
         type: string
       org_id:
         type: string
@@ -1554,8 +1561,16 @@ definitions:
   api.VolumeView:
     properties:
       mount_path:
+        description: |-
+          MountPath is the exact fixed mount point in the Box, not a path in the Snap.
+          The Volume's own file API reads its contents from "/".
+        example: /state
         type: string
       snap_id:
+        description: |-
+          SnapID is the owned Snap identity used by ordinary Snap query, file and Fork APIs.
+          It cannot be deleted independently. A Fork result survives deletion of this Box.
+        example: s12345678
         type: string
     type: object
   api.elasticityDataTransfer:
@@ -3201,9 +3216,10 @@ paths:
       - Boxes
   /projects/{project_cid}/workspace/boxes/{id}:
     delete:
-      description: Deletes the logical Box, its Root, and its optional data disk.
-        Storage reclamation may be asynchronous. Use Stop instead to release compute
-        while retaining data; the data disk has no independent recovery capability.
+      description: Deletes the logical Box, its original Attached Snap, and all Volumes.
+        Storage reclamation may be asynchronous. Previously forked detached Snaps
+        survive. Use Stop to release compute while retaining data; deleted Volumes
+        have no independent recovery capability.
       operationId: deleteBox
       parameters:
       - description: Project handle (`project_cid`).
@@ -3746,8 +3762,9 @@ paths:
   /projects/{project_cid}/workspace/boxes/{id}/stop:
     post:
       description: Stops the runtime and completes storage finalization while preserving
-        the logical Box, its Root, and its optional data disk. A subsequent execution
-        uses the same storage.
+        the logical Box, its original Attached Snap, and all Volumes. A subsequent
+        execution uses the same storage. After Stop succeeds, each owned Snap can
+        be forked separately through the standard Snap Fork API.
       operationId: stopBox
       parameters:
       - description: Project handle (`project_cid`).
@@ -4373,7 +4390,9 @@ paths:
         name: project_cid
         required: true
         type: string
-      - description: Filter by attached (`true`) or detached (`false`) snaps.
+      - description: Defaults to detached Snaps. True selects Box-owned Snaps, including
+          the original Attached Snap and every Volume, with their owning Box and mount
+          paths.
         in: query
         name: attached
         type: boolean
@@ -4471,9 +4490,12 @@ paths:
       - Snaps
   /projects/{project_cid}/workspace/snaps/{id}/fork:
     post:
-      description: Forks only the source Snap filesystem. For a Box Root Snap, neither
-        the data disk nor its mount configuration is included. A derived Box must
-        explicitly request its own new empty data disk.
+      description: Creates an independent detached Snap from exactly one source Snap,
+        including a Volume's snap_id. For any Box-owned Snap, the Box must already
+        be stopped with persistence settled; this operation never stops it implicitly.
+        Other filesystems and mount configuration are excluded. The result survives
+        later source writes and deletion of the source Box. A data-only Snap is valid
+        but is not necessarily a bootable root filesystem.
       operationId: forkSnap
       parameters:
       - description: Project handle (`project_cid`).

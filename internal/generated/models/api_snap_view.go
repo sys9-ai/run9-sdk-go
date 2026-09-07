@@ -35,7 +35,9 @@ type APISnapView struct {
 	// creator primary email
 	CreatorPrimaryEmail string `json:"creator_primary_email,omitempty"`
 
-	// file access url
+	// FileAccessURL reads a detached Snap or Volume from its own filesystem root.
+	// Volume reads exclude the Box Root and other mounts. The original root
+	// Attached Snap retains the owning Box's composed filesystem view.
 	FileAccessURL string `json:"file_access_url,omitempty"`
 
 	// inuse reason
@@ -44,7 +46,8 @@ type APISnapView struct {
 	// last used at
 	LastUsedAt string `json:"last_used_at,omitempty"`
 
-	// MountPath is the fixed path in the owning Box; absent for detached Snaps.
+	// MountPath is the fixed path in the owning Box: "/" for its original Attached
+	// Snap, or the configured Volume mount point. Detached Snaps omit it.
 	MountPath string `json:"mount_path,omitempty"`
 
 	// org id

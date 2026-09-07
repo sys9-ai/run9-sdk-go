@@ -65,7 +65,7 @@ type ListSnapsParams struct {
 
 	/* Attached.
 
-	   Filter by attached (`true`) or detached (`false`) snaps.
+	   Defaults to detached Snaps. True selects Box-owned Snaps, including the original Attached Snap and every Volume, with their owning Box and mount paths.
 	*/
 	Attached *bool
 
