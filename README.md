@@ -83,7 +83,8 @@ not include its contents or mount configuration. Each derived Box must opt in
 again to receive fresh empty Volumes. The disks and mounts cannot be changed
 after creation. Mount paths must be distinct and must not nest inside one another.
 
-`Volumes` is optional: omit it or use an empty slice to create no Volumes. Paths are
+`Volumes` is optional: omit it or use an empty slice to create no Volumes. A Box
+supports at most nine Volumes in either Normal or Managed networking. Paths are
 Linux paths inside the Box, not directories on the caller's machine. Use a
 canonical absolute path such as `/state`, with no trailing slash or `.` / `..`
 components. Symlinks and runtime-managed paths are rejected by the server.

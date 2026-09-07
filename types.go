@@ -551,7 +551,7 @@ type VolumeConfig struct {
 
 // CreateBoxRequest creates a new box from an image or snap.
 type CreateBoxRequest struct {
-	// Volumes creates independent empty Volumes. Omit to create none.
+	// Volumes creates up to nine independent empty Volumes. Omit to create none.
 	// Mount paths must not overlap, including ancestor/descendant paths.
 	Volumes []VolumeConfig `json:"volumes,omitempty"`
 	// BoxID requests one specific box identifier. When empty, the control plane generates one.

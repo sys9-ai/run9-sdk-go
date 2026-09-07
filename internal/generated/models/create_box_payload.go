@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/jsonutils"
 	"github.com/go-openapi/swag/typeutils"
+	"github.com/go-openapi/validate"
 )
 
 // CreateBoxPayload create box payload
@@ -48,6 +49,7 @@ type CreateBoxPayload struct {
 	// DataVolumes creates independent empty Box-owned volumes. Omit or use an empty list to disable them.
 	// Each mount is fixed at creation. Data survives Stop and runtime replacement, is deleted with the Box,
 	// and is never inherited from or included in Root Snap forks. Mount paths cannot overlap.
+	// Max Items: 9
 	Volumes []*APIVolumeConfig `json:"volumes,omitempty"`
 }
 
@@ -93,6 +95,12 @@ func (m *CreateBoxPayload) validateNetworkMode(formats strfmt.Registry) error {
 func (m *CreateBoxPayload) validateVolumes(formats strfmt.Registry) error {
 	if typeutils.IsZero(m.Volumes) { // not required
 		return nil
+	}
+
+	iVolumesSize := int64(len(m.Volumes))
+
+	if err := validate.MaxItems("volumes", "body", iVolumesSize, 9); err != nil {
+		return err
 	}
 
 	for i := 0; i < len(m.Volumes); i++ {

@@ -50,6 +50,7 @@ definitions:
           and is never inherited from or included in Root Snap forks. Mount paths cannot overlap.
         items:
           $ref: '#/definitions/api.VolumeConfig'
+        maxItems: 9
         type: array
         x-omitempty: true
     type: object
@@ -98,6 +99,7 @@ definitions:
           and is never inherited from or included in Root Snap forks. Mount paths cannot overlap.
         items:
           $ref: '#/definitions/api.VolumeConfig'
+        maxItems: 9
         type: array
         x-omitempty: true
     type: object
