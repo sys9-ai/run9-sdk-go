@@ -1552,6 +1552,13 @@ definitions:
     - VerifyUserEmailStatusInvalid
   api.VolumeConfig:
     properties:
+      initial_permissions:
+        allOf:
+        - $ref: '#/definitions/api.VolumeInitialPermissions'
+        description: |-
+          InitialPermissions sets only the new volume's top directory. It is never
+          reapplied on mount, Stop, or runtime replacement.
+        x-nullable: true
       mount_path:
         description: |-
           MountPath is a canonical absolute Linux directory inside the Box.
@@ -1559,6 +1566,21 @@ definitions:
           overlap runtime-managed paths, or overlap another data mount.
         example: /state
         type: string
+    type: object
+  api.VolumeInitialPermissions:
+    properties:
+      gid:
+        description: GID is the initial guest group (0 means guest root).
+        example: 1000
+        type: integer
+      mode:
+        description: Mode is three or four octal digits, from 0000 through 7777.
+        example: "0700"
+        type: string
+      uid:
+        description: UID is the initial guest owner (0 means guest root).
+        example: 1000
+        type: integer
     type: object
   api.VolumeView:
     properties:

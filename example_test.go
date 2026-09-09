@@ -16,7 +16,10 @@ func ExampleClient_CreateBox() {
 	}
 	box, err := client.WithProject("default").CreateBox(context.Background(), run9.CreateBoxRequest{
 		SourceImageRef: "alpine:3.20",
-		Volumes:        []run9.VolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
+		Volumes: []run9.VolumeConfig{{
+			MountPath:          "/state",
+			InitialPermissions: &run9.VolumeInitialPermissions{UID: 1000, GID: 1000, Mode: "0700"},
+		}, {MountPath: "/cache"}},
 	})
 	if err != nil {
 		log.Fatal(err)

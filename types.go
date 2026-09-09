@@ -547,6 +547,21 @@ type VolumeConfig struct {
 	// is deleted with the Box, and is excluded from Root Snap forks along with
 	// its mount configuration. The server validates the path and source contents.
 	MountPath string `json:"mount_path"`
+	// InitialPermissions applies only to the new volume's top directory.
+	// Omit to keep default guest ownership and permissions. Later guest chmod
+	// and chown persist; mounting or restarting never resets them.
+	InitialPermissions *VolumeInitialPermissions `json:"initial_permissions,omitempty"`
+}
+
+// VolumeInitialPermissions sets guest ownership and mode once at creation.
+// It does not resolve image user names or recursively change existing files.
+type VolumeInitialPermissions struct {
+	// UID is the guest owner, from 0 through 4294967294; zero means guest root.
+	UID uint32 `json:"uid"`
+	// GID is the guest group, from 0 through 4294967294; zero means guest root.
+	GID uint32 `json:"gid"`
+	// Mode is three or four octal digits, 0000 through 7777. Empty means 0755.
+	Mode string `json:"mode,omitempty"`
 }
 
 // CreateBoxRequest creates a new box from an image or snap.

@@ -67,6 +67,10 @@ The SDK models the public control-plane contract. It does not include local conf
 
 Create a Box with independent persistent Volumes:
 
+For a non-root guest user, set `InitialPermissions: &run9.VolumeInitialPermissions{UID: 1000, GID: 1000, Mode: "0700"}` on its `VolumeConfig`.
+This initializes only the new volume's top directory. UID/GID are numeric guest IDs (0–4294967294); omitted IDs mean 0. Mode is an octal string from `0000` through `7777`, default `0755`.
+Omitting the entire option preserves the existing empty-volume defaults. Parent directories must already allow guest traversal. Later guest chmod/chown survives Stop and remount; these are creation defaults, not an enforced policy.
+
 ```go
 box, err := client.WithProject("default").CreateBox(ctx, run9.CreateBoxRequest{
     SourceImageRef: "alpine:3.20",

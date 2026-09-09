@@ -248,12 +248,12 @@ func TestClientCreateBoxWithVolumes(t *testing.T) {
 		require.Equal(t, http.MethodPost, r.Method)
 		var req CreateBoxRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-		require.Equal(t, []VolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}}, req.Volumes)
+		require.Equal(t, []VolumeConfig{{MountPath: "/state", InitialPermissions: &VolumeInitialPermissions{UID: 1000, GID: 2000, Mode: "0700"}}, {MountPath: "/cache"}}, req.Volumes)
 		writeJSONResponse(t, w, http.StatusCreated, BoxView{BoxID: "box-1", Volumes: []VolumeView{{SnapID: "svolume01", MountPath: "/state"}, {SnapID: "svolume02", MountPath: "/cache"}}})
 	}))
 	defer server.Close()
 	box, err := newProjectTestClient(t, server.URL, "default").CreateBox(t.Context(), CreateBoxRequest{
-		SourceSnapID: "snap-1", Volumes: []VolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
+		SourceSnapID: "snap-1", Volumes: []VolumeConfig{{MountPath: "/state", InitialPermissions: &VolumeInitialPermissions{UID: 1000, GID: 2000, Mode: "0700"}}, {MountPath: "/cache"}},
 	})
 	require.NoError(t, err)
 	require.Equal(t, "/state", box.Volumes[0].MountPath)
@@ -285,7 +285,7 @@ func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 
 		var req CreateBoxFromSharedSnapRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-		require.Equal(t, []VolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}}, req.Volumes)
+		require.Equal(t, []VolumeConfig{{MountPath: "/state", InitialPermissions: &VolumeInitialPermissions{Mode: "0000"}}, {MountPath: "/cache"}}, req.Volumes)
 		require.Equal(t, "box-1", req.BoxID)
 		require.Equal(t, "2c4g", req.DesiredShape)
 
@@ -298,7 +298,7 @@ func TestClientCreateBoxFromSharedSnapUsesWorkspaceRoute(t *testing.T) {
 	defer server.Close()
 
 	view, err := newProjectTestClient(t, server.URL, "sandbox").CreateBoxFromSharedSnap(context.Background(), "python-dev", CreateBoxFromSharedSnapRequest{
-		Volumes:      []VolumeConfig{{MountPath: "/state"}, {MountPath: "/cache"}},
+		Volumes:      []VolumeConfig{{MountPath: "/state", InitialPermissions: &VolumeInitialPermissions{Mode: "0000"}}, {MountPath: "/cache"}},
 		BoxID:        "box-1",
 		DesiredShape: "2c4g",
 	})

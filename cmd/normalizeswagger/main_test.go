@@ -31,6 +31,10 @@ func TestNormalizePatchPayloads(t *testing.T) {
 				"UpdateBoxPayload": {
 					SchemaProps: spec.SchemaProps{
 						Properties: map[string]spec.Schema{
+							"initial_permissions": {
+								SchemaProps: spec.SchemaProps{AllOf: []spec.Schema{{SchemaProps: spec.SchemaProps{Ref: spec.MustCreateRef("#/definitions/Permissions")}}}},
+								VendorExtensible: spec.VendorExtensible{Extensions: spec.Extensions{"x-nullable": true}},
+							},
 							"labels": {
 								SchemaProps: spec.SchemaProps{
 									Type: []string{"object"},
@@ -59,6 +63,10 @@ func TestNormalizePatchPayloads(t *testing.T) {
 	labels := swagger.Definitions["UpdateBoxPayload"].Properties["labels"]
 	require.Equal(t, true, labels.Extensions["x-omitempty"])
 	require.Equal(t, "StringMap", xGoTypeName(t, labels))
+	permissions := swagger.Definitions["UpdateBoxPayload"].Properties["initial_permissions"]
+	require.Equal(t, "#/definitions/Permissions", permissions.Ref.String())
+	require.Empty(t, permissions.AllOf)
+	require.Equal(t, true, permissions.Extensions["x-nullable"])
 }
 
 func TestNormalizeRejectsUnexpectedShapes(t *testing.T) {

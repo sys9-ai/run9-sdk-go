@@ -57,6 +57,20 @@ func normalize(swagger *spec.Swagger) error {
 	if err := normalizePatchPayloads(swagger); err != nil {
 		return err
 	}
+	// Swag wraps a documented nullable reference in allOf. go-swagger turns
+	// that wrapper into a non-pointer anonymous struct, serializing an absent
+	// option as {}. A single reference needs no composition: retain nullable
+	// and documentation on the direct reference so omission stays omission.
+	for name, definition := range swagger.Definitions {
+		for field, property := range definition.Properties {
+			if property.Extensions["x-nullable"] == true && len(property.AllOf) == 1 && property.AllOf[0].Ref.String() != "" {
+				property.Ref = property.AllOf[0].Ref
+				property.AllOf = nil
+				definition.Properties[field] = property
+			}
+		}
+		swagger.Definitions[name] = definition
+	}
 	return nil
 }
 

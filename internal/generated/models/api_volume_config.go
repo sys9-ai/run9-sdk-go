@@ -4,15 +4,22 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/jsonutils"
+	"github.com/go-openapi/swag/typeutils"
 )
 
 // APIVolumeConfig api volume config
 //
 // swagger:model api.VolumeConfig
 type APIVolumeConfig struct {
+
+	// InitialPermissions sets only the new volume's top directory. It is never
+	// reapplied on mount, Stop, or runtime replacement.
+	InitialPermissions *APIVolumeInitialPermissions `json:"initial_permissions,omitempty"`
 
 	// MountPath is a canonical absolute Linux directory inside the Box.
 	// Its Root location must be absent or empty and cannot traverse symlinks,
@@ -23,11 +30,77 @@ type APIVolumeConfig struct {
 
 // Validate validates this api volume config
 func (m *APIVolumeConfig) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateInitialPermissions(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this api volume config based on context it is used
+func (m *APIVolumeConfig) validateInitialPermissions(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.InitialPermissions) { // not required
+		return nil
+	}
+
+	if m.InitialPermissions != nil {
+		if err := m.InitialPermissions.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("initial_permissions")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("initial_permissions")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this api volume config based on the context it is used
 func (m *APIVolumeConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateInitialPermissions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *APIVolumeConfig) contextValidateInitialPermissions(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.InitialPermissions != nil {
+
+		if typeutils.IsZero(m.InitialPermissions) { // not required
+			return nil
+		}
+
+		if err := m.InitialPermissions.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("initial_permissions")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("initial_permissions")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
