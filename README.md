@@ -119,8 +119,12 @@ normalize paths or select a containing Volume for a subdirectory. Missing mounts
 return an error. Reuse the selected ID with `GetSnap`, `SnapFileSystem`, or
 `ForkSnap`; the server checks current readiness and ownership for each operation.
 Online Fork briefly pauses the VM, resumes its existing processes, then waits
-for the Child to become ready. It includes synchronized filesystem writes but
-not VM memory, application-private buffers, or a multi-filesystem transaction.
+for the new Snap to become ready. Use a caller context to bound the full wait.
+It includes synchronized filesystem writes, but excludes VM memory and
+application-private buffers and does not guarantee application-level transactions.
+Parent lifecycle hooks do not run. New boxes start fresh processes from the saved
+files. `CreateBox` with a source Snap uses the same online capture behavior.
+
 `ListSnaps` defaults to detached Snaps; set `Attached` to a pointer to `true` to
 list the original Attached Snaps and Volumes instead.
 

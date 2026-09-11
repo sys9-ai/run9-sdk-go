@@ -124,6 +124,8 @@ type ClientService interface {
 /*
 CreateBoxcreates a box.
 
+Creates a Box with an independent root Snap. A source Snap may belong to a healthy running Box: the source pauses briefly for capture and resumes while the new Snap prepares. Success waits for storage preparation; processes, VM memory and source Volume configuration are not inherited..
+
 This method does not support injected context.
 However, timeout and opentracing contexts are honored whenever enabled.
 
@@ -142,6 +144,8 @@ func (a *Client) CreateBox(params *CreateBoxParams, authInfo runtime.ClientAuthI
 
 /*
 CreateBoxContextcreates a box.
+
+Creates a Box with an independent root Snap. A source Snap may belong to a healthy running Box: the source pauses briefly for capture and resumes while the new Snap prepares. Success waits for storage preparation; processes, VM memory and source Volume configuration are not inherited..
 
 Do not use the deprecated [CreateBoxParams.Context] with this method: it would be ignored.
 */
@@ -597,7 +601,7 @@ func (a *Client) ListBoxesContext(ctx context.Context, params *ListBoxesParams, 
 /*
 StopBoxstops a box s runtime.
 
-Stops the runtime and completes storage finalization while preserving the logical Box, its original Attached Snap, and all Volumes. A subsequent execution uses the same storage. After Stop succeeds, each owned Snap can be forked separately through the standard Snap Fork API..
+Stops the runtime and completes storage finalization while preserving the logical Box, its original Attached Snap, and all Volumes. A subsequent execution uses the same storage. Each owned Snap can be forked separately through the standard Snap Fork API, including while a healthy Box is running; Stop is not a Fork prerequisite..
 
 This method does not support injected context.
 However, timeout and opentracing contexts are honored whenever enabled.
@@ -618,7 +622,7 @@ func (a *Client) StopBox(params *StopBoxParams, authInfo runtime.ClientAuthInfoW
 /*
 StopBoxContextstops a box s runtime.
 
-Stops the runtime and completes storage finalization while preserving the logical Box, its original Attached Snap, and all Volumes. A subsequent execution uses the same storage. After Stop succeeds, each owned Snap can be forked separately through the standard Snap Fork API..
+Stops the runtime and completes storage finalization while preserving the logical Box, its original Attached Snap, and all Volumes. A subsequent execution uses the same storage. Each owned Snap can be forked separately through the standard Snap Fork API, including while a healthy Box is running; Stop is not a Fork prerequisite..
 
 Do not use the deprecated [StopBoxParams.Context] with this method: it would be ignored.
 */
