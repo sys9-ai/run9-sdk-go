@@ -6,7 +6,7 @@ import "fmt"
 // Use "/" for the original Attached Snap, or a Volume's configured MountPath.
 // It does not normalize paths, match subdirectories, or make a network request.
 // This lookup does not establish readiness; Snap operations check current state
-// on the server, including the owning Box's stopped state before a Fork.
+// on the server; a healthy running Box can Fork with a brief pause.
 func (b BoxView) SnapIDAtMount(mountPath string) (string, error) {
 	if mountPath == "/" && b.BoxSnapID != "" {
 		return b.BoxSnapID, nil

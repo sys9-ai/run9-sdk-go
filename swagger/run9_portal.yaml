@@ -4515,11 +4515,13 @@ paths:
   /projects/{project_cid}/workspace/snaps/{id}/fork:
     post:
       description: Creates an independent detached Snap from exactly one source Snap,
-        including a Volume's snap_id. For any Box-owned Snap, the Box must already
-        be stopped with persistence settled; this operation never stops it implicitly.
-        Other filesystems and mount configuration are excluded. The result survives
-        later source writes and deletion of the source Box. A data-only Snap is valid
-        but is not necessarily a bootable root filesystem.
+        including a Volume's snap_id. A healthy running Box pauses briefly for capture
+        and continues its existing processes; the request waits until the Child is
+        ready. Guest filesystem writes are synchronized, but application-private buffers
+        and cross-file transactions are not guaranteed. Other filesystems, VM memory
+        and mount configuration are excluded. The result survives later source writes
+        and deletion of the source Box. A data-only Snap is valid but is not necessarily
+        a bootable root filesystem.
       operationId: forkSnap
       parameters:
       - description: Project handle (`project_cid`).

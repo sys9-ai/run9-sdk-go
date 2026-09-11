@@ -100,15 +100,11 @@ Use the existing Box exec, upload/download, and `BoxFileSystem` methods to acces
 data under the mount path, including read-only access while stopped. There is no
 separate attachment API. Each Volume is an attached Snap and appears in
 `ListSnaps` with `Attached: true`, its owning Box, and its mount path. `SnapFileSystem`
-reads that Volume's own filesystem, without other Box mounts. Stop the Box before
-forking a Volume by its Snap ID:
+reads that Volume's own filesystem, without other Box mounts. Fork a Volume by
+its Snap ID, including while its healthy Box is running:
 
 ```go
 project := client.WithProject("default")
-box, err = project.StopBox(ctx, box.BoxID)
-if err != nil {
-    return err
-}
 snapID, err := box.SnapIDAtMount("/state")
 if err != nil {
     return err
@@ -122,6 +118,9 @@ an exact configured mount path or `/` for the original Attached Snap. It does no
 normalize paths or select a containing Volume for a subdirectory. Missing mounts
 return an error. Reuse the selected ID with `GetSnap`, `SnapFileSystem`, or
 `ForkSnap`; the server checks current readiness and ownership for each operation.
+Online Fork briefly pauses the VM, resumes its existing processes, then waits
+for the Child to become ready. It includes synchronized filesystem writes but
+not VM memory, application-private buffers, or a multi-filesystem transaction.
 `ListSnaps` defaults to detached Snaps; set `Attached` to a pointer to `true` to
 list the original Attached Snaps and Volumes instead.
 
