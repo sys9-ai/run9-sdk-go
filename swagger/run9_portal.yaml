@@ -3204,6 +3204,10 @@ paths:
     post:
       consumes:
       - application/json
+      description: 'Creates a Box with an independent root Snap. A source Snap may
+        belong to a healthy running Box: the source pauses briefly for capture and
+        resumes while the new Snap prepares. Success waits for storage preparation;
+        processes, VM memory and source Volume configuration are not inherited.'
       operationId: createBox
       parameters:
       - description: Request body
@@ -3787,8 +3791,9 @@ paths:
     post:
       description: Stops the runtime and completes storage finalization while preserving
         the logical Box, its original Attached Snap, and all Volumes. A subsequent
-        execution uses the same storage. After Stop succeeds, each owned Snap can
-        be forked separately through the standard Snap Fork API.
+        execution uses the same storage. Each owned Snap can be forked separately
+        through the standard Snap Fork API, including while a healthy Box is running;
+        Stop is not a Fork prerequisite.
       operationId: stopBox
       parameters:
       - description: Project handle (`project_cid`).
@@ -4518,10 +4523,12 @@ paths:
         including a Volume's snap_id. A healthy running Box pauses briefly for capture
         and continues its existing processes; the request waits until the Child is
         ready. Guest filesystem writes are synchronized, but application-private buffers
-        and cross-file transactions are not guaranteed. Other filesystems, VM memory
-        and mount configuration are excluded. The result survives later source writes
-        and deletion of the source Box. A data-only Snap is valid but is not necessarily
-        a bootable root filesystem.
+        and cross-file transactions are not guaranteed. Parent lifecycle hooks do
+        not run. Concurrent forks are supported; active file transfers and stopping
+        or deleting sources are rejected. Other filesystems, VM memory and mount configuration
+        are excluded. The result survives later source writes and deletion of the
+        source Box. A data-only Snap is valid but is not necessarily a bootable root
+        filesystem.
       operationId: forkSnap
       parameters:
       - description: Project handle (`project_cid`).

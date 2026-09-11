@@ -49,7 +49,9 @@ func ExampleClient_ForkSnap() {
 		log.Fatal(err)
 	}
 	project := client.WithProject("default")
-	box, err := project.StopBox(context.Background(), "stateful-box")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	box, err := project.GetBox(ctx, "stateful-box")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,7 +60,7 @@ func ExampleClient_ForkSnap() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	saved, err := project.ForkSnap(context.Background(), snapID)
+	saved, err := project.ForkSnap(ctx, snapID)
 	if err != nil {
 		log.Fatal(err)
 	}

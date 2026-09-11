@@ -115,7 +115,9 @@ func (c *Client) WhoAmI(ctx context.Context) (CurrentOrgIdentityView, error) {
 	return generatedResult[CurrentOrgIdentityView](c.portal.OrgAccess.WhoamiContext(ctx, &org_access.WhoamiParams{}, c.auth))
 }
 
-// CreateBox creates one project-scoped box.
+// CreateBox creates one project-scoped box with its own root Snap.
+// A source Snap may belong to a healthy running Box; that Box pauses briefly
+// for capture and continues while the new root Snap prepares.
 func (c *Client) CreateBox(ctx context.Context, req CreateBoxRequest) (BoxView, error) {
 	payload, err := remarshalJSON[*genmodels.CreateBoxPayload](req)
 	if err != nil {
@@ -221,8 +223,11 @@ func (c *Client) GetSnap(ctx context.Context, snapID string) (SnapView, error) {
 }
 
 // ForkSnap creates an independent detached Snap from the selected Snap's contents.
-// For a Box's Attached Snap or Volume, stop the owning Box and let storage settle
-// first. Other mounts and mount configuration are not included in the fork.
+// A healthy running source Box pauses briefly, then resumes its existing processes.
+// The call waits until the new Snap is ready; ctx bounds the entire request.
+// Only the selected filesystem is captured, excluding other mounts, mount
+// configuration, VM memory, and application-private buffers. Application-level
+// transactions are not guaranteed, and the parent's lifecycle hooks do not run.
 func (c *Client) ForkSnap(ctx context.Context, snapID string) (SnapView, error) {
 	return projectGeneratedResult[SnapView](c, func(projectCID string) (any, error) {
 		return c.portal.Snaps.ForkSnapContext(ctx, &snaps.ForkSnapParams{

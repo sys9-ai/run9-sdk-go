@@ -167,7 +167,7 @@ func (a *Client) DeleteSnapContext(ctx context.Context, params *DeleteSnapParams
 /*
 ForkSnapforks a snap.
 
-Creates an independent detached Snap from exactly one source Snap, including a Volume's snap_id. A healthy running Box pauses briefly for capture and continues its existing processes; the request waits until the Child is ready. Guest filesystem writes are synchronized, but application-private buffers and cross-file transactions are not guaranteed. Other filesystems, VM memory and mount configuration are excluded. The result survives later source writes and deletion of the source Box. A data-only Snap is valid but is not necessarily a bootable root filesystem..
+Creates an independent detached Snap from exactly one source Snap, including a Volume's snap_id. A healthy running Box pauses briefly for capture and continues its existing processes; the request waits until the Child is ready. Guest filesystem writes are synchronized, but application-private buffers and cross-file transactions are not guaranteed. Parent lifecycle hooks do not run. Concurrent forks are supported; active file transfers and stopping or deleting sources are rejected. Other filesystems, VM memory and mount configuration are excluded. The result survives later source writes and deletion of the source Box. A data-only Snap is valid but is not necessarily a bootable root filesystem..
 
 This method does not support injected context.
 However, timeout and opentracing contexts are honored whenever enabled.
@@ -188,7 +188,7 @@ func (a *Client) ForkSnap(params *ForkSnapParams, authInfo runtime.ClientAuthInf
 /*
 ForkSnapContextforks a snap.
 
-Creates an independent detached Snap from exactly one source Snap, including a Volume's snap_id. A healthy running Box pauses briefly for capture and continues its existing processes; the request waits until the Child is ready. Guest filesystem writes are synchronized, but application-private buffers and cross-file transactions are not guaranteed. Other filesystems, VM memory and mount configuration are excluded. The result survives later source writes and deletion of the source Box. A data-only Snap is valid but is not necessarily a bootable root filesystem..
+Creates an independent detached Snap from exactly one source Snap, including a Volume's snap_id. A healthy running Box pauses briefly for capture and continues its existing processes; the request waits until the Child is ready. Guest filesystem writes are synchronized, but application-private buffers and cross-file transactions are not guaranteed. Parent lifecycle hooks do not run. Concurrent forks are supported; active file transfers and stopping or deleting sources are rejected. Other filesystems, VM memory and mount configuration are excluded. The result survives later source writes and deletion of the source Box. A data-only Snap is valid but is not necessarily a bootable root filesystem..
 
 Do not use the deprecated [ForkSnapParams.Context] with this method: it would be ignored.
 */
