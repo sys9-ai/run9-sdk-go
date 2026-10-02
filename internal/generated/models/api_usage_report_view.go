@@ -18,11 +18,23 @@ import (
 // swagger:model api.UsageReportView
 type APIUsageReportView struct {
 
+	// attribution started at
+	AttributionStartedAt string `json:"attribution_started_at,omitempty"`
+
 	// generated at
 	GeneratedAt string `json:"generated_at,omitempty"`
 
+	// project id
+	ProjectID string `json:"project_id,omitempty"`
+
+	// projects
+	Projects []*APIProjectUsageSummaryView `json:"projects"`
+
 	// resolution
 	Resolution APIUsageReportResolution `json:"resolution,omitempty"`
+
+	// scope
+	Scope string `json:"scope,omitempty"`
 
 	// series
 	Series []*APIUsageReportPointView `json:"series"`
@@ -38,6 +50,10 @@ type APIUsageReportView struct {
 func (m *APIUsageReportView) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateProjects(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateResolution(formats); err != nil {
 		res = append(res, err)
 	}
@@ -49,6 +65,36 @@ func (m *APIUsageReportView) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *APIUsageReportView) validateProjects(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.Projects) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Projects); i++ {
+		if typeutils.IsZero(m.Projects[i]) { // not required
+			continue
+		}
+
+		if m.Projects[i] != nil {
+			if err := m.Projects[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("projects" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("projects" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -107,6 +153,10 @@ func (m *APIUsageReportView) validateSeries(formats strfmt.Registry) error {
 func (m *APIUsageReportView) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateProjects(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateResolution(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -118,6 +168,35 @@ func (m *APIUsageReportView) ContextValidate(ctx context.Context, formats strfmt
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *APIUsageReportView) contextValidateProjects(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Projects); i++ {
+
+		if m.Projects[i] != nil {
+
+			if typeutils.IsZero(m.Projects[i]) { // not required
+				return nil
+			}
+
+			if err := m.Projects[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("projects" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("projects" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

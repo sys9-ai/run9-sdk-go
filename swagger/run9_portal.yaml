@@ -1144,6 +1144,23 @@ definitions:
       updated_by:
         type: string
     type: object
+  api.ProjectUsageSummaryView:
+    properties:
+      box_compute_usage_micros:
+        type: integer
+      deleted:
+        type: boolean
+      display_name:
+        type: string
+      project_cid:
+        type: string
+      project_id:
+        type: string
+      scope:
+        type: string
+      storage_usage_micros:
+        type: integer
+    type: object
   api.ProjectView:
     properties:
       created_at:
@@ -1521,10 +1538,20 @@ definitions:
     - UsageReportResolutionMonthly
   api.UsageReportView:
     properties:
+      attribution_started_at:
+        type: string
       generated_at:
         type: string
+      project_id:
+        type: string
+      projects:
+        items:
+          $ref: '#/definitions/api.ProjectUsageSummaryView'
+        type: array
       resolution:
         $ref: '#/definitions/api.UsageReportResolution'
+      scope:
+        type: string
       series:
         items:
           $ref: '#/definitions/api.UsageReportPointView'
@@ -3159,6 +3186,57 @@ paths:
       - BasicAuth: []
       - SessionToken: []
       summary: Update a project secret
+      tags:
+      - Projects
+  /projects/{project_cid}/usage:
+    get:
+      description: Returns Box Compute and owned Storage, excluding organization Host
+        Compute and quota. Historical usage before attribution remains organization-scoped.
+      operationId: getProjectUsageReport
+      parameters:
+      - description: Project handle.
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: RFC3339 UTC window start.
+        in: query
+        name: start_at
+        required: true
+        type: string
+      - description: RFC3339 UTC window end.
+        in: query
+        name: end_at
+        required: true
+        type: string
+      - default: hourly
+        description: Bucket size.
+        enum:
+        - hourly
+        - daily
+        - monthly
+        in: query
+        name: resolution
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project usage report.
+          schema:
+            $ref: '#/definitions/api.UsageReportView'
+        "400":
+          description: Invalid window or project access denied.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Read project resource usage
       tags:
       - Projects
   /projects/{project_cid}/workspace/boxes:
