@@ -248,12 +248,12 @@ func TestClientCreateBoxWithVolumes(t *testing.T) {
 		require.Equal(t, http.MethodPost, r.Method)
 		var req CreateBoxRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-		require.Equal(t, []VolumeConfig{{MountPath: "/state", InitialPermissions: &VolumeInitialPermissions{UID: 1000, GID: 2000, Mode: "0700"}}, {MountPath: "/cache"}}, req.Volumes)
+		require.Equal(t, []VolumeConfig{{MountPath: "/state", InitialPermissions: &VolumeInitialPermissions{UID: 1000, GID: 2000, Mode: "0700"}}, {MountPath: "/cache", SourceSnapID: "backup"}}, req.Volumes)
 		writeJSONResponse(t, w, http.StatusCreated, BoxView{BoxID: "box-1", Volumes: []VolumeView{{SnapID: "svolume01", MountPath: "/state"}, {SnapID: "svolume02", MountPath: "/cache"}}})
 	}))
 	defer server.Close()
 	box, err := newProjectTestClient(t, server.URL, "default").CreateBox(t.Context(), CreateBoxRequest{
-		SourceSnapID: "snap-1", Volumes: []VolumeConfig{{MountPath: "/state", InitialPermissions: &VolumeInitialPermissions{UID: 1000, GID: 2000, Mode: "0700"}}, {MountPath: "/cache"}},
+		SourceSnapID: "snap-1", Volumes: []VolumeConfig{{MountPath: "/state", InitialPermissions: &VolumeInitialPermissions{UID: 1000, GID: 2000, Mode: "0700"}}, {MountPath: "/cache", SourceSnapID: "backup"}},
 	})
 	require.NoError(t, err)
 	require.Equal(t, "/state", box.Volumes[0].MountPath)

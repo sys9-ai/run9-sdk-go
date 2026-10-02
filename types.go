@@ -540,8 +540,11 @@ type VolumeView struct {
 	MountPath string `json:"mount_path"`
 }
 
-// VolumeConfig creates one independent, empty, Box-owned persistent Snap.
+// VolumeConfig creates one independent Box-owned persistent Snap.
 type VolumeConfig struct {
+	// SourceSnapID forks a settled source into the new volume without changing it.
+	// Omit for an empty volume; cannot be combined with InitialPermissions.
+	SourceSnapID string `json:"source_snap_id,omitempty"`
 	// MountPath is a fixed directory inside the Box.
 	// Use a canonical absolute Linux path other than root, without a trailing
 	// slash or dot components. The source directory must be absent or empty,

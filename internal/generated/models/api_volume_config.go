@@ -26,6 +26,10 @@ type APIVolumeConfig struct {
 	// overlap runtime-managed paths, or overlap another data mount.
 	// Example: /state
 	MountPath string `json:"mount_path,omitempty"`
+
+	// SourceSnapID initializes a new volume from a settled Snap without changing it.
+	// Omit for an empty volume. Mutually exclusive with InitialPermissions.
+	SourceSnapID string `json:"source_snap_id,omitempty"`
 }
 
 // Validate validates this api volume config

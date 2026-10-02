@@ -2,6 +2,7 @@ package run9_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"time"
@@ -247,4 +248,10 @@ func ExampleClient_DeletePrewarmProfile() {
 	if err := client.WithProject("default").DeletePrewarmProfile(context.Background(), "typescript"); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func ExampleVolumeConfig() {
+	volume := run9.VolumeConfig{MountPath: "/state", SourceSnapID: "s12345678"}
+	fmt.Println(volume.MountPath, volume.SourceSnapID)
+	// Output: /state s12345678
 }

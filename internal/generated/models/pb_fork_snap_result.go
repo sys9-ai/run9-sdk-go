@@ -12,33 +12,30 @@ import (
 	"github.com/go-openapi/swag/typeutils"
 )
 
-// PbBoxDataVolumeSize pb box data volume size
+// PbForkSnapResult pb fork snap result
 //
-// swagger:model pb.BoxDataVolumeSize
-type PbBoxDataVolumeSize struct {
+// swagger:model pb.ForkSnapResult
+type PbForkSnapResult struct {
 
-	// Present for a volume derived from a source during creation.
-	Fork struct {
-		PbForkSnapResult
-	} `json:"fork,omitempty"`
+	// child
+	Child string `json:"child,omitempty"`
+
+	// juicefs format name
+	JuicefsFormatName string `json:"juicefs_format_name,omitempty"`
+
+	// parent
+	Parent string `json:"parent,omitempty"`
 
 	// size
 	Size *PbSnapSize `json:"size,omitempty"`
 
 	// size error
 	SizeError string `json:"size_error,omitempty"`
-
-	// snap id
-	SnapID string `json:"snap_id,omitempty"`
 }
 
-// Validate validates this pb box data volume size
-func (m *PbBoxDataVolumeSize) Validate(formats strfmt.Registry) error {
+// Validate validates this pb fork snap result
+func (m *PbForkSnapResult) Validate(formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.validateFork(formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.validateSize(formats); err != nil {
 		res = append(res, err)
@@ -50,15 +47,7 @@ func (m *PbBoxDataVolumeSize) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *PbBoxDataVolumeSize) validateFork(formats strfmt.Registry) error {
-	if typeutils.IsZero(m.Fork) { // not required
-		return nil
-	}
-
-	return nil
-}
-
-func (m *PbBoxDataVolumeSize) validateSize(formats strfmt.Registry) error {
+func (m *PbForkSnapResult) validateSize(formats strfmt.Registry) error {
 	if typeutils.IsZero(m.Size) { // not required
 		return nil
 	}
@@ -81,13 +70,9 @@ func (m *PbBoxDataVolumeSize) validateSize(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validate this pb box data volume size based on the context it is used
-func (m *PbBoxDataVolumeSize) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this pb fork snap result based on the context it is used
+func (m *PbForkSnapResult) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.contextValidateFork(ctx, formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.contextValidateSize(ctx, formats); err != nil {
 		res = append(res, err)
@@ -99,12 +84,7 @@ func (m *PbBoxDataVolumeSize) ContextValidate(ctx context.Context, formats strfm
 	return nil
 }
 
-func (m *PbBoxDataVolumeSize) contextValidateFork(ctx context.Context, formats strfmt.Registry) error {
-
-	return nil
-}
-
-func (m *PbBoxDataVolumeSize) contextValidateSize(ctx context.Context, formats strfmt.Registry) error {
+func (m *PbForkSnapResult) contextValidateSize(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Size != nil {
 
@@ -130,7 +110,7 @@ func (m *PbBoxDataVolumeSize) contextValidateSize(ctx context.Context, formats s
 }
 
 // MarshalBinary interface implementation
-func (m *PbBoxDataVolumeSize) MarshalBinary() ([]byte, error) {
+func (m *PbForkSnapResult) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -138,8 +118,8 @@ func (m *PbBoxDataVolumeSize) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *PbBoxDataVolumeSize) UnmarshalBinary(b []byte) error {
-	var res PbBoxDataVolumeSize
+func (m *PbForkSnapResult) UnmarshalBinary(b []byte) error {
+	var res PbForkSnapResult
 	if err := jsonutils.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -1603,6 +1603,11 @@ definitions:
           overlap runtime-managed paths, or overlap another data mount.
         example: /state
         type: string
+      source_snap_id:
+        description: |-
+          SourceSnapID initializes a new volume from a settled Snap without changing it.
+          Omit for an empty volume. Mutually exclusive with InitialPermissions.
+        type: string
     type: object
   api.VolumeInitialPermissions:
     properties:
@@ -1665,11 +1670,28 @@ definitions:
     type: object
   pb.BoxDataVolumeSize:
     properties:
+      fork:
+        allOf:
+        - $ref: '#/definitions/pb.ForkSnapResult'
+        description: Present for a volume derived from a source during creation.
       size:
         $ref: '#/definitions/pb.SnapSize'
       size_error:
         type: string
       snap_id:
+        type: string
+    type: object
+  pb.ForkSnapResult:
+    properties:
+      child:
+        type: string
+      juicefs_format_name:
+        type: string
+      parent:
+        type: string
+      size:
+        $ref: '#/definitions/pb.SnapSize'
+      size_error:
         type: string
     type: object
   pb.SnapSize:

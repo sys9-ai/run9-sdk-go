@@ -330,3 +330,22 @@ Before `v1.0.0`, breaking API cleanup is allowed when it materially improves cla
 - updated doc comments
 - updated README examples
 - passing `go test ./...`
+
+### Restore a data Volume
+
+Set `VolumeConfig.SourceSnapID` when creating a Box to fork a settled Snap into a
+new writable Volume. The source can be a detached backup or a Volume of a stopped
+Box. Its identity and contents stay unchanged; deleting either Box does not
+invalidate the other's data. Sources must pass the same Project authorization as
+Root sources. Online sources must first be saved with `ForkSnap`.
+
+```go
+Volumes: []run9.VolumeConfig{
+    {MountPath: "/state", SourceSnapID: "s12345678"},
+    {MountPath: "/cache"},
+}
+```
+
+`SourceSnapID` and `InitialPermissions` are mutually exclusive. A derived Volume
+preserves its source permissions. Deleting a Box still deletes its Root and all
+Volumes; retained descendant data may delay physical reclamation of ancestors.
