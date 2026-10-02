@@ -290,6 +290,9 @@ type BoxView struct {
 // filesystem or a Volume's own filesystem. The original root Attached Snap
 // retains the owning Box's composed filesystem view.
 type SnapView struct {
+	// PrewarmProfileID and PrewarmProfileName identify the profile blocking base deletion.
+	PrewarmProfileID    string    `json:"prewarm_profile_id,omitempty"`
+	PrewarmProfileName  string    `json:"prewarm_profile_name,omitempty"`
 	SnapID              string    `json:"snap_id"`
 	OrgID               string    `json:"org_id"`
 	ProjectID           string    `json:"project_id"`
@@ -818,6 +821,8 @@ const (
 
 // PrewarmProfileView describes one exact-base recorded prewarm profile.
 type PrewarmProfileView struct {
+	// HostStatusError reports host discovery or distribution failure independently of saved state.
+	HostStatusError     string                   `json:"host_status_error,omitempty"`
 	ProfileID           string                   `json:"profile_id"`
 	Name                string                   `json:"name"`
 	OrgID               string                   `json:"org_id"`

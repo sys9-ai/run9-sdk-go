@@ -71,3 +71,16 @@ func TestClientRejectsPrewarmRecordingAboveTwelveHours(t *testing.T) {
 	})
 	require.EqualError(t, err, "prewarm recording max runtime must not exceed 12 hours")
 }
+
+func TestPrewarmStopAndDeleteUseSelectedProject(t *testing.T) {
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method+" "+r.URL.EscapedPath())
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+	client := newProjectTestClient(t, server.URL, "tools")
+	require.NoError(t, client.StopPrewarmRecording(t.Context(), " compile "))
+	require.NoError(t, client.DeletePrewarmProfile(t.Context(), "compile"))
+	require.Equal(t, []string{"POST /projects/tools/workspace/prewarm-profiles/compile/stop", "DELETE /projects/tools/workspace/prewarm-profiles/compile"}, requests)
+}

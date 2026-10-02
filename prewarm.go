@@ -77,3 +77,14 @@ func (c *Client) StartPrewarmRecording(ctx context.Context, req RecordPrewarmPro
 	}
 	return &PrewarmRecordingStream{ProfileID: profileID, ExecID: execID, Stream: newExecStream(execID, resp.Body)}, nil
 }
+
+// DeletePrewarmProfile removes a ready or failed profile and releases its base snapshot.
+// Running execs keep their accepted artifact; recording/finalizing profiles must finish first.
+func (c *Client) DeletePrewarmProfile(ctx context.Context, nameOrID string) error {
+	return c.doWorkspace(ctx, http.MethodDelete, "/prewarm-profiles/"+url.PathEscape(strings.TrimSpace(nameOrID)), requestOptions{})
+}
+
+// StopPrewarmRecording stops the workload and lets artifact finalization continue.
+func (c *Client) StopPrewarmRecording(ctx context.Context, nameOrID string) error {
+	return c.doWorkspace(ctx, http.MethodPost, "/prewarm-profiles/"+url.PathEscape(strings.TrimSpace(nameOrID))+"/stop", requestOptions{})
+}

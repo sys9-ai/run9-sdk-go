@@ -238,3 +238,13 @@ func ExampleBackgroundExecPullOutput_WriteMergedOutput() {
 		panic(err)
 	}
 }
+
+func ExampleClient_DeletePrewarmProfile() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "ak-example", SK: "sk-example"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := client.WithProject("default").DeletePrewarmProfile(context.Background(), "typescript"); err != nil {
+		log.Fatal(err)
+	}
+}

@@ -39,6 +39,9 @@ type APIPrewarmProfileView struct {
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
 
+	// HostStatusError reports unavailable host discovery/distribution separately from saved profile state.
+	HostStatusError string `json:"host_status_error,omitempty"`
+
 	// hosts
 	Hosts []*APIPrewarmProfileHostView `json:"hosts"`
 

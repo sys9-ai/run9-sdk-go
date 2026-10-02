@@ -1037,6 +1037,10 @@ definitions:
         type: string
       enabled:
         type: boolean
+      host_status_error:
+        description: HostStatusError reports unavailable host discovery/distribution
+          separately from saved profile state.
+        type: string
       hosts:
         items:
           $ref: '#/definitions/api.PrewarmProfileHostView'
@@ -1404,6 +1408,12 @@ definitions:
         items:
           type: string
         type: array
+      prewarm_profile_id:
+        description: PrewarmProfileID and PrewarmProfileName identify the dependency
+          blocking deletion.
+        type: string
+      prewarm_profile_name:
+        type: string
       project_id:
         type: string
       reason:
@@ -4198,6 +4208,36 @@ paths:
       tags:
       - Prewarm Profiles
   /projects/{project_cid}/workspace/prewarm-profiles/{id}:
+    delete:
+      operationId: deletePrewarmProfile
+      parameters:
+      - description: Project handle.
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Profile name or id.
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Operation accepted.
+        "400":
+          description: The request could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete a recorded prewarm profile
+      tags:
+      - Prewarm Profiles
     get:
       operationId: getPrewarmProfile
       parameters:
@@ -4272,6 +4312,37 @@ paths:
       - BasicAuth: []
       - SessionToken: []
       summary: Enable or disable a recorded prewarm profile
+      tags:
+      - Prewarm Profiles
+  /projects/{project_cid}/workspace/prewarm-profiles/{id}/stop:
+    post:
+      operationId: stopPrewarmRecording
+      parameters:
+      - description: Project handle.
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Profile name or id.
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Operation accepted.
+        "400":
+          description: The request could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Stop and finalize a prewarm recording
       tags:
       - Prewarm Profiles
   /projects/{project_cid}/workspace/prewarm-profiles/record:

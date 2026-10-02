@@ -59,6 +59,12 @@ type APISnapView struct {
 	// parent chain
 	ParentChain []string `json:"parent_chain"`
 
+	// PrewarmProfileID and PrewarmProfileName identify the dependency blocking deletion.
+	PrewarmProfileID string `json:"prewarm_profile_id,omitempty"`
+
+	// prewarm profile name
+	PrewarmProfileName string `json:"prewarm_profile_name,omitempty"`
+
 	// project id
 	ProjectID string `json:"project_id,omitempty"`
 
