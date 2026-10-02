@@ -17,11 +17,6 @@ import (
 // swagger:model pb.BoxDataVolumeSize
 type PbBoxDataVolumeSize struct {
 
-	// Present for a volume derived from a source during creation.
-	Fork struct {
-		PbForkSnapResult
-	} `json:"fork,omitempty"`
-
 	// size
 	Size *PbSnapSize `json:"size,omitempty"`
 
@@ -36,10 +31,6 @@ type PbBoxDataVolumeSize struct {
 func (m *PbBoxDataVolumeSize) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateFork(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateSize(formats); err != nil {
 		res = append(res, err)
 	}
@@ -47,14 +38,6 @@ func (m *PbBoxDataVolumeSize) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *PbBoxDataVolumeSize) validateFork(formats strfmt.Registry) error {
-	if typeutils.IsZero(m.Fork) { // not required
-		return nil
-	}
-
 	return nil
 }
 
@@ -85,10 +68,6 @@ func (m *PbBoxDataVolumeSize) validateSize(formats strfmt.Registry) error {
 func (m *PbBoxDataVolumeSize) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateFork(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateSize(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -96,11 +75,6 @@ func (m *PbBoxDataVolumeSize) ContextValidate(ctx context.Context, formats strfm
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *PbBoxDataVolumeSize) contextValidateFork(ctx context.Context, formats strfmt.Registry) error {
-
 	return nil
 }
 
