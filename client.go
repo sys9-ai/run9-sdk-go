@@ -228,12 +228,7 @@ func (c *Client) GetSnap(ctx context.Context, snapID string) (SnapView, error) {
 // configuration, VM memory, and application-private buffers. Application-level
 // transactions are not guaranteed, and the parent's lifecycle hooks do not run.
 func (c *Client) ForkSnap(ctx context.Context, snapID string) (SnapView, error) {
-	return projectGeneratedResult[SnapView](c, func(projectCID string) (any, error) {
-		return c.portal.Snaps.ForkSnapContext(ctx, &snaps.ForkSnapParams{
-			ProjectCid: projectCID,
-			ID:         strings.TrimSpace(snapID),
-		}, c.auth)
-	})
+	return c.ForkSnapWithOptions(ctx, snapID, ForkSnapRequest{})
 }
 
 // DeleteSnap deletes one snap.
