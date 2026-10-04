@@ -1410,6 +1410,12 @@ definitions:
         type: string
       inuse_reason:
         $ref: '#/definitions/api.SnapInUseReason'
+      labels:
+        additionalProperties:
+          type: string
+        description: Labels are mutable metadata owned by this Snap, never inherited
+          by descendants.
+        type: object
       last_used_at:
         type: string
       mount_path:
@@ -1650,6 +1656,13 @@ definitions:
       path_summary:
         type: string
     type: object
+  api.forkSnapPayload:
+    properties:
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
   api.recordPrewarmProfilePayload:
     properties:
       base_snap_id:
@@ -1667,6 +1680,14 @@ definitions:
     properties:
       enabled:
         type: boolean
+    type: object
+  api.updateSnapPayload:
+    properties:
+      labels:
+        additionalProperties:
+          type: string
+        description: Labels replaces all labels; an empty object clears them.
+        type: object
     type: object
   pb.BoxDataVolumeSize:
     properties:
@@ -4568,6 +4589,13 @@ paths:
     get:
       operationId: listSnaps
       parameters:
+      - collectionFormat: multi
+        description: Exact key=value label filters; all must match.
+        in: query
+        items:
+          type: string
+        name: label
+        type: array
       - description: Project handle (`project_cid`).
         in: path
         name: project_cid
@@ -4671,8 +4699,52 @@ paths:
       summary: Get a snap
       tags:
       - Snaps
+    patch:
+      consumes:
+      - application/json
+      operationId: updateSnap
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Snap identifier.
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Labels replace the full map; an empty object clears labels.
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.updateSnapPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated snap metadata.
+          schema:
+            $ref: '#/definitions/api.SnapView'
+        "400":
+          description: Invalid request.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Update snap labels
+      tags:
+      - Snaps
   /projects/{project_cid}/workspace/snaps/{id}/fork:
     post:
+      consumes:
+      - application/json
       description: Creates an independent detached Snap from exactly one source Snap,
         including a Volume's snap_id. A healthy running Box pauses briefly for capture
         and continues its existing processes; the request waits until the Child is
@@ -4685,6 +4757,11 @@ paths:
         filesystem.
       operationId: forkSnap
       parameters:
+      - description: Optional labels for the new Snap; source labels are never inherited.
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/api.forkSnapPayload'
       - description: Project handle (`project_cid`).
         in: path
         name: project_cid

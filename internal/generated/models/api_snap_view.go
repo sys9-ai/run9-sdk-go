@@ -43,6 +43,9 @@ type APISnapView struct {
 	// inuse reason
 	InuseReason APISnapInUseReason `json:"inuse_reason,omitempty"`
 
+	// Labels are mutable metadata owned by this Snap, never inherited by descendants.
+	Labels map[string]string `json:"labels,omitempty"`
+
 	// last used at
 	LastUsedAt string `json:"last_used_at,omitempty"`
 

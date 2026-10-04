@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/sys9-ai/run9-sdk-go/internal/generated/models"
 )
 
 // NewForkSnapParams creates a new ForkSnapParams object,
@@ -73,6 +74,12 @@ type ForkSnapParams struct {
 	   Project handle (`project_cid`).
 	*/
 	ProjectCid string
+
+	/* Request.
+
+	   Optional labels for the new Snap; source labels are never inherited.
+	*/
+	Request *models.APIForkSnapPayload
 
 	HTTPClient *http.Client
 
@@ -153,6 +160,17 @@ func (o *ForkSnapParams) SetProjectCid(projectCid string) {
 	o.ProjectCid = projectCid
 }
 
+// WithRequest adds the request to the fork snap params.
+func (o *ForkSnapParams) WithRequest(request *models.APIForkSnapPayload) *ForkSnapParams {
+	o.SetRequest(request)
+	return o
+}
+
+// SetRequest adds the request to the fork snap params.
+func (o *ForkSnapParams) SetRequest(request *models.APIForkSnapPayload) {
+	o.Request = request
+}
+
 // WriteToRequest writes these params to a [runtime.ClientRequest].
 func (o *ForkSnapParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 	if err := r.SetTimeout(o.inner.timeout); err != nil {
@@ -168,6 +186,11 @@ func (o *ForkSnapParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 	// path param project_cid
 	if err := r.SetPathParam("project_cid", o.ProjectCid); err != nil {
 		return err
+	}
+	if o.Request != nil {
+		if err := r.SetBodyParam(o.Request); err != nil {
+			return err
+		}
 	}
 
 	if len(res) > 0 {

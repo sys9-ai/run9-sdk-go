@@ -290,6 +290,8 @@ type BoxView struct {
 // filesystem or a Volume's own filesystem. The original root Attached Snap
 // retains the owning Box's composed filesystem view.
 type SnapView struct {
+	// Labels is mutable metadata belonging only to this Snap.
+	Labels map[string]string `json:"labels,omitempty"`
 	// PrewarmProfileID and PrewarmProfileName identify the profile blocking base deletion.
 	PrewarmProfileID    string    `json:"prewarm_profile_id,omitempty"`
 	PrewarmProfileName  string    `json:"prewarm_profile_name,omitempty"`
@@ -618,6 +620,8 @@ type ImportSnapRequest struct {
 
 // ListSnapsRequest describes optional filters for ListSnaps.
 type ListSnapsRequest struct {
+	// Labels requires every exact key/value pair to match.
+	Labels map[string]string
 	// Attached selects attached Snaps (true) or detached Snaps (false).
 	// Nil defaults to detached Snaps. Attached includes the original Attached
 	// Snap and every Volume, with their owning Box and mount paths.
@@ -909,4 +913,16 @@ type BackgroundExecPullOutput struct {
 	Reason string
 	// IdleDeadlineAt is the current idle lease deadline when the control plane reports it.
 	IdleDeadlineAt *time.Time
+}
+
+// ForkSnapRequest supplies metadata for a new independent Snap.
+type ForkSnapRequest struct {
+	// Labels belongs only to the new Snap. Source labels are never inherited.
+	Labels map[string]string `json:"labels,omitempty"`
+}
+
+// UpdateSnapRequest edits mutable Snap metadata, including on attached Snaps.
+type UpdateSnapRequest struct {
+	// Labels replaces all labels when non-nil. An empty map clears them.
+	Labels *map[string]string `json:"labels,omitempty"`
 }
