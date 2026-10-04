@@ -255,3 +255,18 @@ func ExampleVolumeConfig() {
 	fmt.Println(volume.MountPath, volume.SourceSnapID)
 	// Output: /state s12345678
 }
+
+func ExampleClient_ForkSnapWithOptions() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "ak", SK: "sk"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	project := client.WithProject("default")
+	snap, err := project.ForkSnapWithOptions(context.Background(), "snap-source", run9.ForkSnapRequest{
+		Labels: map[string]string{"owner": "chord", "purpose": "base"},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Labeled Snap %s", snap.SnapID)
+}

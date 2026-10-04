@@ -349,3 +349,20 @@ Volumes: []run9.VolumeConfig{
 `SourceSnapID` and `InitialPermissions` are mutually exclusive. A derived Volume
 preserves its source permissions. Deleting a Box still deletes its Root and all
 Volumes; retained descendant data may delay physical reclamation of ancestors.
+
+### Snap labels
+
+Snap labels are mutable control-plane metadata, separate from immutable filesystem
+contents. A Fork never inherits source or Box labels. Use `ForkSnapWithOptions` to
+assign labels atomically to its new Snap, or `UpdateSnap` to replace labels later.
+`ListSnapsRequest.Labels` matches every exact key/value pair. A non-nil empty map
+in `UpdateSnapRequest.Labels` clears labels; nil leaves them unchanged.
+
+```go
+saved, err := project.ForkSnapWithOptions(ctx, sourceID, run9.ForkSnapRequest{
+    Labels: map[string]string{"owner": "chord", "purpose": "base"},
+})
+```
+
+Labels do not grant access, change filesystem contents, or update `last_used_at`.
+Import may reuse an existing Snap; it does not assign labels as a side effect.

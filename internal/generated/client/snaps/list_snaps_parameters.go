@@ -12,6 +12,7 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/conv"
+	"github.com/go-openapi/swag/stringutils"
 )
 
 // NewListSnapsParams creates a new ListSnapsParams object,
@@ -68,6 +69,12 @@ type ListSnapsParams struct {
 	   Defaults to detached Snaps. True selects Box-owned Snaps, including the original Attached Snap and every Volume, with their owning Box and mount paths.
 	*/
 	Attached *bool
+
+	/* Label.
+
+	   Exact key=value label filters; all must match.
+	*/
+	Label []string
 
 	/* ProjectCid.
 
@@ -143,6 +150,17 @@ func (o *ListSnapsParams) SetAttached(attached *bool) {
 	o.Attached = attached
 }
 
+// WithLabel adds the label to the list snaps params.
+func (o *ListSnapsParams) WithLabel(label []string) *ListSnapsParams {
+	o.SetLabel(label)
+	return o
+}
+
+// SetLabel adds the label to the list snaps params.
+func (o *ListSnapsParams) SetLabel(label []string) {
+	o.Label = label
+}
+
 // WithProjectCid adds the projectCid to the list snaps params.
 func (o *ListSnapsParams) WithProjectCid(projectCid string) *ListSnapsParams {
 	o.SetProjectCid(projectCid)
@@ -178,6 +196,17 @@ func (o *ListSnapsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 		}
 	}
 
+	if o.Label != nil {
+
+		// binding items for label
+		joinedLabel := o.bindParamLabel(reg)
+
+		// query array param label
+		if err := r.SetQueryParam("label", joinedLabel...); err != nil {
+			return err
+		}
+	}
+
 	// path param project_cid
 	if err := r.SetPathParam("project_cid", o.ProjectCid); err != nil {
 		return err
@@ -187,4 +216,21 @@ func (o *ListSnapsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 		return errors.CompositeValidationError(res...)
 	}
 	return nil
+}
+
+// bindParamListSnaps binds the parameter label.
+func (o *ListSnapsParams) bindParamLabel(formats strfmt.Registry) []string {
+	labelIR := o.Label
+
+	var labelIC []string
+	for _, labelIIR := range labelIR { // explode []string
+
+		labelIIV := labelIIR // string as string
+		labelIC = append(labelIC, labelIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	labelIS := stringutils.JoinByFormat(labelIC, "multi")
+
+	return labelIS
 }

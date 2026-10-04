@@ -199,14 +199,12 @@ func (c *Client) ImportSnap(ctx context.Context, req ImportSnapRequest) (SnapVie
 	})
 }
 
-// ListSnaps lists project-scoped snaps with an optional attached filter.
+// ListSnaps lists project-scoped snaps with optional attachment and label filters.
 func (c *Client) ListSnaps(ctx context.Context, req ListSnapsRequest) ([]SnapView, error) {
 	return projectGeneratedResult[[]SnapView](c, func(projectCID string) (any, error) {
-		params := &snaps.ListSnapsParams{
-			ProjectCid: projectCID,
-		}
-		if req.Attached != nil {
-			params.Attached = req.Attached
+		params := &snaps.ListSnapsParams{ProjectCid: projectCID, Attached: req.Attached}
+		for key, value := range req.Labels {
+			params.Label = append(params.Label, key+"="+value)
 		}
 		return c.portal.Snaps.ListSnapsContext(ctx, params, c.auth)
 	})
@@ -223,6 +221,7 @@ func (c *Client) GetSnap(ctx context.Context, snapID string) (SnapView, error) {
 }
 
 // ForkSnap creates an independent detached Snap from the selected Snap's contents.
+// Source labels are not inherited; use ForkSnapWithOptions to assign new labels.
 // A healthy running source Box pauses briefly, then resumes its existing processes.
 // The call waits until the new Snap is ready; ctx bounds the entire request.
 // Only the selected filesystem is captured, excluding other mounts, mount
