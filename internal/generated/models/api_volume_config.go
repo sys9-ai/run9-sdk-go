@@ -27,7 +27,8 @@ type APIVolumeConfig struct {
 	// Example: /state
 	MountPath string `json:"mount_path,omitempty"`
 
-	// SourceSnapID initializes a new volume from a settled Snap without changing it.
+	// SourceSnapID forks settled or healthy online storage into a new volume.
+	// A creation can use at most one online source Box; captures are per disk.
 	// Omit for an empty volume. Mutually exclusive with InitialPermissions.
 	SourceSnapID string `json:"source_snap_id,omitempty"`
 }

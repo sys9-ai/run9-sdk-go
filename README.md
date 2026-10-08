@@ -128,7 +128,7 @@ files. `CreateBox` with a source Snap uses the same online capture behavior.
 `ListSnaps` defaults to detached Snaps; set `Attached` to a pointer to `true` to
 list the original Attached Snaps and Volumes instead.
 
-Volumes cannot be deleted independently or initialized from a Snap in this MVP.
+Volumes cannot be deleted independently. Use `SourceSnapID` to initialize a new Volume from a Snap.
 A saved Snap may contain only application files, not a bootable root filesystem.
 A failed mount
 does not fall back to writing the Root directory. The disk uses Run9's existing
@@ -333,11 +333,16 @@ Before `v1.0.0`, breaking API cleanup is allowed when it materially improves cla
 
 ### Restore a data Volume
 
-Set `VolumeConfig.SourceSnapID` when creating a Box to fork a settled Snap into a
-new writable Volume. The source can be a detached backup or a Volume of a stopped
-Box. Its identity and contents stay unchanged; deleting either Box does not
+Set `VolumeConfig.SourceSnapID` when creating a Box to fork a Snap into a new
+writable Volume. The source can be a detached backup or the Root/Volume of a
+stopped or healthy online Box. Its identity and contents stay unchanged; deleting either Box does not
 invalidate the other's data. Sources must pass the same Project authorization as
-Root sources. Online sources must first be saved with `ForkSnap`.
+Root sources. Online sources are captured directly without an intermediate backup.
+One creation may use sources from at most one online Box instance, mixed with
+settled sources and empty Volumes. The Root may come from another settled Snap
+or a new image. Each filesystem is captured independently; there is no common
+multi-disk snapshot time. The source resumes its existing processes after brief
+pauses. The Box is published only after every disk is ready.
 
 ```go
 Volumes: []run9.VolumeConfig{

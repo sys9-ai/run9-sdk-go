@@ -1611,7 +1611,8 @@ definitions:
         type: string
       source_snap_id:
         description: |-
-          SourceSnapID initializes a new volume from a settled Snap without changing it.
+          SourceSnapID forks settled or healthy online storage into a new volume.
+          A creation can use at most one online source Box; captures are per disk.
           Omit for an empty volume. Mutually exclusive with InitialPermissions.
         type: string
     type: object

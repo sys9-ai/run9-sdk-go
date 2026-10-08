@@ -28,6 +28,35 @@ func ExampleClient_CreateBox() {
 	log.Printf("Box %s has persistent Volumes %v", box.BoxID, box.Volumes)
 }
 
+func ExampleClient_CreateBox_onlineVolumes() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "ak-example", SK: "sk-example"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	project := client.WithProject("default")
+	ctx := context.Background()
+	parent, err := project.GetBox(ctx, "working-box")
+	if err != nil {
+		log.Fatal(err)
+	}
+	workspace, err := parent.SnapIDAtMount("/workspace")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// The parent keeps running. The child gets independent writable disks.
+	child, err := project.CreateBox(ctx, run9.CreateBoxRequest{
+		SourceSnapID: parent.BoxSnapID,
+		Volumes: []run9.VolumeConfig{
+			{MountPath: "/workspace", SourceSnapID: workspace},
+			{MountPath: "/private"},
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Created independent Box %s", child.BoxID)
+}
+
 func ExampleClient_CreateBoxFromSharedSnap() {
 	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "ak-example", SK: "sk-example"})
 	if err != nil {

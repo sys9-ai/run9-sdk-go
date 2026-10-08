@@ -544,7 +544,8 @@ type VolumeView struct {
 
 // VolumeConfig creates one independent Box-owned persistent Snap.
 type VolumeConfig struct {
-	// SourceSnapID forks a settled source into the new volume without changing it.
+	// SourceSnapID forks settled or healthy online storage into an independent volume.
+	// One creation can use at most one online source Box; captures are per disk.
 	// Omit for an empty volume; cannot be combined with InitialPermissions.
 	SourceSnapID string `json:"source_snap_id,omitempty"`
 	// MountPath is a fixed directory inside the Box.
