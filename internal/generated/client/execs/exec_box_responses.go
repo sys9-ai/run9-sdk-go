@@ -39,6 +39,12 @@ func (o *ExecBoxReader) ReadResponse(response runtime.ClientResponse, consumer r
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewExecBoxConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	default:
 		return nil, runtime.NewAPIError("[POST /projects/{project_cid}/workspace/boxes/{id}/execs] execBox", response, response.Code())
 	}
@@ -243,6 +249,76 @@ func (o *ExecBoxUnauthorized) GetPayload() *models.Error {
 }
 
 func (o *ExecBoxUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.Error)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewExecBoxConflict creates a ExecBoxConflict with default headers values
+func NewExecBoxConflict() *ExecBoxConflict {
+	return &ExecBoxConflict{}
+}
+
+/*
+ExecBoxConflict describes a response with status code 409, with default header values.
+
+The source Snap is temporarily in use; retry after the source operation finishes.
+*/
+type ExecBoxConflict struct {
+	Payload *models.Error
+}
+
+// IsSuccess returns true when this exec box conflict response has a 2xx status code
+func (o *ExecBoxConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this exec box conflict response has a 3xx status code
+func (o *ExecBoxConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this exec box conflict response has a 4xx status code
+func (o *ExecBoxConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this exec box conflict response has a 5xx status code
+func (o *ExecBoxConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this exec box conflict response a status code equal to that given
+func (o *ExecBoxConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the exec box conflict response
+func (o *ExecBoxConflict) Code() int {
+	return 409
+}
+
+func (o *ExecBoxConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /projects/{project_cid}/workspace/boxes/{id}/execs][%d] execBoxConflict %s", 409, payload)
+}
+
+func (o *ExecBoxConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /projects/{project_cid}/workspace/boxes/{id}/execs][%d] execBoxConflict %s", 409, payload)
+}
+
+func (o *ExecBoxConflict) GetPayload() *models.Error {
+	return o.Payload
+}
+
+func (o *ExecBoxConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.Error)
 

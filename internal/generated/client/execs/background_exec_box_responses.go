@@ -268,7 +268,7 @@ func NewBackgroundExecBoxConflict() *BackgroundExecBoxConflict {
 /*
 BackgroundExecBoxConflict describes a response with status code 409, with default header values.
 
-The idempotency key was already used with a different request.
+The source Snap is temporarily in use, or the idempotency key was already used with a different request.
 */
 type BackgroundExecBoxConflict struct {
 	Payload *models.Error

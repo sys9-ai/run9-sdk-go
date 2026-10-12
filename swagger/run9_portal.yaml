@@ -3515,7 +3515,8 @@ paths:
           schema:
             $ref: '#/definitions/Error'
         "409":
-          description: The idempotency key was already used with a different request.
+          description: The source Snap is temporarily in use, or the idempotency key
+            was already used with a different request.
           schema:
             $ref: '#/definitions/Error'
       security:
@@ -3559,6 +3560,11 @@ paths:
             $ref: '#/definitions/Error'
         "401":
           description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+        "409":
+          description: The source Snap is temporarily in use; retry after the source
+            operation finishes.
           schema:
             $ref: '#/definitions/Error'
       security:
@@ -3628,6 +3634,11 @@ paths:
           description: Missing or invalid credentials.
           schema:
             $ref: '#/definitions/Error'
+        "409":
+          description: The source Snap is temporarily in use; retry after the source
+            operation finishes.
+          schema:
+            $ref: '#/definitions/Error'
       security:
       - BasicAuth: []
       - SessionToken: []
@@ -3674,6 +3685,11 @@ paths:
             $ref: '#/definitions/Error'
         "401":
           description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+        "409":
+          description: The source Snap is temporarily in use; retry after the source
+            operation finishes.
           schema:
             $ref: '#/definitions/Error'
       security:
@@ -3728,6 +3744,11 @@ paths:
             $ref: '#/definitions/Error'
         "401":
           description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+        "409":
+          description: The source Snap is temporarily in use; retry after the source
+            operation finishes.
           schema:
             $ref: '#/definitions/Error'
       security:

@@ -271,3 +271,28 @@ func TestBackgroundExecFollowerReadSkipsStartedOnlyPolls(t *testing.T) {
 func intPtr(value int) *int {
 	return &value
 }
+
+func TestClientStartExecReturnsSourceUseConflict(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		writeJSONResponse(t, w, http.StatusConflict, map[string]string{
+			"error": "source snap has active source uses",
+		})
+	}))
+	defer server.Close()
+	client := newProjectTestClient(t, server.URL, "default")
+	for _, start := range []struct {
+		name string
+		call func(context.Context, string, ExecRequest) (ExecView, error)
+	}{
+		{"foreground", client.StartExec},
+		{"background", client.StartBackgroundExec},
+	} {
+		t.Run(start.name, func(t *testing.T) {
+			_, err := start.call(t.Context(), "box-1", ExecRequest{Command: []string{"true"}})
+			var apiErr *Error
+			require.ErrorAs(t, err, &apiErr)
+			require.Equal(t, http.StatusConflict, apiErr.StatusCode)
+			require.Equal(t, "source snap has active source uses", apiErr.Message)
+		})
+	}
+}
