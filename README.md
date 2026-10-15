@@ -128,6 +128,25 @@ files. `CreateBox` with a source Snap uses the same online capture behavior.
 `ListSnaps` defaults to detached Snaps; set `Attached` to a pointer to `true` to
 list the original Attached Snaps and Volumes instead.
 
+`BoxView.Storage.Bytes` is the data a Box keeps on its root filesystem and
+Volumes: what those disks wrote themselves and still read, plus what Forks taken
+from them received. Data inherited from the source Snap is not counted, so a new
+Box starts near zero and deleting inherited files does not lower it. The figure
+follows writes and deletions within about a minute while the Box runs:
+
+```go
+box, err := client.GetBox(ctx, "my-box")
+if err != nil {
+    return err
+}
+if box.Storage != nil {
+    fmt.Printf("%s keeps %d bytes\n", box.BoxID, box.Storage.Bytes)
+}
+```
+
+`SnapView.Size` is a different number: the filesystem usage of one disk,
+including inherited data, as of its last stop.
+
 Volumes cannot be deleted independently. Use `SourceSnapID` to initialize a new Volume from a Snap.
 A saved Snap may contain only application files, not a bootable root filesystem.
 A failed mount

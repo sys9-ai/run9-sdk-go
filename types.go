@@ -275,7 +275,9 @@ type BoxView struct {
 	BoxSnapID string `json:"box_snap_id"`
 	// Volumes lists the fixed Box-owned Snap mounts; empty means none.
 	// It describes configuration, not whether a runtime is currently mounted.
-	Volumes                   []VolumeView   `json:"volumes,omitempty"`
+	Volumes []VolumeView `json:"volumes,omitempty"`
+	// Storage is nil for a deleted Box.
+	Storage                   *BoxStorage    `json:"storage,omitempty"`
 	FileAccessURL             string         `json:"file_access_url,omitempty"`
 	DesiredShape              string         `json:"desired_shape"`
 	NetworkMode               BoxNetworkMode `json:"network_mode"`
@@ -284,6 +286,21 @@ type BoxView struct {
 	CurrentRuntimeNetworkMode BoxNetworkMode `json:"current_runtime_network_mode,omitempty"`
 	PendingShapeChange        bool           `json:"pending_shape_change"`
 	PendingNetworkModeChange  bool           `json:"pending_network_mode_change"`
+}
+
+// BoxStorage is the data a Box keeps on its root filesystem and Volumes.
+//
+// Bytes counts what those disks wrote themselves and still read, plus what
+// Forks taken from them received. Data inherited from the Box's source Snap is
+// not counted: a new Box starts near zero however large its source is, and
+// deleting inherited files does not lower it. While the Box runs, Bytes follows
+// writes and deletions within about a minute; no stop is needed.
+//
+// It differs from [SnapSize], the filesystem usage a disk reports including
+// inherited data, and from [SnapOwnedStorage], a periodic measurement of one
+// Snap's stored objects.
+type BoxStorage struct {
+	Bytes uint64 `json:"bytes"`
 }
 
 // SnapView describes one snap. FileAccessURL reads a detached Snap's immutable

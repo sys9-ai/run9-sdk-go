@@ -84,6 +84,9 @@ type APIBoxView struct {
 	// state
 	State APIBoxState `json:"state,omitempty"`
 
+	// storage
+	Storage *APIBoxStorage `json:"storage,omitempty"`
+
 	// DataVolumes describes the fixed Box-owned volumes; omitted when disabled.
 	// This is configuration, not runtime mount readiness. Stop retains every disk;
 	// deleting the Box deletes them. Root Snap forks exclude data and configuration.
@@ -107,6 +110,10 @@ func (m *APIBoxView) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateState(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStorage(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -206,6 +213,29 @@ func (m *APIBoxView) validateState(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *APIBoxView) validateStorage(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.Storage) { // not required
+		return nil
+	}
+
+	if m.Storage != nil {
+		if err := m.Storage.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("storage")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("storage")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *APIBoxView) validateVolumes(formats strfmt.Registry) error {
 	if typeutils.IsZero(m.Volumes) { // not required
 		return nil
@@ -253,6 +283,10 @@ func (m *APIBoxView) ContextValidate(ctx context.Context, formats strfmt.Registr
 	}
 
 	if err := m.contextValidateState(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStorage(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -352,6 +386,31 @@ func (m *APIBoxView) contextValidateState(ctx context.Context, formats strfmt.Re
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *APIBoxView) contextValidateStorage(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Storage != nil {
+
+		if typeutils.IsZero(m.Storage) { // not required
+			return nil
+		}
+
+		if err := m.Storage.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("storage")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("storage")
+			}
+
+			return err
+		}
 	}
 
 	return nil

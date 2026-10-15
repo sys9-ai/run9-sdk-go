@@ -478,6 +478,11 @@ definitions:
     - BoxStateRunning
     - BoxStateError
     - BoxStateDeleted
+  api.BoxStorage:
+    properties:
+      bytes:
+        type: integer
+    type: object
   api.BoxView:
     properties:
       box_id:
@@ -528,6 +533,8 @@ definitions:
         type: string
       state:
         $ref: '#/definitions/api.BoxState'
+      storage:
+        $ref: '#/definitions/api.BoxStorage'
       volumes:
         description: |-
           DataVolumes describes the fixed Box-owned volumes; omitted when disabled.
@@ -1702,6 +1709,11 @@ definitions:
   pb.SnapSize:
     properties:
       measured_at_unix_ms:
+        type: integer
+      owned_bytes:
+        description: |-
+          Own data this close counted as kept: still read, or below the bound of a
+          Fork. Absent when the close did not count.
         type: integer
       used_bytes:
         type: integer
