@@ -17,9 +17,11 @@ type PbSnapSize struct {
 	// measured at unix ms
 	MeasuredAtUnixMs int64 `json:"measured_at_unix_ms,omitempty"`
 
-	// Own data this close counted as kept: still read, or below the bound of a
-	// Fork. Absent when the close did not count.
+	// Signed raw counter from this close; absent when counting failed.
 	OwnedBytes int64 `json:"owned_bytes,omitempty"`
+
+	// owned bytes basis
+	OwnedBytesBasis int64 `json:"owned_bytes_basis,omitempty"`
 
 	// used bytes
 	UsedBytes int64 `json:"used_bytes,omitempty"`

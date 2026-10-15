@@ -1711,9 +1711,9 @@ definitions:
       measured_at_unix_ms:
         type: integer
       owned_bytes:
-        description: |-
-          Own data this close counted as kept: still read, or below the bound of a
-          Fork. Absent when the close did not count.
+        description: Signed raw counter from this close; absent when counting failed.
+        type: integer
+      owned_bytes_basis:
         type: integer
       used_bytes:
         type: integer
