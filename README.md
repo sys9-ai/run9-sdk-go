@@ -132,9 +132,9 @@ list the original Attached Snaps and Volumes instead.
 Volumes: what those disks wrote themselves and still read, plus what Forks taken
 from them received. Data inherited from the source Snap is not counted, so a new
 Box starts near zero and deleting inherited files does not lower it. The figure
-follows writes and deletions within about a minute while the Box runs. It is
-nil for a deleted Box, and for an older Box with a disk Run9 has never counted
-or measured:
+follows writes and deletions within about a minute while the Box runs. An
+older disk Run9 has not counted or measured yet adds nothing, and `Storage` is
+nil for a deleted Box or an older Box with no such figure on any disk:
 
 ```go
 box, err := client.GetBox(ctx, "my-box")
