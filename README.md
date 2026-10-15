@@ -390,3 +390,11 @@ saved, err := project.ForkSnapWithOptions(ctx, sourceID, run9.ForkSnapRequest{
 
 Labels do not grant access, change filesystem contents, or update `last_used_at`.
 Import may reuse an existing Snap; it does not assign labels as a side effect.
+
+### Archive downloads
+
+`project.DownloadArchive(ctx, boxID, absolutePath)` returns an `ArchiveReader`.
+Read it through EOF before using downloaded files, then close it. The reader
+checks the server's completion trailer; a tar end marker or clean HTTP EOF alone
+is not proof that the runtime succeeded. Missing confirmation returns an error
+wrapping `io.ErrUnexpectedEOF`, including when a proxy hides a failed stream.

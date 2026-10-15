@@ -299,3 +299,14 @@ func ExampleClient_ForkSnapWithOptions() {
 	}
 	log.Printf("Labeled Snap %s", snap.SnapID)
 }
+
+func ExampleClient_DownloadArchive() {
+	client, _ := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "access-key", SK: "secret-key"})
+	reader, err := client.WithProject("default").DownloadArchive(context.Background(), "my-box", "/work/result.txt")
+	if err != nil {
+		return
+	}
+	defer reader.Close()
+	// Consume the whole reader, including its completion check, before publishing files.
+	_, _ = io.Copy(io.Discard, reader)
+}

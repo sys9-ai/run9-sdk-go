@@ -295,8 +295,9 @@ func (c *Client) UploadArchive(ctx context.Context, boxID string, boxAbsPath str
 	return view, err
 }
 
-// DownloadArchive downloads one box path as a tar archive.
-func (c *Client) DownloadArchive(ctx context.Context, boxID string, boxAbsPath string) (io.ReadCloser, error) {
+// DownloadArchive downloads one box path as a tar archive. Read the returned
+// reader through EOF to verify completion, then close it.
+func (c *Client) DownloadArchive(ctx context.Context, boxID string, boxAbsPath string) (*ArchiveReader, error) {
 	resp, err := c.doWorkspaceRaw(ctx, http.MethodGet, "/boxes/"+url.PathEscape(strings.TrimSpace(boxID))+"/files/download", requestOptions{
 		query: map[string]string{
 			"archive":      "tar",
@@ -306,7 +307,7 @@ func (c *Client) DownloadArchive(ctx context.Context, boxID string, boxAbsPath s
 	if err != nil {
 		return nil, err
 	}
-	return resp.Body, nil
+	return &ArchiveReader{response: resp}, nil
 }
 
 func (c *Client) do(ctx context.Context, method string, path string, options requestOptions) error {
