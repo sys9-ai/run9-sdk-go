@@ -276,7 +276,8 @@ type BoxView struct {
 	// Volumes lists the fixed Box-owned Snap mounts; empty means none.
 	// It describes configuration, not whether a runtime is currently mounted.
 	Volumes []VolumeView `json:"volumes,omitempty"`
-	// Storage is nil for a deleted Box.
+	// Storage is nil for a deleted Box, and for a Box with a disk Run9 has
+	// never counted or measured.
 	Storage                   *BoxStorage    `json:"storage,omitempty"`
 	FileAccessURL             string         `json:"file_access_url,omitempty"`
 	DesiredShape              string         `json:"desired_shape"`
