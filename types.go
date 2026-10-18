@@ -209,10 +209,20 @@ type ProjectSecretView struct {
 	Placeholder      string             `json:"placeholder"`
 	AllowedHosts     []string           `json:"allowed_hosts"`
 	InjectHeaderName string             `json:"inject_header_name"`
-	CreatedBy        string             `json:"created_by"`
-	UpdatedBy        string             `json:"updated_by"`
-	CreatedAt        time.Time          `json:"created_at"`
-	UpdatedAt        time.Time          `json:"updated_at"`
+	// BoxLabel is set when a project secret only applies to boxes carrying this label.
+	BoxLabel  *BoxLabel `json:"box_label,omitempty"`
+	CreatedBy string    `json:"created_by"`
+	UpdatedBy string    `json:"updated_by"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// BoxLabel is one exact box label match.
+type BoxLabel struct {
+	// Key is the box label key.
+	Key string `json:"key"`
+	// Value is the box label value that must match exactly.
+	Value string `json:"value"`
 }
 
 // CreateProjectRequest creates a new project.
@@ -235,6 +245,10 @@ type CreateProjectSecretRequest struct {
 	AllowedHosts []string `json:"allowed_hosts"`
 	// InjectHeaderName selects which HTTP header names are eligible for substitution.
 	InjectHeaderName string `json:"inject_header_name"`
+	// BoxLabel limits a project secret to managed boxes carrying this label.
+	// Nil applies it to every managed box in the project. Box secrets reject it.
+	// It cannot be changed later.
+	BoxLabel *BoxLabel `json:"box_label,omitempty"`
 }
 
 // UpdateProjectSecretRequest updates one existing project or box secret.

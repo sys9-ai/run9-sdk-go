@@ -23,6 +23,9 @@ type APIProjectSecretView struct {
 	// box id
 	BoxID string `json:"box_id,omitempty"`
 
+	// BoxLabel is set when the secret only applies to boxes carrying this label.
+	BoxLabel *APIBoxLabel `json:"box_label,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -61,6 +64,10 @@ type APIProjectSecretView struct {
 func (m *APIProjectSecretView) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateBoxLabel(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateScope(formats); err != nil {
 		res = append(res, err)
 	}
@@ -68,6 +75,29 @@ func (m *APIProjectSecretView) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *APIProjectSecretView) validateBoxLabel(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.BoxLabel) { // not required
+		return nil
+	}
+
+	if m.BoxLabel != nil {
+		if err := m.BoxLabel.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("box_label")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("box_label")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -96,6 +126,10 @@ func (m *APIProjectSecretView) validateScope(formats strfmt.Registry) error {
 func (m *APIProjectSecretView) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateBoxLabel(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateScope(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -103,6 +137,31 @@ func (m *APIProjectSecretView) ContextValidate(ctx context.Context, formats strf
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *APIProjectSecretView) contextValidateBoxLabel(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.BoxLabel != nil {
+
+		if typeutils.IsZero(m.BoxLabel) { // not required
+			return nil
+		}
+
+		if err := m.BoxLabel.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("box_label")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("box_label")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

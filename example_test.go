@@ -300,6 +300,24 @@ func ExampleClient_ForkSnapWithOptions() {
 	log.Printf("Labeled Snap %s", snap.SnapID)
 }
 
+func ExampleClient_CreateProjectSecret() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "ak", SK: "sk"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	secret, err := client.WithProject("default").CreateProjectSecret(context.Background(), run9.CreateProjectSecretRequest{
+		Value:            "sk-real-key",
+		Placeholder:      "run9secret_team_web",
+		AllowedHosts:     []string{"api.openai.com"},
+		InjectHeaderName: "Authorization",
+		BoxLabel:         &run9.BoxLabel{Key: "team", Value: "web"},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Boxes labeled team=web can use %s", secret.Placeholder)
+}
+
 func ExampleClient_DownloadArchive() {
 	client, _ := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "access-key", SK: "secret-key"})
 	reader, err := client.WithProject("default").DownloadArchive(context.Background(), "my-box", "/work/result.txt")

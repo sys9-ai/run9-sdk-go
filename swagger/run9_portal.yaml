@@ -130,6 +130,12 @@ definitions:
         items:
           type: string
         type: array
+      box_label:
+        allOf:
+        - $ref: '#/definitions/api.BoxLabel'
+        description: BoxLabel limits a project secret to boxes carrying this label.
+          Box secrets reject it.
+        x-nullable: true
       inject_header_name:
         type: string
       name:
@@ -454,6 +460,15 @@ definitions:
       code_verifier:
         type: string
       redirect_uri:
+        type: string
+    type: object
+  api.BoxLabel:
+    properties:
+      key:
+        description: Key is the box label key.
+        type: string
+      value:
+        description: Value is the box label value that must match exactly.
         type: string
     type: object
   api.BoxNetworkMode:
@@ -1128,6 +1143,12 @@ definitions:
         type: array
       box_id:
         type: string
+      box_label:
+        allOf:
+        - $ref: '#/definitions/api.BoxLabel'
+        description: BoxLabel is set when the secret only applies to boxes carrying
+          this label.
+        x-nullable: true
       created_at:
         type: string
       created_by:

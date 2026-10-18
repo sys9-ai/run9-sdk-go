@@ -172,6 +172,34 @@ func TestClientUpdateBoxCanClearLabelsWithoutSendingNull(t *testing.T) {
 	require.Empty(t, view.Labels)
 }
 
+func TestClientCreateProjectSecretSendsBoxLabel(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/projects/default/secrets", r.URL.Path)
+		require.Equal(t, http.MethodPost, r.Method)
+
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		require.JSONEq(t, `{"value":"sk-1","placeholder":"run9secret_web","allowed_hosts":["api.openai.com"],"inject_header_name":"Authorization","box_label":{"key":"team","value":"web"}}`, string(body))
+
+		writeJSONResponse(t, w, http.StatusCreated, ProjectSecretView{
+			SecretID: "secret-1",
+			Scope:    ProjectSecretScopeProject,
+			BoxLabel: &BoxLabel{Key: "team", Value: "web"},
+		})
+	}))
+	defer server.Close()
+
+	view, err := newProjectTestClient(t, server.URL, "default").CreateProjectSecret(context.Background(), CreateProjectSecretRequest{
+		Value:            "sk-1",
+		Placeholder:      "run9secret_web",
+		AllowedHosts:     []string{"api.openai.com"},
+		InjectHeaderName: "Authorization",
+		BoxLabel:         &BoxLabel{Key: "team", Value: "web"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, &BoxLabel{Key: "team", Value: "web"}, view.BoxLabel)
+}
+
 func TestClientUpdateProjectSecretOmitsAllowedHostsWhenUnset(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/projects/default/secrets/secret-1", r.URL.Path)

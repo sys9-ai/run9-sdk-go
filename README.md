@@ -393,6 +393,27 @@ saved, err := project.ForkSnapWithOptions(ctx, sourceID, run9.ForkSnapRequest{
 Labels do not grant access, change filesystem contents, or update `last_used_at`.
 Import may reuse an existing Snap; it does not assign labels as a side effect.
 
+### Secrets for labeled boxes
+
+A Project Secret applies to every managed box in the project. Set `BoxLabel` to
+limit it to managed boxes that carry that exact label. The box label decides at
+request time: adding, changing, or removing the label takes effect for new HTTPS
+connections within seconds, and a box created with the label can use the secret
+from its first command. The label is fixed when the secret is created.
+
+```go
+secret, err := project.CreateProjectSecret(ctx, run9.CreateProjectSecretRequest{
+    Value:            apiKey,
+    Placeholder:      "run9secret_team_web",
+    AllowedHosts:     []string{"api.openai.com"},
+    InjectHeaderName: "Authorization",
+    BoxLabel:         &run9.BoxLabel{Key: "team", Value: "web"},
+})
+```
+
+Anyone who can change a box's labels can give that box the matching secrets, so
+use labels to route secrets to boxes, not to isolate project members from each other.
+
 ### Archive downloads
 
 `project.DownloadArchive(ctx, boxID, absolutePath)` returns an `ArchiveReader`.

@@ -4,9 +4,12 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/jsonutils"
+	"github.com/go-openapi/swag/typeutils"
 )
 
 // CreateProjectSecretPayload create project secret payload
@@ -16,6 +19,9 @@ type CreateProjectSecretPayload struct {
 
 	// allowed hosts
 	AllowedHosts []string `json:"allowed_hosts"`
+
+	// BoxLabel limits a project secret to boxes carrying this label. Box secrets reject it.
+	BoxLabel *APIBoxLabel `json:"box_label,omitempty"`
 
 	// inject header name
 	InjectHeaderName string `json:"inject_header_name,omitempty"`
@@ -32,11 +38,77 @@ type CreateProjectSecretPayload struct {
 
 // Validate validates this create project secret payload
 func (m *CreateProjectSecretPayload) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateBoxLabel(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this create project secret payload based on context it is used
+func (m *CreateProjectSecretPayload) validateBoxLabel(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.BoxLabel) { // not required
+		return nil
+	}
+
+	if m.BoxLabel != nil {
+		if err := m.BoxLabel.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("box_label")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("box_label")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this create project secret payload based on the context it is used
 func (m *CreateProjectSecretPayload) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateBoxLabel(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *CreateProjectSecretPayload) contextValidateBoxLabel(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.BoxLabel != nil {
+
+		if typeutils.IsZero(m.BoxLabel) { // not required
+			return nil
+		}
+
+		if err := m.BoxLabel.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("box_label")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("box_label")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
