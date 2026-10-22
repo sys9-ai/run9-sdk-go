@@ -170,15 +170,18 @@ type SSHKeyView struct {
 
 // ProjectView describes one project visible to the caller.
 type ProjectView struct {
-	ProjectID   string      `json:"project_id"`
-	OrgID       string      `json:"org_id"`
-	ProjectCID  string      `json:"project_cid"`
-	DisplayName string      `json:"display_name"`
-	Description string      `json:"description,omitempty"`
-	Role        ProjectRole `json:"role"`
-	CreatedBy   string      `json:"created_by"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+	ProjectID   string `json:"project_id"`
+	OrgID       string `json:"org_id"`
+	ProjectCID  string `json:"project_cid"`
+	DisplayName string `json:"display_name"`
+	Description string `json:"description,omitempty"`
+	// OutboundIPLabel is the Box label key whose values get separate outbound
+	// IPs; empty means every Box in the project shares one.
+	OutboundIPLabel string      `json:"outbound_ip_label,omitempty"`
+	Role            ProjectRole `json:"role"`
+	CreatedBy       string      `json:"created_by"`
+	CreatedAt       time.Time   `json:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at"`
 }
 
 // DeleteProjectResult describes the accepted result of deleting a project.
@@ -301,6 +304,15 @@ type BoxView struct {
 	CurrentRuntimeNetworkMode BoxNetworkMode `json:"current_runtime_network_mode,omitempty"`
 	PendingShapeChange        bool           `json:"pending_shape_change"`
 	PendingNetworkModeChange  bool           `json:"pending_network_mode_change"`
+	// OutboundIP is the public address the Box reaches the internet from once
+	// it next starts; empty when the deployment has no outbound IPs.
+	OutboundIP string `json:"outbound_ip,omitempty"`
+	// CurrentRuntimeOutboundIP is the address the running Box uses until it
+	// stops.
+	CurrentRuntimeOutboundIP string `json:"current_runtime_outbound_ip,omitempty"`
+	// PendingOutboundIPChange reports that the Box moves from
+	// CurrentRuntimeOutboundIP to OutboundIP when it next starts.
+	PendingOutboundIPChange bool `json:"pending_outbound_ip_change"`
 }
 
 // BoxStorage is the data a Box keeps on its root filesystem and Volumes.
@@ -713,6 +725,12 @@ type UpdateProjectRequest struct {
 	DisplayName *string `json:"display_name,omitempty"`
 	// Description replaces the current project description when non-nil.
 	Description *string `json:"description,omitempty"`
+	// OutboundIPLabel replaces the project's outbound IP label when non-nil.
+	// Each value of this Box label gets its own outbound IP while free
+	// addresses remain; Boxes without it share one. An empty string makes
+	// every Box share the project's address. Running Boxes change address
+	// when they next start.
+	OutboundIPLabel *string `json:"outbound_ip_label,omitempty"`
 }
 
 // UpdateProjectMembershipRequest updates one project membership.
@@ -958,4 +976,52 @@ type ForkSnapRequest struct {
 type UpdateSnapRequest struct {
 	// Labels replaces all labels when non-nil. An empty map clears them.
 	Labels *map[string]string `json:"labels,omitempty"`
+}
+
+// ListOutboundIPsRequest filters and pages the values of a project's outbound
+// IP label.
+type ListOutboundIPsRequest struct {
+	// LabelValue keeps label values containing it, ignoring case.
+	LabelValue string
+	// Limit caps label values per page; zero uses the server default (50).
+	Limit int
+	// Cursor continues from a previous [ProjectOutboundIPs.NextCursor].
+	Cursor string
+}
+
+// ProjectOutboundIPs lists the public addresses a project's Boxes reach the
+// internet from. An address stays with its Boxes across starts and hosts;
+// other projects may share it.
+type ProjectOutboundIPs struct {
+	// Available is false when the deployment has no outbound IPs; Boxes then
+	// reach the internet from addresses Run9 does not fix.
+	Available bool `json:"available"`
+	// Label is the project's outbound IP label; empty when every Box shares
+	// one address.
+	Label string `json:"label,omitempty"`
+	// Addresses lists each address in use once, independent of paging.
+	Addresses []OutboundIPAddress `json:"addresses"`
+	// Groups pages the label's values; empty when Label is empty.
+	Groups []OutboundIPGroup `json:"groups,omitempty"`
+	// NextCursor continues to the next page; empty on the last one.
+	NextCursor string `json:"next_cursor,omitempty"`
+}
+
+// OutboundIPAddress is one address a project's Boxes use.
+type OutboundIPAddress struct {
+	Address string `json:"address"`
+	// LabelValues counts the label values assigned this address.
+	LabelValues int `json:"label_values,omitempty"`
+	// Unlabeled reports that Boxes without the label use this address.
+	Unlabeled bool `json:"unlabeled,omitempty"`
+}
+
+// OutboundIPGroup is one label value and the address its Boxes use.
+type OutboundIPGroup struct {
+	// LabelValue is nil for Boxes without the label.
+	LabelValue *string `json:"label_value,omitempty"`
+	// Address is empty until one of the group's Boxes next starts.
+	Address string `json:"address,omitempty"`
+	// Boxes counts the project's Boxes in this group.
+	Boxes int `json:"boxes"`
 }

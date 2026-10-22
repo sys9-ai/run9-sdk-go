@@ -325,6 +325,7 @@ Project-scoped APIs require `WithProject(...)`:
 - reusable read-only box and snap filesystems
 - project members
 - project and box secrets
+- outbound IPs
 - create-from-shared-snap flows
 
 If a project-scoped method is called without `WithProject(...)`, the SDK returns an explicit error instead of guessing a default project.
@@ -413,6 +414,32 @@ secret, err := project.CreateProjectSecret(ctx, run9.CreateProjectSecretRequest{
 
 Anyone who can change a box's labels can give that box the matching secrets, so
 use labels to route secrets to boxes, not to isolate project members from each other.
+
+### Outbound IPs
+
+Boxes reach the internet from a small set of fixed public addresses, so an
+external service can allowlist them. A Box keeps its address across starts and
+hosts. By default every Box in a project shares one address; other projects may
+share it too.
+
+To give each tenant its own address, set the project's outbound IP label to a
+Box label key. Each value of that label gets its own address while free ones
+remain; Boxes without the label share one. A running Box keeps its address
+until it next starts.
+
+```go
+label := "tenant"
+_, err := project.UpdateProject(ctx, run9.UpdateProjectRequest{OutboundIPLabel: &label})
+
+ips, err := project.ListOutboundIPs(ctx, run9.ListOutboundIPsRequest{LabelValue: "acme"})
+for _, group := range ips.Groups {
+    fmt.Println(*group.LabelValue, group.Address)
+}
+```
+
+`BoxView.OutboundIP` is the address a Box uses once it next starts;
+`CurrentRuntimeOutboundIP` is the one a running Box uses now. When
+`ProjectOutboundIPs.Available` is false, the deployment has no fixed addresses.
 
 ### Archive downloads
 

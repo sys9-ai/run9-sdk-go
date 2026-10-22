@@ -328,3 +328,26 @@ func ExampleClient_DownloadArchive() {
 	// Consume the whole reader, including its completion check, before publishing files.
 	_, _ = io.Copy(io.Discard, reader)
 }
+
+func ExampleClient_ListOutboundIPs() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{
+		AK: "ak-...",
+		SK: "sk-...",
+	})
+	if err != nil {
+		panic(err)
+	}
+	project := client.WithProject("default")
+
+	label := "tenant"
+	if _, err := project.UpdateProject(context.Background(), run9.UpdateProjectRequest{OutboundIPLabel: &label}); err != nil {
+		panic(err)
+	}
+	ips, err := project.ListOutboundIPs(context.Background(), run9.ListOutboundIPsRequest{})
+	if err != nil {
+		panic(err)
+	}
+	for _, address := range ips.Addresses {
+		fmt.Println(address.Address)
+	}
+}

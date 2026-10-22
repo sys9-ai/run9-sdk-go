@@ -351,10 +351,10 @@ definitions:
       display_name:
         type: string
         x-nullable: true
-      egress_group_label:
+      outbound_ip_label:
         description: |-
-          EgressGroupLabel sets the Box label key that selects egress groups;
-          an empty string returns every Box to the project group.
+          OutboundIPLabel sets the Box label key whose values get separate
+          outbound IPs; an empty string makes every Box share the project's one.
         type: string
         x-nullable: true
     type: object
@@ -524,6 +524,11 @@ definitions:
         type: string
       current_runtime_network_mode:
         $ref: '#/definitions/api.BoxNetworkMode'
+      current_runtime_outbound_ip:
+        description: |-
+          CurrentRuntimeOutboundIP is the address the running instance uses; it
+          keeps it until the instance stops.
+        type: string
       current_runtime_shape:
         type: string
       description:
@@ -544,7 +549,14 @@ definitions:
         $ref: '#/definitions/api.BoxNetworkMode'
       org_id:
         type: string
+      outbound_ip:
+        description: |-
+          OutboundIP is the public address the Box reaches the internet from
+          once it next starts; empty when the deployment has no outbound IPs.
+        type: string
       pending_network_mode_change:
+        type: boolean
+      pending_outbound_ip_change:
         type: boolean
       pending_shape_change:
         type: boolean
@@ -1016,6 +1028,29 @@ definitions:
       role:
         $ref: '#/definitions/api.MembershipRole'
     type: object
+  api.OutboundIPAddressView:
+    properties:
+      address:
+        type: string
+      label_values:
+        description: LabelValues counts the label values assigned this address.
+        type: integer
+      unlabeled:
+        description: Unlabeled is true when Boxes without the label use this address.
+        type: boolean
+    type: object
+  api.OutboundIPGroupView:
+    properties:
+      address:
+        description: Address is empty until the group's next Box start assigns one.
+        type: string
+      boxes:
+        type: integer
+      label_value:
+        description: LabelValue is omitted for Boxes without the label.
+        type: string
+        x-nullable: true
+    type: object
   api.PrewarmProfileHostState:
     enum:
     - pending
@@ -1123,6 +1158,31 @@ definitions:
       user_id:
         type: string
     type: object
+  api.ProjectOutboundIPsView:
+    properties:
+      addresses:
+        description: Addresses lists each address in use once, independent of paging.
+        items:
+          $ref: '#/definitions/api.OutboundIPAddressView'
+        type: array
+      available:
+        description: |-
+          Available is false when the deployment has no outbound IPs; Boxes then
+          reach the internet from addresses run9 does not fix.
+        type: boolean
+      groups:
+        description: Groups pages the label's values; omitted when Label is empty.
+        items:
+          $ref: '#/definitions/api.OutboundIPGroupView'
+        type: array
+      label:
+        description: |-
+          Label is the project's outbound IP label; empty when every Box shares
+          one address.
+        type: string
+      next_cursor:
+        type: string
+    type: object
   api.ProjectRole:
     enum:
     - admin
@@ -1205,12 +1265,12 @@ definitions:
         type: string
       display_name:
         type: string
-      egress_group_label:
-        description: |-
-          EgressGroupLabel is the Box label key that groups Boxes onto shared
-          egress addresses; empty means one egress group for the project.
-        type: string
       org_id:
+        type: string
+      outbound_ip_label:
+        description: |-
+          OutboundIPLabel is the Box label key whose values get separate outbound
+          IPs; empty means every Box in the project shares one.
         type: string
       project_cid:
         type: string
@@ -3111,6 +3171,53 @@ paths:
       - BasicAuth: []
       - SessionToken: []
       summary: Change a project member's role
+      tags:
+      - Projects
+  /projects/{project_cid}/outbound-ips:
+    get:
+      description: Returns the public addresses the project's Boxes reach the internet
+        from, and the address of each value of the project's outbound IP label.
+      operationId: listProjectOutboundIPs
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: Keep label values containing this text, ignoring case.
+        in: query
+        name: label_value
+        type: string
+      - default: 50
+        description: Label values per page.
+        in: query
+        maximum: 200
+        minimum: 1
+        name: limit
+        type: integer
+      - description: next_cursor from the previous page.
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The project's outbound IPs.
+          schema:
+            $ref: '#/definitions/api.ProjectOutboundIPsView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List a project's outbound IPs
       tags:
       - Projects
   /projects/{project_cid}/secrets:

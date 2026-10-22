@@ -42,6 +42,10 @@ type APIBoxView struct {
 	// current runtime network mode
 	CurrentRuntimeNetworkMode APIBoxNetworkMode `json:"current_runtime_network_mode,omitempty"`
 
+	// CurrentRuntimeOutboundIP is the address the running instance uses; it
+	// keeps it until the instance stops.
+	CurrentRuntimeOutboundIP string `json:"current_runtime_outbound_ip,omitempty"`
+
 	// current runtime shape
 	CurrentRuntimeShape string `json:"current_runtime_shape,omitempty"`
 
@@ -69,8 +73,15 @@ type APIBoxView struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// OutboundIP is the public address the Box reaches the internet from
+	// once it next starts; empty when the deployment has no outbound IPs.
+	OutboundIP string `json:"outbound_ip,omitempty"`
+
 	// pending network mode change
 	PendingNetworkModeChange bool `json:"pending_network_mode_change,omitempty"`
+
+	// pending outbound ip change
+	PendingOutboundIPChange bool `json:"pending_outbound_ip_change,omitempty"`
 
 	// pending shape change
 	PendingShapeChange bool `json:"pending_shape_change,omitempty"`

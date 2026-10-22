@@ -29,12 +29,12 @@ type APIProjectView struct {
 	// display name
 	DisplayName string `json:"display_name,omitempty"`
 
-	// EgressGroupLabel is the Box label key that groups Boxes onto shared
-	// egress addresses; empty means one egress group for the project.
-	EgressGroupLabel string `json:"egress_group_label,omitempty"`
-
 	// org id
 	OrgID string `json:"org_id,omitempty"`
+
+	// OutboundIPLabel is the Box label key whose values get separate outbound
+	// IPs; empty means every Box in the project shares one.
+	OutboundIPLabel string `json:"outbound_ip_label,omitempty"`
 
 	// project cid
 	ProjectCid string `json:"project_cid,omitempty"`

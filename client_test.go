@@ -644,3 +644,41 @@ func writeJSONResponse(t *testing.T, w http.ResponseWriter, status int, value an
 	w.WriteHeader(status)
 	require.NoError(t, json.NewEncoder(w).Encode(value))
 }
+
+func TestClientListOutboundIPsSendsFiltersAndDecodesGroups(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/projects/default/outbound-ips", r.URL.Path)
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "acme", r.URL.Query().Get("label_value"))
+		require.Equal(t, "10", r.URL.Query().Get("limit"))
+		require.Equal(t, "c1", r.URL.Query().Get("cursor"))
+		w.Header().Set("Content-Type", "application/json")
+		_, err := io.WriteString(w, `{"available":true,"label":"tenant","addresses":[{"address":"52.0.0.1","label_values":1,"unlabeled":true}],"groups":[{"boxes":2,"address":"52.0.0.1"},{"label_value":"acme","address":"52.0.0.1","boxes":1}],"next_cursor":"c2"}`)
+		require.NoError(t, err)
+	}))
+	defer server.Close()
+
+	ips, err := newProjectTestClient(t, server.URL, "default").ListOutboundIPs(context.Background(), ListOutboundIPsRequest{LabelValue: "acme", Limit: 10, Cursor: "c1"})
+	require.NoError(t, err)
+	require.True(t, ips.Available)
+	require.Equal(t, []OutboundIPAddress{{Address: "52.0.0.1", LabelValues: 1, Unlabeled: true}}, ips.Addresses)
+	require.Len(t, ips.Groups, 2)
+	require.Nil(t, ips.Groups[0].LabelValue)
+	require.Equal(t, "acme", *ips.Groups[1].LabelValue)
+	require.Equal(t, "c2", ips.NextCursor)
+}
+
+func TestClientUpdateProjectCanClearOutboundIPLabel(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		require.JSONEq(t, `{"outbound_ip_label":""}`, string(body))
+		writeJSONResponse(t, w, http.StatusOK, ProjectView{ProjectID: "p1", ProjectCID: "default"})
+	}))
+	defer server.Close()
+
+	empty := ""
+	view, err := newProjectTestClient(t, server.URL, "default").UpdateProject(context.Background(), UpdateProjectRequest{OutboundIPLabel: &empty})
+	require.NoError(t, err)
+	require.Empty(t, view.OutboundIPLabel)
+}

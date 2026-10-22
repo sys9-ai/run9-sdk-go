@@ -94,6 +94,12 @@ type ClientService interface {
 	// ListProjectMembersContext list project members.
 	ListProjectMembersContext(ctx context.Context, params *ListProjectMembersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectMembersOK, error)
 
+	// ListProjectOutboundIPs list a project s outbound IPs.
+	ListProjectOutboundIPs(params *ListProjectOutboundIPsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectOutboundIpsOK, error)
+
+	// ListProjectOutboundIPsContext list a project s outbound IPs.
+	ListProjectOutboundIPsContext(ctx context.Context, params *ListProjectOutboundIPsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectOutboundIpsOK, error)
+
 	// ListProjectSecrets list project secrets.
 	ListProjectSecrets(params *ListProjectSecretsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectSecretsOK, error)
 
@@ -532,6 +538,77 @@ func (a *Client) ListProjectMembersContext(ctx context.Context, params *ListProj
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for listProjectMembers: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListProjectOutboundIPslists a project s outbound IPs.
+
+Returns the public addresses the project's Boxes reach the internet from, and the address of each value of the project's outbound IP label..
+
+This method does not support injected context.
+However, timeout and opentracing contexts are honored whenever enabled.
+
+If you need to pass a specific context, use [Client.ListProjectOutboundIPsContext] instead.
+*/
+func (a *Client) ListProjectOutboundIPs(params *ListProjectOutboundIPsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectOutboundIpsOK, error) {
+	var ctx context.Context
+	if params.inner.ctx != nil {
+		ctx = params.inner.ctx
+	} else {
+		ctx = context.Background()
+	}
+
+	return a.ListProjectOutboundIPsContext(ctx, params, authInfo, opts...)
+}
+
+/*
+ListProjectOutboundIPsContextlists a project s outbound IPs.
+
+Returns the public addresses the project's Boxes reach the internet from, and the address of each value of the project's outbound IP label..
+
+Do not use the deprecated [ListProjectOutboundIPsParams.Context] with this method: it would be ignored.
+*/
+func (a *Client) ListProjectOutboundIPsContext(ctx context.Context, params *ListProjectOutboundIPsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectOutboundIpsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListProjectOutboundIPsParams()
+	}
+
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectOutboundIPs",
+		Method:             "GET",
+		PathPattern:        "/projects/{project_cid}/outbound-ips",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectOutboundIPsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Client:             params.HTTPClient,
+	}
+
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.SubmitContext(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListProjectOutboundIpsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listProjectOutboundIPs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

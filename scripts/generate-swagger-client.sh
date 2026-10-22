@@ -43,6 +43,7 @@ operations=(
   listProjectMembers
   updateProjectMember
   removeProjectMember
+  listProjectOutboundIPs
   listProjectSecrets
   createProjectSecret
   updateProjectSecret

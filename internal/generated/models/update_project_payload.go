@@ -20,9 +20,9 @@ type UpdateProjectPayload struct {
 	// display name
 	DisplayName *string `json:"display_name,omitempty"`
 
-	// EgressGroupLabel sets the Box label key that selects egress groups;
-	// an empty string returns every Box to the project group.
-	EgressGroupLabel *string `json:"egress_group_label,omitempty"`
+	// OutboundIPLabel sets the Box label key whose values get separate
+	// outbound IPs; an empty string makes every Box share the project's one.
+	OutboundIPLabel *string `json:"outbound_ip_label,omitempty"`
 }
 
 // Validate validates this update project payload

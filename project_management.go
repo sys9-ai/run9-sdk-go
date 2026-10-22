@@ -23,6 +23,25 @@ func (c *Client) UpdateProject(ctx context.Context, req UpdateProjectRequest) (P
 	})
 }
 
+// ListOutboundIPs lists the public addresses the current project's Boxes
+// reach the internet from, and pages the address of each value of its
+// outbound IP label.
+func (c *Client) ListOutboundIPs(ctx context.Context, req ListOutboundIPsRequest) (ProjectOutboundIPs, error) {
+	return projectGeneratedResult[ProjectOutboundIPs](c, func(projectCID string) (any, error) {
+		params := &projects.ListProjectOutboundIPsParams{ProjectCid: projectCID}
+		if value := req.LabelValue; value != "" {
+			params.LabelValue = &value
+		}
+		if limit := int64(req.Limit); limit != 0 {
+			params.Limit = &limit
+		}
+		if cursor := strings.TrimSpace(req.Cursor); cursor != "" {
+			params.Cursor = &cursor
+		}
+		return c.portal.Projects.ListProjectOutboundIPsContext(ctx, params, c.auth)
+	})
+}
+
 // DeleteProject deletes the current project.
 func (c *Client) DeleteProject(ctx context.Context) (DeleteProjectResult, error) {
 	return projectGeneratedResult[DeleteProjectResult](c, func(projectCID string) (any, error) {
