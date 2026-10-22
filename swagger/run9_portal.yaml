@@ -351,6 +351,12 @@ definitions:
       display_name:
         type: string
         x-nullable: true
+      egress_group_label:
+        description: |-
+          EgressGroupLabel sets the Box label key that selects egress groups;
+          an empty string returns every Box to the project group.
+        type: string
+        x-nullable: true
     type: object
   UpdateProjectSecretPayload:
     properties:
@@ -1198,6 +1204,11 @@ definitions:
       description:
         type: string
       display_name:
+        type: string
+      egress_group_label:
+        description: |-
+          EgressGroupLabel is the Box label key that groups Boxes onto shared
+          egress addresses; empty means one egress group for the project.
         type: string
       org_id:
         type: string
