@@ -276,7 +276,9 @@ type ListBoxesRequest struct {
 	State BoxState
 }
 
-// BoxView describes one box. FileAccessURL is its stable read-only filesystem capability URL.
+// BoxView describes one box. FileAccessURL reads its filesystem without
+// credentials and expires one hour after this view was loaded; BoxFileSystem
+// renews it automatically.
 type BoxView struct {
 	BoxID       string            `json:"box_id"`
 	OrgID       string            `json:"org_id"`
@@ -332,7 +334,8 @@ type BoxStorage struct {
 
 // SnapView describes one snap. FileAccessURL reads a detached Snap's immutable
 // filesystem or a Volume's own filesystem. The original root Attached Snap
-// retains the owning Box's composed filesystem view.
+// retains the owning Box's composed filesystem view. Like BoxView's, the URL
+// expires one hour after this view was loaded; SnapFileSystem renews it.
 type SnapView struct {
 	// Labels is mutable metadata belonging only to this Snap.
 	Labels map[string]string `json:"labels,omitempty"`

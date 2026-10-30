@@ -11,6 +11,8 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -117,35 +119,61 @@ func (reader *FileReader) Info() FileInfo {
 }
 
 // FileSystem is a reusable read-only Box or Snap filesystem capability.
-// It reuses the parent Client's HTTP transport and does not contact the control
-// plane again after resolution.
+// It reuses the parent Client's HTTP transport. A capability URL expires;
+// the first request rejected as expired resolves a new one through the
+// control plane, so a FileSystem stays usable while its credentials are.
+// RootedAt copies share that capability.
 type FileSystem struct {
-	baseURL *url.URL
+	access *fileAccess
+	root   string
+}
+
+// fileAccess is the capability URL shared by one resolution's FileSystems.
+type fileAccess struct {
 	http    *http.Client
-	root    string
+	resolve func(context.Context) (string, error)
+	renewMu sync.Mutex
+	baseURL atomic.Pointer[url.URL]
 }
 
 // BoxFileSystem resolves one Box filesystem capability.
 func (c *Client) BoxFileSystem(ctx context.Context, boxID string) (*FileSystem, error) {
-	view, err := c.GetBox(ctx, boxID)
-	if err != nil {
-		return nil, err
-	}
-	return newFileSystem(view.FileAccessURL, c.http)
+	return resolveFileSystem(ctx, c.http, func(ctx context.Context) (string, error) {
+		view, err := c.GetBox(ctx, boxID)
+		return view.FileAccessURL, err
+	})
 }
 
 // SnapFileSystem resolves a Snap's read-only filesystem capability. A detached
 // Snap reads its immutable view; a Volume reads only its own contents. The
 // original root Attached Snap retains the owning Box's composed view.
 func (c *Client) SnapFileSystem(ctx context.Context, snapID string) (*FileSystem, error) {
-	view, err := c.GetSnap(ctx, snapID)
+	return resolveFileSystem(ctx, c.http, func(ctx context.Context) (string, error) {
+		view, err := c.GetSnap(ctx, snapID)
+		return view.FileAccessURL, err
+	})
+}
+
+func resolveFileSystem(ctx context.Context, client *http.Client, resolve func(context.Context) (string, error)) (*FileSystem, error) {
+	access := &fileAccess{http: client, resolve: resolve}
+	if _, err := access.renew(ctx, nil); err != nil {
+		return nil, err
+	}
+	return &FileSystem{access: access, root: "/"}, nil
+}
+
+// renew replaces expired with a freshly resolved URL. Concurrent requests that
+// saw the same expired URL share one resolution.
+func (access *fileAccess) renew(ctx context.Context, expired *url.URL) (*url.URL, error) {
+	access.renewMu.Lock()
+	defer access.renewMu.Unlock()
+	if current := access.baseURL.Load(); current != expired {
+		return current, nil
+	}
+	accessURL, err := access.resolve(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return newFileSystem(view.FileAccessURL, c.http)
-}
-
-func newFileSystem(accessURL string, client *http.Client) (*FileSystem, error) {
 	if strings.TrimSpace(accessURL) == "" {
 		return nil, errors.New("file access is unavailable for this resource")
 	}
@@ -160,68 +188,41 @@ func newFileSystem(accessURL string, client *http.Client) (*FileSystem, error) {
 		return nil, errors.New("invalid file access URL")
 	}
 	parsed.Path = strings.TrimRight(parsed.Path, "/") + "/"
-	return &FileSystem{baseURL: parsed, http: client, root: "/"}, nil
+	access.baseURL.Store(parsed)
+	return parsed, nil
 }
 
 // RootedAt returns a filesystem whose "/" is rooted at root inside the Box or
 // Snap. The gateway also resolves symlinks inside that root.
 func (fileSystem *FileSystem) RootedAt(root string) (*FileSystem, error) {
-	if fileSystem == nil || fileSystem.baseURL == nil || fileSystem.http == nil {
+	if fileSystem == nil || fileSystem.access == nil {
 		return nil, errors.New("file system is not initialized")
 	}
 	canonicalRoot, err := canonicalFilePath(root)
 	if err != nil {
 		return nil, fmt.Errorf("file system root: %w", err)
 	}
-	rooted := *fileSystem
-	rooted.root = canonicalRoot
-	return &rooted, nil
+	return &FileSystem{access: fileSystem.access, root: canonicalRoot}, nil
 }
 
 // Open starts a streamed read of one regular file.
 func (fileSystem *FileSystem) Open(ctx context.Context, filePath string, options OpenFileOptions) (*FileReader, error) {
-	targetURL, canonicalPath, err := fileSystem.requestURL(filePath, nil)
+	byteRange := strings.TrimSpace(options.Range)
+	if byteRange != "" && !strings.HasPrefix(byteRange, "bytes=") {
+		return nil, errors.New("file range must start with bytes=")
+	}
+	response, canonicalPath, err := fileSystem.send(ctx, http.MethodGet, filePath, nil, byteRange)
 	if err != nil {
 		return nil, err
-	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	request.Header.Set(fileRootHeader, fileSystem.root)
-	if byteRange := strings.TrimSpace(options.Range); byteRange != "" {
-		if !strings.HasPrefix(byteRange, "bytes=") {
-			return nil, errors.New("file range must start with bytes=")
-		}
-		request.Header.Set("Range", byteRange)
-	}
-	response, err := fileSystem.http.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	if response.StatusCode >= http.StatusBadRequest {
-		return nil, responseError(response)
 	}
 	return &FileReader{body: response.Body, info: fileInfoFromResponse(canonicalPath, response)}, nil
 }
 
 // Stat loads metadata for one file or directory without reading its content.
 func (fileSystem *FileSystem) Stat(ctx context.Context, filePath string) (FileInfo, error) {
-	targetURL, canonicalPath, err := fileSystem.requestURL(filePath, nil)
+	response, canonicalPath, err := fileSystem.send(ctx, http.MethodHead, filePath, nil, "")
 	if err != nil {
 		return FileInfo{}, err
-	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodHead, targetURL, nil)
-	if err != nil {
-		return FileInfo{}, err
-	}
-	request.Header.Set(fileRootHeader, fileSystem.root)
-	response, err := fileSystem.http.Do(request)
-	if err != nil {
-		return FileInfo{}, err
-	}
-	if response.StatusCode >= http.StatusBadRequest {
-		return FileInfo{}, responseError(response)
 	}
 	defer response.Body.Close()
 	return fileInfoFromResponse(canonicalPath, response), nil
@@ -239,7 +240,7 @@ func (fileSystem *FileSystem) ReadDir(ctx context.Context, directoryPath string,
 	if cursor := strings.TrimSpace(request.Cursor); cursor != "" {
 		query.Set("cursor", cursor)
 	}
-	response, err := fileSystem.getResponse(ctx, directoryPath, query)
+	response, _, err := fileSystem.send(ctx, http.MethodGet, directoryPath, query, "")
 	if err != nil {
 		return ReadDirPage{}, err
 	}
@@ -297,7 +298,7 @@ func (fileSystem *FileSystem) GlobFiles(ctx context.Context, directoryPath strin
 		}
 		query.Add("exclude_dir", name)
 	}
-	response, err := fileSystem.getResponse(ctx, directoryPath, query)
+	response, _, err := fileSystem.send(ctx, http.MethodGet, directoryPath, query, "")
 	if err != nil {
 		return GlobFilesResult{}, err
 	}
@@ -334,39 +335,56 @@ func hasGlobBraceAlternative(pattern string) bool {
 	return false
 }
 
-func (fileSystem *FileSystem) getResponse(ctx context.Context, filePath string, query url.Values) (*http.Response, error) {
-	targetURL, _, err := fileSystem.requestURL(filePath, query)
-	if err != nil {
-		return nil, err
+// send performs one read and returns a successful response with the canonical
+// path. An expired capability URL is renewed once and the read replayed.
+func (fileSystem *FileSystem) send(ctx context.Context, method string, filePath string, query url.Values, byteRange string) (*http.Response, string, error) {
+	if fileSystem == nil || fileSystem.access == nil {
+		return nil, "", errors.New("file system is not initialized")
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
+	canonicalPath, err := canonicalFilePath(filePath)
+	if err != nil {
+		return nil, "", err
+	}
+	baseURL := fileSystem.access.baseURL.Load()
+	response, err := fileSystem.sendTo(ctx, baseURL, method, canonicalPath, query, byteRange)
+	if err != nil {
+		return nil, "", err
+	}
+	if response.StatusCode == http.StatusGone {
+		_ = response.Body.Close()
+		baseURL, err = fileSystem.access.renew(ctx, baseURL)
+		if err != nil {
+			return nil, "", err
+		}
+		response, err = fileSystem.sendTo(ctx, baseURL, method, canonicalPath, query, byteRange)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+	if response.StatusCode >= http.StatusBadRequest {
+		return nil, "", responseError(response)
+	}
+	return response, canonicalPath, nil
+}
+
+func (fileSystem *FileSystem) sendTo(ctx context.Context, baseURL *url.URL, method string, canonicalPath string, query url.Values, byteRange string) (*http.Response, error) {
+	request, err := http.NewRequestWithContext(ctx, method, fileRequestURL(baseURL, canonicalPath, query), nil)
 	if err != nil {
 		return nil, err
 	}
 	request.Header.Set(fileRootHeader, fileSystem.root)
-	response, err := fileSystem.http.Do(request)
-	if err != nil {
-		return nil, err
+	if byteRange != "" {
+		request.Header.Set("Range", byteRange)
 	}
-	if response.StatusCode >= http.StatusBadRequest {
-		return nil, responseError(response)
-	}
-	return response, nil
+	return fileSystem.access.http.Do(request)
 }
 
-func (fileSystem *FileSystem) requestURL(filePath string, query url.Values) (string, string, error) {
-	if fileSystem == nil || fileSystem.baseURL == nil || fileSystem.http == nil {
-		return "", "", errors.New("file system is not initialized")
-	}
-	canonicalPath, err := canonicalFilePath(filePath)
-	if err != nil {
-		return "", "", err
-	}
-	target := *fileSystem.baseURL
+func fileRequestURL(baseURL *url.URL, canonicalPath string, query url.Values) string {
+	target := *baseURL
 	target.Path = strings.TrimRight(target.Path, "/") + canonicalPath
 	target.RawPath = ""
 	target.RawQuery = query.Encode()
-	return target.String(), canonicalPath, nil
+	return target.String()
 }
 
 func canonicalFilePath(value string) (string, error) {

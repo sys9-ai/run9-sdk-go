@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -61,6 +62,60 @@ func TestBoxFileSystemResolvesOnceAndStreamsFiles(t *testing.T) {
 	require.NoError(t, two.Close())
 	require.Equal(t, "two", string(data))
 	require.Equal(t, int64(1), boxLookups.Load())
+}
+
+func TestBoxFileSystemRenewsExpiredURLOnce(t *testing.T) {
+	var boxLookups atomic.Int64
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/projects/default/workspace/boxes/box-a":
+			lookup := boxLookups.Add(1)
+			writeJSONResponse(t, w, http.StatusOK, BoxView{BoxID: "box-a", FileAccessURL: server.URL + "/file-token-" + strconv.FormatInt(lookup, 10) + "/"})
+		case "/file-token-1/work/one.txt":
+			http.Error(w, "file access URL expired", http.StatusGone)
+		case "/file-token-2/work/one.txt":
+			require.Equal(t, "/workspace", r.Header.Get(fileRootHeader))
+			_, _ = w.Write([]byte("one"))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(server.URL, Credentials{AK: "ak-1", SK: "sk-1"})
+	require.NoError(t, err)
+	files, err := client.WithProject("default").BoxFileSystem(context.Background(), "box-a")
+	require.NoError(t, err)
+	workspace, err := files.RootedAt("/workspace")
+	require.NoError(t, err)
+
+	reader, err := workspace.Open(context.Background(), "/work/one.txt", OpenFileOptions{})
+	require.NoError(t, err)
+	data, err := io.ReadAll(reader)
+	require.NoError(t, err)
+	require.NoError(t, reader.Close())
+	require.Equal(t, "one", string(data))
+	require.Equal(t, int64(2), boxLookups.Load())
+
+	// The parent FileSystem shares the renewed URL.
+	_, err = files.Open(context.Background(), "/work/missing.txt", OpenFileOptions{})
+	require.ErrorContains(t, err, "404")
+	require.Equal(t, int64(2), boxLookups.Load())
+}
+
+func TestFileSystemReportsURLThatStaysExpired(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "file access URL expired", http.StatusGone)
+	}))
+	defer server.Close()
+
+	files, err := resolveFileSystem(context.Background(), server.Client(), fixedFileAccessURL(server.URL+"/access/"))
+	require.NoError(t, err)
+	_, err = files.Stat(context.Background(), "/work")
+	var apiErr *Error
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, http.StatusGone, apiErr.StatusCode)
 }
 
 func TestSnapFileSystemStatAndReadDir(t *testing.T) {
@@ -125,7 +180,7 @@ func TestFileSystemGlobFilesUsesOneBoundedServerRequest(t *testing.T) {
 	}))
 	defer server.Close()
 
-	files, err := newFileSystem(server.URL+"/access/", server.Client())
+	files, err := resolveFileSystem(context.Background(), server.Client(), fixedFileAccessURL(server.URL+"/access/"))
 	require.NoError(t, err)
 	files, err = files.RootedAt("/workspace")
 	require.NoError(t, err)
@@ -151,7 +206,7 @@ func TestFileSystemGlobFilesAllowsEscapedLiteralBrace(t *testing.T) {
 	}))
 	defer server.Close()
 
-	files, err := newFileSystem(server.URL+"/access/", server.Client())
+	files, err := resolveFileSystem(context.Background(), server.Client(), fixedFileAccessURL(server.URL+"/access/"))
 	require.NoError(t, err)
 	result, err := files.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: `\{foo\}.go`})
 	require.NoError(t, err)
@@ -162,7 +217,7 @@ func TestFileSystemGlobFilesAllowsEscapedLiteralBrace(t *testing.T) {
 }
 
 func TestFileSystemRejectsInvalidPathsAndRanges(t *testing.T) {
-	files, err := newFileSystem("https://static.run.sys9.ai/file-token/", http.DefaultClient)
+	files, err := resolveFileSystem(context.Background(), http.DefaultClient, fixedFileAccessURL("https://static.run.sys9.ai/file-token/"))
 	require.NoError(t, err)
 
 	_, err = files.Open(context.Background(), "../secret", OpenFileOptions{})
@@ -184,9 +239,10 @@ func TestFileSystemRejectsInvalidPathsAndRanges(t *testing.T) {
 	_, err = files.GlobFiles(context.Background(), "/", GlobFilesRequest{Pattern: "**/*.go", ExcludeDirectories: []string{"src/generated"}})
 	require.EqualError(t, err, "excluded directory names must be single path components")
 
-	targetURL, canonicalPath, err := files.requestURL("/work/ leading and trailing ", nil)
+	canonicalPath, err := canonicalFilePath("/work/ leading and trailing ")
 	require.NoError(t, err)
 	require.Equal(t, "/work/ leading and trailing ", canonicalPath)
+	targetURL := fileRequestURL(files.access.baseURL.Load(), canonicalPath, nil)
 	require.Equal(t, "https://static.run.sys9.ai/file-token/work/%20leading%20and%20trailing%20", targetURL)
 }
 
@@ -211,7 +267,7 @@ func TestFileSystemRootedAtBindsEveryRequestToOneRoot(t *testing.T) {
 	}))
 	defer server.Close()
 
-	files, err := newFileSystem(server.URL+"/access/", server.Client())
+	files, err := resolveFileSystem(context.Background(), server.Client(), fixedFileAccessURL(server.URL+"/access/"))
 	require.NoError(t, err)
 	workspace, err := files.RootedAt("/workspace")
 	require.NoError(t, err)
@@ -230,7 +286,7 @@ func TestFileSystemRootedAtBindsEveryRequestToOneRoot(t *testing.T) {
 }
 
 func TestFileSystemRootedAtRejectsInvalidRootAndKeepsOriginalRoot(t *testing.T) {
-	files, err := newFileSystem("https://static.run.sys9.ai/file-token/", http.DefaultClient)
+	files, err := resolveFileSystem(context.Background(), http.DefaultClient, fixedFileAccessURL("https://static.run.sys9.ai/file-token/"))
 	require.NoError(t, err)
 
 	_, err = files.RootedAt("/workspace/../etc")
@@ -240,6 +296,10 @@ func TestFileSystemRootedAtRejectsInvalidRootAndKeepsOriginalRoot(t *testing.T) 
 	require.NoError(t, err)
 	require.Equal(t, "/", files.root)
 	require.Equal(t, "/workspace", workspace.root)
+}
+
+func fixedFileAccessURL(accessURL string) func(context.Context) (string, error) {
+	return func(context.Context) (string, error) { return accessURL, nil }
 }
 
 func basicAuthUser(request *http.Request) string {
