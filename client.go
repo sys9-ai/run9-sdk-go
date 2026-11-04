@@ -85,7 +85,7 @@ func NewClient(endpoint string, creds Credentials) (*Client, error) {
 		AK: strings.TrimSpace(creds.AK),
 		SK: strings.TrimSpace(creds.SK),
 	}
-	portal, auth, err := newGeneratedPortal(baseURL, trimmedCreds, httpClient)
+	portal, auth, err := newGeneratedPortal(baseURL, trimmedCreds)
 	if err != nil {
 		return nil, err
 	}
@@ -429,13 +429,16 @@ func requestBody(body any) (io.Reader, error) {
 	return bytes.NewReader(payload), nil
 }
 
+// maxErrorBodyBytes bounds a failure body, which may be a proxy's page.
+const maxErrorBodyBytes = 64 << 10
+
 func responseError(resp *http.Response) error {
 	if resp == nil {
 		return &Error{Message: "request failed"}
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(io.LimitReader(resp.Body, maxErrorBodyBytes))
 	if err != nil {
 		return &Error{StatusCode: resp.StatusCode, Message: err.Error()}
 	}

@@ -14,13 +14,12 @@ import (
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	genclient "github.com/sys9-ai/run9-sdk-go/internal/generated/client"
-	genmodels "github.com/sys9-ai/run9-sdk-go/internal/generated/models"
 )
 
 var errEmptyResponseBody = errors.New("portal api returned empty response body")
 var errNilGeneratedResponse = errors.New("generated client returned nil response")
 
-func newGeneratedPortal(baseURL string, creds Credentials, httpClient *http.Client) (*genclient.Run9Portal, runtime.ClientAuthInfoWriter, error) {
+func newGeneratedPortal(baseURL string, creds Credentials) (*genclient.Run9Portal, runtime.ClientAuthInfoWriter, error) {
 	parsed, err := url.Parse(strings.TrimSpace(baseURL))
 	if err != nil {
 		return nil, nil, err
@@ -31,6 +30,7 @@ func newGeneratedPortal(baseURL string, creds Credentials, httpClient *http.Clie
 		basePath = "/"
 	}
 
+	httpClient := &http.Client{Transport: failureTransport{next: http.DefaultTransport}}
 	transport := httptransport.NewWithClient(parsed.Host, basePath, []string{parsed.Scheme}, httpClient)
 	auth := httptransport.BasicAuth(creds.AK, creds.SK)
 	transport.Consumers[runtime.JSONMime] = nonEmptyResponseConsumer(transport.Consumers[runtime.JSONMime])
@@ -68,35 +68,30 @@ func remarshalJSON[To any](from any) (To, error) {
 	return to, nil
 }
 
-func generatedError(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	coded, ok := err.(interface{ Code() int })
-	if !ok {
-		if errors.Is(err, errEmptyResponseBody) {
-			return errEmptyResponseBody
-		}
-		return err
-	}
-
-	message := generatedErrorMessage(err)
-	if message == "" {
-		message = strings.TrimSpace(err.Error())
-	}
-	return &Error{
-		StatusCode: coded.Code(),
-		Message:    message,
-	}
+// failureTransport reports every failure status as *Error before the generated
+// client reads the response. Generated operations only understand the statuses
+// their route declares, and a proxy failure page is not JSON, so neither could
+// otherwise reach callers with its status.
+type failureTransport struct {
+	next http.RoundTripper
 }
 
-func generatedErrorMessage(err error) string {
-	var payloadError interface{ GetPayload() *genmodels.Error }
-	if !errors.As(err, &payloadError) || payloadError.GetPayload() == nil {
-		return ""
+// RoundTrip implements http.RoundTripper.
+func (t failureTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := t.next.RoundTrip(req)
+	if err != nil || resp.StatusCode < http.StatusBadRequest {
+		return resp, err
 	}
-	return strings.TrimSpace(payloadError.GetPayload().Error)
+	return nil, responseError(resp)
+}
+
+// generatedError removes the transport wrapper from a failure status.
+func generatedError(err error) error {
+	var apiErr *Error
+	if errors.As(err, &apiErr) {
+		return apiErr
+	}
+	return err
 }
 
 func (c *Client) requireProjectCID() (string, error) {

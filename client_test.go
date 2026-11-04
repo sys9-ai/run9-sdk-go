@@ -682,3 +682,34 @@ func TestClientUpdateProjectCanClearOutboundIPLabel(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, view.OutboundIPLabel)
 }
+
+func TestClientReportsEveryFailureStatusAsAPIError(t *testing.T) {
+	for _, status := range []int{http.StatusNotFound, http.StatusConflict, http.StatusInternalServerError, http.StatusServiceUnavailable} {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(status)
+			_, _ = w.Write([]byte(`{"error":"source is settling"}`))
+		}))
+		_, err := newProjectTestClient(t, server.URL, "default").CreateBox(context.Background(), CreateBoxRequest{})
+		server.Close()
+
+		var apiErr *Error
+		require.ErrorAs(t, err, &apiErr)
+		require.Equal(t, status, apiErr.StatusCode)
+		require.Equal(t, "source is settling", apiErr.Message)
+	}
+}
+
+func TestClientReportsAProxyFailurePageAsAPIError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusBadGateway)
+		_, _ = w.Write([]byte("<html>bad gateway</html>"))
+	}))
+	defer server.Close()
+	_, err := newProjectTestClient(t, server.URL, "default").CreateBox(context.Background(), CreateBoxRequest{})
+
+	var apiErr *Error
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, http.StatusBadGateway, apiErr.StatusCode)
+}
