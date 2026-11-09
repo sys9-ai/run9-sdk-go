@@ -700,6 +700,22 @@ func TestClientReportsEveryFailureStatusAsAPIError(t *testing.T) {
 	}
 }
 
+func TestClientReportsTheErrorCode(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		_, _ = w.Write([]byte(`{"error":"box_id \"b1\" already exists","code":"box_create_in_progress"}`))
+	}))
+	defer server.Close()
+	_, err := newProjectTestClient(t, server.URL, "default").CreateBox(context.Background(), CreateBoxRequest{BoxID: "b1"})
+
+	var apiErr *Error
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, http.StatusConflict, apiErr.StatusCode)
+	require.Equal(t, ErrorCodeBoxCreateInProgress, apiErr.Code)
+	require.Equal(t, `box_id "b1" already exists`, apiErr.Message)
+}
+
 func TestClientReportsAProxyFailurePageAsAPIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")

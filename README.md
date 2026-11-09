@@ -342,10 +342,16 @@ Non-2xx responses are returned as `*run9.Error`.
 if err != nil {
 	var apiErr *run9.Error
 	if errors.As(err, &apiErr) {
-		log.Printf("run9 request failed: status=%d message=%q", apiErr.StatusCode, apiErr.Message)
+		log.Printf("run9 request failed: status=%d code=%q message=%q", apiErr.StatusCode, apiErr.Code, apiErr.Message)
 	}
 }
 ```
+
+`Message` is for people. When callers must tell refusals with the same status apart, branch on `Code`; it is empty for most errors. Creating a Box can return `409` with:
+
+- `ErrorCodeBoxAlreadyExists`: a Box with this `box_id` exists.
+- `ErrorCodeBoxCreateInProgress`: an earlier create of this `box_id` has not settled; retry later.
+- `ErrorCodeSourceSnapUnavailable`: the source Snap is in `error` or deleted, so it cannot be forked; retrying will not succeed (also returned by `ForkSnap`).
 
 The SDK avoids silent fallbacks. Missing credentials, invalid endpoints, and missing project scope are returned as direct errors.
 

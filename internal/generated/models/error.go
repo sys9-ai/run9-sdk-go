@@ -14,7 +14,12 @@ import (
 // swagger:model Error
 type Error struct {
 
-	// error
+	// Code is a stable name for a refusal that callers need to tell apart from
+	// others with the same status; most errors have none. Current codes:
+	// box_create_in_progress, box_already_exists, source_snap_unavailable.
+	Code string `json:"code,omitempty"`
+
+	// Error is human-readable text; do not parse it.
 	Error string `json:"error,omitempty"`
 }
 

@@ -22,6 +22,7 @@ import (
 
 type errorPayload struct {
 	Error string `json:"error"`
+	Code  string `json:"code"`
 }
 
 // Credentials are the org-scoped API key credentials used by run9 clients.
@@ -37,8 +38,24 @@ type Error struct {
 	// StatusCode is the HTTP status returned by the control plane.
 	StatusCode int
 	// Message is the structured control-plane error message when one is available.
+	// It is meant for people; branch on Code instead of parsing it.
 	Message string
+	// Code is a stable name for a refusal callers need to tell apart from
+	// others with the same StatusCode. It is empty for most errors.
+	Code string
 }
+
+// Codes reported in Error.Code.
+const (
+	// ErrorCodeBoxAlreadyExists means a Box with the requested box_id exists.
+	ErrorCodeBoxAlreadyExists = "box_already_exists"
+	// ErrorCodeBoxCreateInProgress means an earlier create of the requested
+	// box_id has not settled yet; the same create may succeed later.
+	ErrorCodeBoxCreateInProgress = "box_create_in_progress"
+	// ErrorCodeSourceSnapUnavailable means the source Snap exists but is in
+	// error or deleted, so it cannot be forked; retrying will not succeed.
+	ErrorCodeSourceSnapUnavailable = "source_snap_unavailable"
+)
 
 // Error returns the control-plane message when present.
 func (e *Error) Error() string {
@@ -448,7 +465,7 @@ func responseError(resp *http.Response) error {
 func responseBodyError(statusCode int, status string, body []byte) error {
 	var payload errorPayload
 	if len(body) > 0 && json.Unmarshal(body, &payload) == nil && strings.TrimSpace(payload.Error) != "" {
-		return &Error{StatusCode: statusCode, Message: strings.TrimSpace(payload.Error)}
+		return &Error{StatusCode: statusCode, Message: strings.TrimSpace(payload.Error), Code: payload.Code}
 	}
 
 	message := strings.TrimSpace(string(body))
