@@ -315,6 +315,10 @@ type BoxView struct {
 	// PendingOutboundIPChange reports that the Box moves from
 	// CurrentRuntimeOutboundIP to OutboundIP when it next starts.
 	PendingOutboundIPChange bool `json:"pending_outbound_ip_change"`
+	// ErrorSnapIDs lists this Box's own Snaps (BoxSnapID and Volume Snaps)
+	// that are in error when State is error. A Box is in error only because
+	// one of its Snaps is.
+	ErrorSnapIDs []string `json:"error_snap_ids,omitempty"`
 }
 
 // BoxStorage is the data a Box keeps on its root filesystem and Volumes.
@@ -363,6 +367,11 @@ type SnapView struct {
 	FileAccessURL string            `json:"file_access_url,omitempty"`
 	Size          *SnapSize         `json:"size,omitempty"`
 	OwnedStorage  *SnapOwnedStorage `json:"owned_storage,omitempty"`
+	// RestoredFromCheckpointAt is set when this Snap was copied from the last
+	// durable checkpoint of a source whose host was terminated while writing
+	// it: the time that checkpoint was saved. Changes the source made after
+	// this time are not in this Snap.
+	RestoredFromCheckpointAt *time.Time `json:"restored_from_checkpoint_at,omitempty"`
 }
 
 // SnapTreeView describes the ancestry tree returned for one snap.
@@ -440,6 +449,23 @@ type ExecView struct {
 	StdinEnabled   bool           `json:"stdin_enabled,omitempty"`
 	AttachURL      string         `json:"attach_url,omitempty"`
 	Diagnostics    map[string]any `json:"diagnostics,omitempty"`
+}
+
+// ErrorSnapIDs names every Snap of the Box that kept this exec from starting
+// because its storage is in error (failure code ErrorCodeSnapError). It is
+// nil for any other outcome. The Box itself is then in error too.
+func (v ExecView) ErrorSnapIDs() []string {
+	if v.Diagnostics["failure_code"] != ErrorCodeSnapError {
+		return nil
+	}
+	values, _ := v.Diagnostics["snap_ids"].([]any)
+	ids := make([]string, 0, len(values))
+	for _, value := range values {
+		if id, ok := value.(string); ok {
+			ids = append(ids, id)
+		}
+	}
+	return ids
 }
 
 // TerminalResult returns the normalized terminal outcome when this exec view is terminal.
@@ -587,6 +613,11 @@ type TTYSize struct {
 type VolumeView struct {
 	SnapID    string `json:"snap_id"`
 	MountPath string `json:"mount_path"`
+	// RestoredFromCheckpointAt is set when this Volume was copied from the
+	// last durable checkpoint of a source whose host was terminated while
+	// writing it: the time that checkpoint was saved. Later source changes
+	// are lost.
+	RestoredFromCheckpointAt *time.Time `json:"restored_from_checkpoint_at,omitempty"`
 }
 
 // VolumeConfig creates one independent Box-owned persistent Snap.

@@ -268,7 +268,7 @@ func NewCreateBoxConflict() *CreateBoxConflict {
 /*
 CreateBoxConflict describes a response with status code 409, with default header values.
 
-The request conflicts with current state. `code` tells: `box_already_exists` (a Box in this org, possibly in another project, has this box_id), `box_create_in_progress` (an earlier create of this box_id has not settled; retry later), `source_snap_unavailable` (the root or a volume source Snap is in error or deleted).
+The request conflicts with current state. `code` tells: `box_already_exists` (a Box in this org, possibly in another project, has this box_id), `box_create_in_progress` (an earlier create of this box_id has not settled; retry later), `snap_error` (the root or volume source Snaps are in error; `snap_ids` names every one), `source_snap_unavailable` (the root or a volume source Snap was deleted).
 */
 type CreateBoxConflict struct {
 	Payload *models.Error

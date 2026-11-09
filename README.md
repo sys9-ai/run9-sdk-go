@@ -351,7 +351,18 @@ if err != nil {
 
 - `ErrorCodeBoxAlreadyExists`: a Box with this `box_id` exists. `box_id` is unique per org, so the Box may be in another project and not readable through this project.
 - `ErrorCodeBoxCreateInProgress`: an earlier create of this `box_id` has not settled; retry later.
-- `ErrorCodeSourceSnapUnavailable`: the root or a volume source Snap is in `error` or deleted, so it cannot be used; retrying will not succeed. `ForkSnap` and `PublishSharedSnap` return it for their source too.
+- `ErrorCodeSnapError`: the storage of the root or volume source Snaps ended in `error`; `SnapIDs` names every one. `ForkSnap` and `PublishSharedSnap` return it for their source too.
+- `ErrorCodeSourceSnapUnavailable`: the root or a volume source Snap was deleted, so it cannot be used; retrying will not succeed. `ForkSnap` and `PublishSharedSnap` return it for their source too.
+
+### Storage in error
+
+A Snap is in `error` when its storage can no longer be trusted, usually because the host writing it died. Run9 reports every such disk at once, wherever the failure is seen:
+
+- `BoxView.ErrorSnapIDs` lists the Box's own Snaps (root and Volumes) in error while the Box is in `error`.
+- An exec that could not start for this reason ends in `error`, and `ExecView.ErrorSnapIDs()` lists the same Snaps (`Diagnostics["failure_code"]` is `ErrorCodeSnapError`).
+- Creating a Box or forking from such sources returns `409` with `ErrorCodeSnapError` and `Error.SnapIDs`.
+
+An error Snap stays in `error`. Once run9 has proof that the host that was writing it is terminated, not merely unreachable, a fork or a Box create from it succeeds and copies its last durable checkpoint: the state its last successful stop saved, or the state it was created with if it never stopped. Everything written after that is lost. `SnapView.RestoredFromCheckpointAt` and `VolumeView.RestoredFromCheckpointAt` report when the copied state was saved, so you can tell people what they lost. Until the proof exists, the same request keeps returning `ErrorCodeSnapError`.
 
 The SDK avoids silent fallbacks. Missing credentials, invalid endpoints, and missing project scope are returned as direct errors.
 

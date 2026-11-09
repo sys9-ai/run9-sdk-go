@@ -716,6 +716,59 @@ func TestClientReportsTheErrorCode(t *testing.T) {
 	require.Equal(t, `box_id "b1" already exists`, apiErr.Message)
 }
 
+func TestClientReportsEverySourceSnapInError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		_, _ = w.Write([]byte(`{"error":"source snaps \"s1\", \"s2\" are in error","code":"snap_error","snap_ids":["s1","s2"]}`))
+	}))
+	defer server.Close()
+	_, err := newProjectTestClient(t, server.URL, "default").CreateBox(context.Background(), CreateBoxRequest{SourceSnapID: "s1"})
+
+	var apiErr *Error
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, ErrorCodeSnapError, apiErr.Code)
+	require.Equal(t, []string{"s1", "s2"}, apiErr.SnapIDs)
+}
+
+func TestClientReportsRestoredVolumesAndErrorSnaps(t *testing.T) {
+	savedAt := time.Date(2026, 11, 9, 7, 0, 0, 0, time.UTC)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/projects/default/workspace/boxes/new-box":
+			writeJSONResponse(t, w, http.StatusOK, BoxView{BoxID: "new-box", Volumes: []VolumeView{{SnapID: "svolume01", MountPath: "/state", RestoredFromCheckpointAt: &savedAt}}})
+		case "/projects/default/workspace/boxes/old-box":
+			writeJSONResponse(t, w, http.StatusOK, BoxView{BoxID: "old-box", State: "error", ErrorSnapIDs: []string{"sroot", "svolume00"}})
+		case "/projects/default/workspace/snaps/svolume01":
+			writeJSONResponse(t, w, http.StatusOK, SnapView{SnapID: "svolume01", RestoredFromCheckpointAt: &savedAt})
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	client := newProjectTestClient(t, server.URL, "default")
+
+	restored, err := client.GetBox(t.Context(), "new-box")
+	require.NoError(t, err)
+	require.Equal(t, savedAt, *restored.Volumes[0].RestoredFromCheckpointAt)
+	broken, err := client.GetBox(t.Context(), "old-box")
+	require.NoError(t, err)
+	require.Equal(t, []string{"sroot", "svolume00"}, broken.ErrorSnapIDs)
+	snap, err := client.GetSnap(t.Context(), "svolume01")
+	require.NoError(t, err)
+	require.Equal(t, savedAt, *snap.RestoredFromCheckpointAt)
+}
+
+func TestExecViewErrorSnapIDs(t *testing.T) {
+	var view ExecView
+	require.NoError(t, json.Unmarshal([]byte(`{"state":"error","diagnostics":{"failure_code":"snap_error","snap_ids":["sroot","svolume00"]}}`), &view))
+	require.Equal(t, []string{"sroot", "svolume00"}, view.ErrorSnapIDs())
+
+	var other ExecView
+	require.NoError(t, json.Unmarshal([]byte(`{"state":"error","diagnostics":{"failure_code":"PRECONDITION_FAILED"}}`), &other))
+	require.Nil(t, other.ErrorSnapIDs())
+}
+
 func TestClientReportsAProxyFailurePageAsAPIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")

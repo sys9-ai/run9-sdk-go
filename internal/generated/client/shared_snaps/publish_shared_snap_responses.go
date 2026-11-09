@@ -268,7 +268,7 @@ func NewPublishSharedSnapConflict() *PublishSharedSnapConflict {
 /*
 PublishSharedSnapConflict describes a response with status code 409, with default header values.
 
-The request conflicts with current state. `code`=`source_snap_unavailable` means the source Snap is in error or deleted.
+The request conflicts with current state. `code`=`snap_error` means the source Snap is in error (`snap_ids` names it); `source_snap_unavailable` means it was deleted.
 */
 type PublishSharedSnapConflict struct {
 	Payload *models.Error

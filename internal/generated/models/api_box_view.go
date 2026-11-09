@@ -55,6 +55,11 @@ type APIBoxView struct {
 	// desired shape
 	DesiredShape string `json:"desired_shape,omitempty"`
 
+	// ErrorSnapIDs lists this Box's own Snaps (box_snap_id and Volume Snaps)
+	// that are in error when State is error. A Box is in error only because
+	// one of its Snaps is.
+	ErrorSnapIds []string `json:"error_snap_ids"`
+
 	// file access url
 	FileAccessURL string `json:"file_access_url,omitempty"`
 

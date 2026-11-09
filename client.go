@@ -21,8 +21,9 @@ import (
 )
 
 type errorPayload struct {
-	Error string `json:"error"`
-	Code  string `json:"code"`
+	Error   string   `json:"error"`
+	Code    string   `json:"code"`
+	SnapIDs []string `json:"snap_ids"`
 }
 
 // Credentials are the org-scoped API key credentials used by run9 clients.
@@ -43,6 +44,9 @@ type Error struct {
 	// Code is a stable name for a refusal callers need to tell apart from
 	// others with the same StatusCode. It is empty for most errors.
 	Code string
+	// SnapIDs names every Snap the refusal is about; for ErrorCodeSnapError,
+	// every source Snap in error.
+	SnapIDs []string
 }
 
 // Codes reported in Error.Code.
@@ -54,9 +58,16 @@ const (
 	// box_id has not settled yet; the same create may succeed later.
 	ErrorCodeBoxCreateInProgress = "box_create_in_progress"
 	// ErrorCodeSourceSnapUnavailable means a source Snap (a Box's root or
-	// volume source, a fork or shared snap publish source) exists but is in
-	// error or deleted, so it cannot be used; retrying will not succeed.
+	// volume source, a fork or shared snap publish source) was deleted, so it
+	// cannot be used; retrying will not succeed.
 	ErrorCodeSourceSnapUnavailable = "source_snap_unavailable"
+	// ErrorCodeSnapError means the storage of source Snaps ended in error;
+	// Error.SnapIDs names every one. Retrying the same request fails, except
+	// that once run9 proves the host that was writing such a Snap terminated,
+	// it copies the Snap's last durable checkpoint instead and reports when
+	// that was saved (SnapView.RestoredFromCheckpointAt). The same code is an
+	// ExecView failure code; see ExecView.ErrorSnapIDs.
+	ErrorCodeSnapError = "snap_error"
 )
 
 // Error returns the control-plane message when present.
@@ -467,7 +478,7 @@ func responseError(resp *http.Response) error {
 func responseBodyError(statusCode int, status string, body []byte) error {
 	var payload errorPayload
 	if len(body) > 0 && json.Unmarshal(body, &payload) == nil && strings.TrimSpace(payload.Error) != "" {
-		return &Error{StatusCode: statusCode, Message: strings.TrimSpace(payload.Error), Code: payload.Code}
+		return &Error{StatusCode: statusCode, Message: strings.TrimSpace(payload.Error), Code: payload.Code, SnapIDs: payload.SnapIDs}
 	}
 
 	message := strings.TrimSpace(string(body))

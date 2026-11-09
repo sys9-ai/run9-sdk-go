@@ -19,6 +19,11 @@ type APIVolumeView struct {
 	// Example: /state
 	MountPath string `json:"mount_path,omitempty"`
 
+	// RestoredFromCheckpointAt is set when this Volume was copied from the last
+	// durable checkpoint of a source whose host was terminated while writing
+	// it: the time that checkpoint was saved. Later source changes are lost.
+	RestoredFromCheckpointAt string `json:"restored_from_checkpoint_at,omitempty"`
+
 	// SnapID is the owned Snap identity used by ordinary Snap query, file and Fork APIs.
 	// It cannot be deleted independently. A Fork result survives deletion of this Box.
 	// Example: s12345678

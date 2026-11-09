@@ -74,6 +74,12 @@ type APISnapView struct {
 	// reason
 	Reason string `json:"reason,omitempty"`
 
+	// RestoredFromCheckpointAt is set when this Snap was copied from the last
+	// durable checkpoint of a source whose host was terminated while writing
+	// it: the time that checkpoint was saved. Changes the source made after
+	// this time are not in this Snap.
+	RestoredFromCheckpointAt string `json:"restored_from_checkpoint_at,omitempty"`
+
 	// size
 	Size *APISnapSize `json:"size,omitempty"`
 

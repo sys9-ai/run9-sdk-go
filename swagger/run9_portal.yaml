@@ -193,11 +193,19 @@ definitions:
         description: |-
           Code is a stable name for a refusal that callers need to tell apart from
           others with the same status; most errors have none. Current codes:
-          box_create_in_progress, box_already_exists, source_snap_unavailable.
+          box_create_in_progress, box_already_exists, source_snap_unavailable (a
+          source Snap was deleted) and snap_error (source Snaps are in error).
         type: string
       error:
         description: Error is human-readable text; do not parse it.
         type: string
+      snap_ids:
+        description: |-
+          SnapIDs names every Snap the refusal is about, for example each source
+          in error of snap_error.
+        items:
+          type: string
+        type: array
     type: object
   ExecBoxPayload:
     properties:
@@ -542,6 +550,14 @@ definitions:
         type: string
       desired_shape:
         type: string
+      error_snap_ids:
+        description: |-
+          ErrorSnapIDs lists this Box's own Snaps (box_snap_id and Volume Snaps)
+          that are in error when State is error. A Box is in error only because
+          one of its Snaps is.
+        items:
+          type: string
+        type: array
       file_access_url:
         type: string
       labels:
@@ -1547,6 +1563,13 @@ definitions:
         type: string
       reason:
         type: string
+      restored_from_checkpoint_at:
+        description: |-
+          RestoredFromCheckpointAt is set when this Snap was copied from the last
+          durable checkpoint of a source whose host was terminated while writing
+          it: the time that checkpoint was saved. Changes the source made after
+          this time are not in this Snap.
+        type: string
       size:
         $ref: '#/definitions/api.SnapSize'
       snap_id:
@@ -1744,6 +1767,12 @@ definitions:
           MountPath is the exact fixed mount point in the Box, not a path in the Snap.
           The Volume's own file API reads its contents from "/".
         example: /state
+        type: string
+      restored_from_checkpoint_at:
+        description: |-
+          RestoredFromCheckpointAt is set when this Volume was copied from the last
+          durable checkpoint of a source whose host was terminated while writing
+          it: the time that checkpoint was saved. Later source changes are lost.
         type: string
       snap_id:
         description: |-
@@ -3512,8 +3541,10 @@ paths:
         "409":
           description: 'The request conflicts with current state. `code` tells: `box_already_exists`
             (a Box in this org, possibly in another project, has this box_id), `box_create_in_progress`
-            (an earlier create of this box_id has not settled; retry later), `source_snap_unavailable`
-            (the root or a volume source Snap is in error or deleted).'
+            (an earlier create of this box_id has not settled; retry later), `snap_error`
+            (the root or volume source Snaps are in error; `snap_ids` names every
+            one), `source_snap_unavailable` (the root or a volume source Snap was
+            deleted).'
           schema:
             $ref: '#/definitions/Error'
       security:
@@ -4980,8 +5011,9 @@ paths:
           schema:
             $ref: '#/definitions/Error'
         "409":
-          description: The source cannot be forked now. `code`=`source_snap_unavailable`
-            means the source Snap is in error or deleted.
+          description: The source cannot be forked now. `code`=`snap_error` means
+            the source Snap is in error (`snap_ids` names it); `source_snap_unavailable`
+            means it was deleted.
           schema:
             $ref: '#/definitions/Error'
       security:
@@ -5112,8 +5144,9 @@ paths:
           schema:
             $ref: '#/definitions/Error'
         "409":
-          description: The request conflicts with current state. `code`=`source_snap_unavailable`
-            means the source Snap is in error or deleted.
+          description: The request conflicts with current state. `code`=`snap_error`
+            means the source Snap is in error (`snap_ids` names it); `source_snap_unavailable`
+            means it was deleted.
           schema:
             $ref: '#/definitions/Error'
       security:

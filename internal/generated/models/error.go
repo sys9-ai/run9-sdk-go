@@ -16,11 +16,16 @@ type Error struct {
 
 	// Code is a stable name for a refusal that callers need to tell apart from
 	// others with the same status; most errors have none. Current codes:
-	// box_create_in_progress, box_already_exists, source_snap_unavailable.
+	// box_create_in_progress, box_already_exists, source_snap_unavailable (a
+	// source Snap was deleted) and snap_error (source Snaps are in error).
 	Code string `json:"code,omitempty"`
 
 	// Error is human-readable text; do not parse it.
 	Error string `json:"error,omitempty"`
+
+	// SnapIDs names every Snap the refusal is about, for example each source
+	// in error of snap_error.
+	SnapIds []string `json:"snap_ids"`
 }
 
 // Validate validates this error
