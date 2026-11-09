@@ -39,6 +39,12 @@ func (o *PublishSharedSnapReader) ReadResponse(response runtime.ClientResponse, 
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewPublishSharedSnapConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	default:
 		return nil, runtime.NewAPIError("[POST /shared-snaps] publishSharedSnap", response, response.Code())
 	}
@@ -243,6 +249,76 @@ func (o *PublishSharedSnapUnauthorized) GetPayload() *models.Error {
 }
 
 func (o *PublishSharedSnapUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.Error)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewPublishSharedSnapConflict creates a PublishSharedSnapConflict with default headers values
+func NewPublishSharedSnapConflict() *PublishSharedSnapConflict {
+	return &PublishSharedSnapConflict{}
+}
+
+/*
+PublishSharedSnapConflict describes a response with status code 409, with default header values.
+
+The request conflicts with current state. `code`=`source_snap_unavailable` means the source Snap is in error or deleted.
+*/
+type PublishSharedSnapConflict struct {
+	Payload *models.Error
+}
+
+// IsSuccess returns true when this publish shared snap conflict response has a 2xx status code
+func (o *PublishSharedSnapConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this publish shared snap conflict response has a 3xx status code
+func (o *PublishSharedSnapConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this publish shared snap conflict response has a 4xx status code
+func (o *PublishSharedSnapConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this publish shared snap conflict response has a 5xx status code
+func (o *PublishSharedSnapConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this publish shared snap conflict response a status code equal to that given
+func (o *PublishSharedSnapConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the publish shared snap conflict response
+func (o *PublishSharedSnapConflict) Code() int {
+	return 409
+}
+
+func (o *PublishSharedSnapConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /shared-snaps][%d] publishSharedSnapConflict %s", 409, payload)
+}
+
+func (o *PublishSharedSnapConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /shared-snaps][%d] publishSharedSnapConflict %s", 409, payload)
+}
+
+func (o *PublishSharedSnapConflict) GetPayload() *models.Error {
+	return o.Payload
+}
+
+func (o *PublishSharedSnapConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.Error)
 

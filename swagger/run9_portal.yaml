@@ -3511,9 +3511,9 @@ paths:
             $ref: '#/definitions/Error'
         "409":
           description: 'The request conflicts with current state. `code` tells: `box_already_exists`
-            (a Box has this box_id), `box_create_in_progress` (an earlier create of
-            this box_id has not settled; retry later), `source_snap_unavailable` (the
-            source Snap is in error or deleted).'
+            (a Box in this org, possibly in another project, has this box_id), `box_create_in_progress`
+            (an earlier create of this box_id has not settled; retry later), `source_snap_unavailable`
+            (the root or a volume source Snap is in error or deleted).'
           schema:
             $ref: '#/definitions/Error'
       security:
@@ -4723,6 +4723,11 @@ paths:
           description: Missing or invalid credentials.
           schema:
             $ref: '#/definitions/Error'
+        "409":
+          description: The request conflicts with current state; `code` is as for
+            createBox.
+          schema:
+            $ref: '#/definitions/Error'
       security:
       - BasicAuth: []
       - SessionToken: []
@@ -5104,6 +5109,11 @@ paths:
             $ref: '#/definitions/Error'
         "401":
           description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+        "409":
+          description: The request conflicts with current state. `code`=`source_snap_unavailable`
+            means the source Snap is in error or deleted.
           schema:
             $ref: '#/definitions/Error'
       security:

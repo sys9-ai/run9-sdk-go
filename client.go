@@ -48,12 +48,14 @@ type Error struct {
 // Codes reported in Error.Code.
 const (
 	// ErrorCodeBoxAlreadyExists means a Box with the requested box_id exists.
+	// box_id is unique per org, so the Box may be in another project.
 	ErrorCodeBoxAlreadyExists = "box_already_exists"
 	// ErrorCodeBoxCreateInProgress means an earlier create of the requested
 	// box_id has not settled yet; the same create may succeed later.
 	ErrorCodeBoxCreateInProgress = "box_create_in_progress"
-	// ErrorCodeSourceSnapUnavailable means the source Snap exists but is in
-	// error or deleted, so it cannot be forked; retrying will not succeed.
+	// ErrorCodeSourceSnapUnavailable means a source Snap (a Box's root or
+	// volume source, a fork or shared snap publish source) exists but is in
+	// error or deleted, so it cannot be used; retrying will not succeed.
 	ErrorCodeSourceSnapUnavailable = "source_snap_unavailable"
 )
 

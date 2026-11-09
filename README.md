@@ -349,9 +349,9 @@ if err != nil {
 
 `Message` is for people. When callers must tell refusals with the same status apart, branch on `Code`; it is empty for most errors. Creating a Box can return `409` with:
 
-- `ErrorCodeBoxAlreadyExists`: a Box with this `box_id` exists.
+- `ErrorCodeBoxAlreadyExists`: a Box with this `box_id` exists. `box_id` is unique per org, so the Box may be in another project and not readable through this project.
 - `ErrorCodeBoxCreateInProgress`: an earlier create of this `box_id` has not settled; retry later.
-- `ErrorCodeSourceSnapUnavailable`: the source Snap is in `error` or deleted, so it cannot be forked; retrying will not succeed (also returned by `ForkSnap`).
+- `ErrorCodeSourceSnapUnavailable`: the root or a volume source Snap is in `error` or deleted, so it cannot be used; retrying will not succeed. `ForkSnap` and `PublishSharedSnap` return it for their source too.
 
 The SDK avoids silent fallbacks. Missing credentials, invalid endpoints, and missing project scope are returned as direct errors.
 
