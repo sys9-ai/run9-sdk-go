@@ -84,6 +84,14 @@ definitions:
         type: object
       network_mode:
         $ref: '#/definitions/api.BoxNetworkMode'
+      restore_from_checkpoint:
+        description: |-
+          RestoreFromCheckpoint copies a root or Volume source in error from its last durable checkpoint, once
+          run9 proves terminated the host that was writing it. Changes made after that checkpoint are lost;
+          restored_from_checkpoint_at on the new disk says when it was saved. Healthy sources are unaffected.
+          Without it, a source in error is refused with `snap_error`. Deprecated behavior, being removed: a request
+          without it still restores; do not rely on that.
+        type: boolean
       source_image_digest:
         type: string
       source_image_platform:
@@ -194,7 +202,8 @@ definitions:
           Code is a stable name for a refusal that callers need to tell apart from
           others with the same status; most errors have none. Current codes:
           box_create_in_progress, box_already_exists, source_snap_unavailable (a
-          source Snap was deleted) and snap_error (source Snaps are in error).
+          source Snap was deleted) and snap_error (source Snaps are in error;
+          only a request that sets restore_from_checkpoint can still use them).
         type: string
       error:
         description: Error is human-readable text; do not parse it.
@@ -526,6 +535,13 @@ definitions:
       box_snap_id:
         description: BoxSnapID is this Box's writable root Attached Snap, not the
           source used to create it.
+        type: string
+      box_snap_restored_from_checkpoint_at:
+        description: |-
+          BoxSnapRestoredFromCheckpointAt is set when box_snap_id was copied from
+          the last durable checkpoint of a source in error whose host was
+          terminated while writing it: the time that checkpoint was saved. Later
+          source changes are lost. Volumes report their own.
         type: string
       created_at:
         type: string
@@ -1798,6 +1814,14 @@ definitions:
         additionalProperties:
           type: string
         type: object
+      restore_from_checkpoint:
+        description: |-
+          RestoreFromCheckpoint copies a source in error from its last durable checkpoint, once run9 proves
+          terminated the host that was writing it. Changes made after that checkpoint are lost;
+          restored_from_checkpoint_at on the new Snap says when it was saved. Without it, a source in error
+          is refused with `snap_error`. Deprecated behavior, being removed: a request without it still
+          restores; do not rely on that.
+        type: boolean
     type: object
   api.recordPrewarmProfilePayload:
     properties:
@@ -3543,8 +3567,9 @@ paths:
             (a Box in this org, possibly in another project, has this box_id), `box_create_in_progress`
             (an earlier create of this box_id has not settled; retry later), `snap_error`
             (the root or volume source Snaps are in error; `snap_ids` names every
-            one), `source_snap_unavailable` (the root or a volume source Snap was
-            deleted).'
+            one; the same request keeps failing unless it sets `restore_from_checkpoint`
+            and run9 has proven terminated the hosts that were writing them), `source_snap_unavailable`
+            (the root or a volume source Snap was deleted).'
           schema:
             $ref: '#/definitions/Error'
       security:
@@ -4980,7 +5005,9 @@ paths:
         filesystem.
       operationId: forkSnap
       parameters:
-      - description: Optional labels for the new Snap; source labels are never inherited.
+      - description: Optional labels for the new Snap (source labels are never inherited),
+          and restore_from_checkpoint to copy a source in error from its last durable
+          checkpoint.
         in: body
         name: request
         schema:
@@ -5011,9 +5038,11 @@ paths:
           schema:
             $ref: '#/definitions/Error'
         "409":
-          description: The source cannot be forked now. `code`=`snap_error` means
-            the source Snap is in error (`snap_ids` names it); `source_snap_unavailable`
-            means it was deleted.
+          description: 'The source cannot be forked now. `code`=`snap_error` means
+            the source Snap is in error (`snap_ids` names it): the same request keeps
+            failing unless it sets `restore_from_checkpoint` and run9 has proven terminated
+            the host that was writing the source. `source_snap_unavailable` means
+            it was deleted.'
           schema:
             $ref: '#/definitions/Error'
       security:

@@ -292,6 +292,11 @@ type BoxView struct {
 	Reason      string            `json:"reason,omitempty"`
 	// BoxSnapID identifies this Box's writable Attached Snap, not its source.
 	BoxSnapID string `json:"box_snap_id"`
+	// BoxSnapRestoredFromCheckpointAt is set when BoxSnapID was copied from
+	// the last durable checkpoint of a source in error whose host was
+	// terminated while writing it: the time that checkpoint was saved. Later
+	// source changes are lost. Each VolumeView reports its own.
+	BoxSnapRestoredFromCheckpointAt *time.Time `json:"box_snap_restored_from_checkpoint_at,omitempty"`
 	// Volumes lists the fixed Box-owned Snap mounts; empty means none.
 	// It describes configuration, not whether a runtime is currently mounted.
 	Volumes []VolumeView `json:"volumes,omitempty"`
@@ -670,6 +675,14 @@ type CreateBoxRequest struct {
 	SourceSnapID string `json:"source_snap_id,omitempty"`
 	// SourceImageRef imports directly from one image reference when non-empty.
 	SourceImageRef string `json:"source_image_ref,omitempty"`
+	// RestoreFromCheckpoint copies the root or Volume sources that are in
+	// error from their last durable checkpoint, once run9 has proven
+	// terminated the host that was writing them. Changes made after that
+	// checkpoint are lost; BoxView.BoxSnapRestoredFromCheckpointAt and
+	// VolumeView.RestoredFromCheckpointAt say when it was saved. Healthy
+	// sources are unaffected. Without it, sources in error are refused with
+	// ErrorCodeSnapError. Set it only when the caller means to accept that loss.
+	RestoreFromCheckpoint bool `json:"restore_from_checkpoint,omitempty"`
 }
 
 // CreateBoxFromSharedSnapRequest creates a box from a published shared snap.
@@ -1004,6 +1017,10 @@ type BackgroundExecPullOutput struct {
 type ForkSnapRequest struct {
 	// Labels belongs only to the new Snap. Source labels are never inherited.
 	Labels map[string]string `json:"labels,omitempty"`
+	// RestoreFromCheckpoint has the meaning of
+	// CreateBoxRequest.RestoreFromCheckpoint; SnapView.RestoredFromCheckpointAt
+	// reports when the copied state was saved.
+	RestoreFromCheckpoint bool `json:"restore_from_checkpoint,omitempty"`
 }
 
 // UpdateSnapRequest edits mutable Snap metadata, including on attached Snaps.

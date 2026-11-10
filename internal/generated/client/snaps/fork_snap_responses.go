@@ -268,7 +268,7 @@ func NewForkSnapConflict() *ForkSnapConflict {
 /*
 ForkSnapConflict describes a response with status code 409, with default header values.
 
-The source cannot be forked now. `code`=`snap_error` means the source Snap is in error (`snap_ids` names it); `source_snap_unavailable` means it was deleted.
+The source cannot be forked now. `code`=`snap_error` means the source Snap is in error (`snap_ids` names it): the same request keeps failing unless it sets `restore_from_checkpoint` and run9 has proven terminated the host that was writing the source. `source_snap_unavailable` means it was deleted.
 */
 type ForkSnapConflict struct {
 	Payload *models.Error

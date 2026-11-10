@@ -731,6 +731,32 @@ func TestClientReportsEverySourceSnapInError(t *testing.T) {
 	require.Equal(t, []string{"s1", "s2"}, apiErr.SnapIDs)
 }
 
+func TestClientAsksForCheckpointRestore(t *testing.T) {
+	savedAt := time.Date(2026, 11, 9, 7, 0, 0, 0, time.UTC)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		require.Equal(t, true, body["restore_from_checkpoint"])
+		switch r.URL.Path {
+		case "/projects/default/workspace/boxes":
+			writeJSONResponse(t, w, http.StatusCreated, BoxView{BoxID: "new-box", BoxSnapRestoredFromCheckpointAt: &savedAt})
+		case "/projects/default/workspace/snaps/sroot/fork":
+			writeJSONResponse(t, w, http.StatusCreated, SnapView{SnapID: "sfork", RestoredFromCheckpointAt: &savedAt})
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+	client := newProjectTestClient(t, server.URL, "default")
+
+	box, err := client.CreateBox(t.Context(), CreateBoxRequest{SourceSnapID: "sroot", RestoreFromCheckpoint: true})
+	require.NoError(t, err)
+	require.Equal(t, savedAt, *box.BoxSnapRestoredFromCheckpointAt)
+	snap, err := client.ForkSnapWithOptions(t.Context(), "sroot", ForkSnapRequest{RestoreFromCheckpoint: true})
+	require.NoError(t, err)
+	require.Equal(t, savedAt, *snap.RestoredFromCheckpointAt)
+}
+
 func TestClientReportsRestoredVolumesAndErrorSnaps(t *testing.T) {
 	savedAt := time.Date(2026, 11, 9, 7, 0, 0, 0, time.UTC)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

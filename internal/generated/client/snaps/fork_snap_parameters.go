@@ -77,7 +77,7 @@ type ForkSnapParams struct {
 
 	/* Request.
 
-	   Optional labels for the new Snap; source labels are never inherited.
+	   Optional labels for the new Snap (source labels are never inherited), and restore_from_checkpoint to copy a source in error from its last durable checkpoint.
 	*/
 	Request *models.APIForkSnapPayload
 

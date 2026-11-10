@@ -62,10 +62,11 @@ const (
 	// cannot be used; retrying will not succeed.
 	ErrorCodeSourceSnapUnavailable = "source_snap_unavailable"
 	// ErrorCodeSnapError means the storage of source Snaps ended in error;
-	// Error.SnapIDs names every one. Retrying the same request fails, except
-	// that once run9 proves the host that was writing such a Snap terminated,
-	// it copies the Snap's last durable checkpoint instead and reports when
-	// that was saved (SnapView.RestoredFromCheckpointAt). The same code is an
+	// Error.SnapIDs names every one. Retrying the same request fails. To copy
+	// such a Snap's last durable checkpoint instead, the caller must ask for it
+	// with CreateBoxRequest.RestoreFromCheckpoint or
+	// ForkSnapRequest.RestoreFromCheckpoint; that succeeds once run9 proves
+	// terminated the host that was writing the Snap. The same code is an
 	// ExecView failure code; see ExecView.ErrorSnapIDs.
 	ErrorCodeSnapError = "snap_error"
 )

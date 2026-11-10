@@ -34,6 +34,13 @@ type CreateBoxPayload struct {
 	// network mode
 	NetworkMode APIBoxNetworkMode `json:"network_mode,omitempty"`
 
+	// RestoreFromCheckpoint copies a root or Volume source in error from its last durable checkpoint, once
+	// run9 proves terminated the host that was writing it. Changes made after that checkpoint are lost;
+	// restored_from_checkpoint_at on the new disk says when it was saved. Healthy sources are unaffected.
+	// Without it, a source in error is refused with `snap_error`. Deprecated behavior, being removed: a request
+	// without it still restores; do not rely on that.
+	RestoreFromCheckpoint bool `json:"restore_from_checkpoint,omitempty"`
+
 	// source image digest
 	SourceImageDigest string `json:"source_image_digest,omitempty"`
 

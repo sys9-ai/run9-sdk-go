@@ -24,6 +24,12 @@ type APIBoxView struct {
 	// BoxSnapID is this Box's writable root Attached Snap, not the source used to create it.
 	BoxSnapID string `json:"box_snap_id,omitempty"`
 
+	// BoxSnapRestoredFromCheckpointAt is set when box_snap_id was copied from
+	// the last durable checkpoint of a source in error whose host was
+	// terminated while writing it: the time that checkpoint was saved. Later
+	// source changes are lost. Volumes report their own.
+	BoxSnapRestoredFromCheckpointAt string `json:"box_snap_restored_from_checkpoint_at,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
