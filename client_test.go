@@ -668,6 +668,35 @@ func TestClientListOutboundIPsSendsFiltersAndDecodesGroups(t *testing.T) {
 	require.Equal(t, "c2", ips.NextCursor)
 }
 
+func TestClientDecodesBoxRuntimeCPUOnlyWhenTheHostMeasuredIt(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var err error
+		switch r.URL.Path {
+		case "/projects/default/workspace/boxes/box-a":
+			_, err = io.WriteString(w, `{"box_id":"box-a","current_runtime_cpu":{"instance_id":"cid-a","usage_seconds":2.5,"measured_at":"2026-11-15T10:00:00.123Z"}}`)
+		case "/projects/default/workspace/boxes":
+			_, err = io.WriteString(w, `[{"box_id":"box-a","current_runtime_cpu":{"instance_id":"cid-a","usage_seconds":2.5,"measured_at":"2026-11-15T10:00:00.123Z"}},{"box_id":"box-stopped"}]`)
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+		require.NoError(t, err)
+	}))
+	defer server.Close()
+	client := newProjectTestClient(t, server.URL, "default")
+	want := &BoxRuntimeCPU{InstanceID: "cid-a", UsageSeconds: 2.5, MeasuredAt: time.Date(2026, 11, 15, 10, 0, 0, 123_000_000, time.UTC)}
+
+	box, err := client.GetBox(context.Background(), "box-a")
+	require.NoError(t, err)
+	require.Equal(t, want, box.CurrentRuntimeCPU)
+
+	boxes, err := client.ListBoxes(context.Background(), ListBoxesRequest{})
+	require.NoError(t, err)
+	require.Len(t, boxes, 2)
+	require.Equal(t, want, boxes[0].CurrentRuntimeCPU)
+	require.Nil(t, boxes[1].CurrentRuntimeCPU)
+}
+
 func TestClientUpdateProjectCanClearOutboundIPLabel(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)

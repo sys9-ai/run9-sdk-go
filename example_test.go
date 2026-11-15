@@ -351,3 +351,18 @@ func ExampleClient_ListOutboundIPs() {
 		fmt.Println(address.Address)
 	}
 }
+
+func ExampleBoxRuntimeCPU() {
+	// Two views of the same Box, for example from two GetBox calls a minute apart.
+	measuredAt := time.Date(2026, 11, 15, 10, 0, 0, 0, time.UTC)
+	before := &run9.BoxRuntimeCPU{InstanceID: "cid-a", UsageSeconds: 30, MeasuredAt: measuredAt}
+	after := &run9.BoxRuntimeCPU{InstanceID: "cid-a", UsageSeconds: 120, MeasuredAt: measuredAt.Add(time.Minute)}
+
+	if before == nil || after == nil || before.InstanceID != after.InstanceID || !after.MeasuredAt.After(before.MeasuredAt) {
+		// Not measured, a new instance, or the same measurement: wait for the next view.
+		return
+	}
+	busy := (after.UsageSeconds - before.UsageSeconds) / after.MeasuredAt.Sub(before.MeasuredAt).Seconds()
+	fmt.Printf("%.1f CPUs busy\n", busy)
+	// Output: 1.5 CPUs busy
+}

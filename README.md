@@ -149,6 +149,34 @@ if box.Storage != nil {
 `SnapView.Size` is a different number: the filesystem usage of one disk,
 including inherited data, as of its last stop.
 
+`BoxView.CurrentRuntimeCPU` is the CPU time the Box's running VM instance has
+used, measured by its host from outside the VM, so nothing inside the Box can
+change it. `UsageSeconds` counts every vCPU and the VM's devices from when the
+instance became the Box's, and `MeasuredAt` is when the host read it; hosts read
+it every few seconds. Between two views with the same `InstanceID`, the growth
+of `UsageSeconds` divided by the growth of `MeasuredAt` is how many CPUs the Box
+kept busy. A new `InstanceID` means a new instance whose usage starts again
+from zero. The field is nil when the Box has no running instance or its host
+cannot measure it, never a made-up zero. `GetBox` and `ListBoxes` both return
+it:
+
+```go
+before, err := client.GetBox(ctx, "my-box")
+if err != nil {
+    return err
+}
+time.Sleep(time.Minute)
+after, err := client.GetBox(ctx, "my-box")
+if err != nil {
+    return err
+}
+a, b := before.CurrentRuntimeCPU, after.CurrentRuntimeCPU
+if a != nil && b != nil && a.InstanceID == b.InstanceID && b.MeasuredAt.After(a.MeasuredAt) {
+    busy := (b.UsageSeconds - a.UsageSeconds) / b.MeasuredAt.Sub(a.MeasuredAt).Seconds()
+    fmt.Printf("%s kept %.1f CPUs busy\n", after.BoxID, busy)
+}
+```
+
 Volumes cannot be deleted independently. Use `SourceSnapID` to initialize a new Volume from a Snap.
 A saved Snap may contain only application files, not a bootable root filesystem.
 A failed mount

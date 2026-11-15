@@ -509,6 +509,24 @@ definitions:
     x-enum-varnames:
     - BoxNetworkModeNormal
     - BoxNetworkModeManaged
+  api.BoxRuntimeCPU:
+    properties:
+      instance_id:
+        description: |-
+          InstanceID identifies the VM instance. It changes whenever the Box gets
+          a new instance, and usage then restarts from zero.
+        type: string
+      measured_at:
+        description: |-
+          MeasuredAt is when the host read UsageSeconds. Hosts read it every few
+          seconds.
+        type: string
+      usage_seconds:
+        description: |-
+          UsageSeconds is cumulative CPU time in seconds; it never decreases for
+          one instance.
+        type: number
+    type: object
   api.BoxState:
     enum:
     - ready
@@ -553,6 +571,13 @@ definitions:
         type: string
       current_host_id:
         type: string
+      current_runtime_cpu:
+        allOf:
+        - $ref: '#/definitions/api.BoxRuntimeCPU'
+        description: |-
+          CurrentRuntimeCPU is absent when the Box has no running instance or
+          its host cannot measure it.
+        x-nullable: true
       current_runtime_network_mode:
         $ref: '#/definitions/api.BoxNetworkMode'
       current_runtime_outbound_ip:

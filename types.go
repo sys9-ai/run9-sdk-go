@@ -320,6 +320,10 @@ type BoxView struct {
 	// PendingOutboundIPChange reports that the Box moves from
 	// CurrentRuntimeOutboundIP to OutboundIP when it next starts.
 	PendingOutboundIPChange bool `json:"pending_outbound_ip_change"`
+	// CurrentRuntimeCPU is the CPU time of the Box's running VM instance. It
+	// is nil when the Box has no running instance or its host cannot measure
+	// it; nil never means zero.
+	CurrentRuntimeCPU *BoxRuntimeCPU `json:"current_runtime_cpu,omitempty"`
 	// ErrorSnapIDs lists this Box's own Snaps (BoxSnapID and Volume Snaps)
 	// that are in error when State is error. A Box is in error only because
 	// one of its Snaps is.
@@ -339,6 +343,27 @@ type BoxView struct {
 // Snap's stored objects.
 type BoxStorage struct {
 	Bytes uint64 `json:"bytes"`
+}
+
+// BoxRuntimeCPU is the CPU time a Box's running VM instance has used, measured
+// by its host from outside the VM, so nothing inside the Box can change it.
+//
+// It counts the VM's whole host process, every vCPU and its devices, from when
+// the instance became the Box's; a VM that was booted ahead of time does not
+// carry its earlier boot. Between two views of the same InstanceID,
+// the growth of UsageSeconds divided by the growth of MeasuredAt is how many
+// CPUs the Box kept busy. A different InstanceID is a new instance whose usage
+// started again from zero.
+type BoxRuntimeCPU struct {
+	// InstanceID identifies the VM instance. It changes whenever the Box gets
+	// a new instance.
+	InstanceID string `json:"instance_id"`
+	// UsageSeconds is the cumulative CPU time in seconds, with microsecond
+	// precision. It never decreases for one InstanceID.
+	UsageSeconds float64 `json:"usage_seconds"`
+	// MeasuredAt is when the host read UsageSeconds. Hosts read it every few
+	// seconds, so consecutive views may repeat a measurement.
+	MeasuredAt time.Time `json:"measured_at"`
 }
 
 // SnapView describes one snap. FileAccessURL reads a detached Snap's immutable

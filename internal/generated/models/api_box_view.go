@@ -45,6 +45,10 @@ type APIBoxView struct {
 	// current host id
 	CurrentHostID string `json:"current_host_id,omitempty"`
 
+	// CurrentRuntimeCPU is absent when the Box has no running instance or
+	// its host cannot measure it.
+	CurrentRuntimeCPU *APIBoxRuntimeCPU `json:"current_runtime_cpu,omitempty"`
+
 	// current runtime network mode
 	CurrentRuntimeNetworkMode APIBoxNetworkMode `json:"current_runtime_network_mode,omitempty"`
 
@@ -119,6 +123,10 @@ type APIBoxView struct {
 func (m *APIBoxView) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCurrentRuntimeCPU(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateCurrentRuntimeNetworkMode(formats); err != nil {
 		res = append(res, err)
 	}
@@ -146,6 +154,29 @@ func (m *APIBoxView) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *APIBoxView) validateCurrentRuntimeCPU(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.CurrentRuntimeCPU) { // not required
+		return nil
+	}
+
+	if m.CurrentRuntimeCPU != nil {
+		if err := m.CurrentRuntimeCPU.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("current_runtime_cpu")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("current_runtime_cpu")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -292,6 +323,10 @@ func (m *APIBoxView) validateVolumes(formats strfmt.Registry) error {
 func (m *APIBoxView) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateCurrentRuntimeCPU(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCurrentRuntimeNetworkMode(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -319,6 +354,31 @@ func (m *APIBoxView) ContextValidate(ctx context.Context, formats strfmt.Registr
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *APIBoxView) contextValidateCurrentRuntimeCPU(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CurrentRuntimeCPU != nil {
+
+		if typeutils.IsZero(m.CurrentRuntimeCPU) { // not required
+			return nil
+		}
+
+		if err := m.CurrentRuntimeCPU.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("current_runtime_cpu")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("current_runtime_cpu")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
