@@ -357,6 +357,7 @@ Project-scoped APIs require `WithProject(...)`:
 - reusable read-only box and snap filesystems
 - project members
 - project and box secrets
+- private networks
 - outbound IPs
 - create-from-shared-snap flows
 
@@ -463,6 +464,33 @@ secret, err := project.CreateProjectSecret(ctx, run9.CreateProjectSecretRequest{
 
 Anyone who can change a box's labels can give that box the matching secrets, so
 use labels to route secrets to boxes, not to isolate project members from each other.
+
+### Private networks
+
+A private network lets the project's managed Boxes reach the caller's own
+Tailscale tailnet, such as a company GitLab or database, without a VPN or any
+credential inside the Box. run9 joins the tailnet as one tagged device shared by
+every matching Box, and the tailnet's ACLs decide what Boxes can reach. A Box
+uses the oldest private network that matches it; `BoxLabel` limits a network to
+Boxes carrying that label and is fixed at creation.
+
+```go
+network, err := project.CreatePrivateNetwork(ctx, run9.CreatePrivateNetworkRequest{
+    Name: "corp",
+    Type: run9.PrivateNetworkTypeTailscale,
+    Tailscale: run9.CreatePrivateNetworkTailscaleRequest{
+        OAuthClientSecret: oauthClientSecret, // "tskey-client-...", write-only
+        Tags:              []string{"tag:run9"},
+    },
+})
+```
+
+`PrivateNetworkView.Status` reports whether the device is `connecting`,
+`connected` or `failed`, and once connected the DNS domains and routes it serves.
+`BoxView.PrivateNetwork` names the network a running Box uses. Creating,
+updating and deleting require project admin; members can list and inspect. A
+deployment without a private network gateway refuses creation with
+`ErrorCodePrivateNetworkGatewayNotConfigured`.
 
 ### Outbound IPs
 

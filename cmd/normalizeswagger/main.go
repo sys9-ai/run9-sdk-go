@@ -74,12 +74,21 @@ func normalize(swagger *spec.Swagger) error {
 	return nil
 }
 
+// patchStringSlices are the optional string slice PATCH fields whose omission
+// must stay distinct from an empty slice.
+var patchStringSlices = []struct{ definition, property string }{
+	{"UpdateProjectSecretPayload", "allowed_hosts"},
+	{"api.UpdatePrivateNetworkTailscalePayload", "tags"},
+}
+
 func normalizePatchPayloads(swagger *spec.Swagger) error {
-	if err := expectStringArrayProperty(swagger, "UpdateProjectSecretPayload", "allowed_hosts"); err != nil {
-		return err
-	}
-	if err := setPropertyCodegenType(swagger, "UpdateProjectSecretPayload", "allowed_hosts", "StringSlice", "array"); err != nil {
-		return err
+	for _, field := range patchStringSlices {
+		if err := expectStringArrayProperty(swagger, field.definition, field.property); err != nil {
+			return err
+		}
+		if err := setPropertyCodegenType(swagger, field.definition, field.property, "StringSlice", "array"); err != nil {
+			return err
+		}
 	}
 	if err := expectStringMapProperty(swagger, "UpdateBoxPayload", "labels"); err != nil {
 		return err

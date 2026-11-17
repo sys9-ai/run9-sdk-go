@@ -266,6 +266,115 @@ type UpdateProjectSecretRequest struct {
 	InjectHeaderName *string `json:"inject_header_name,omitempty"`
 }
 
+// PrivateNetworkType names the kind of network a private network joins.
+type PrivateNetworkType string
+
+// Private network types accepted by CreatePrivateNetwork.
+const (
+	// PrivateNetworkTypeTailscale joins a Tailscale tailnet.
+	PrivateNetworkTypeTailscale PrivateNetworkType = "tailscale"
+)
+
+// PrivateNetworkState is the state of a private network's device.
+type PrivateNetworkState string
+
+// Private network states reported in PrivateNetworkStatusView.
+const (
+	// PrivateNetworkStateConnecting means the device has not joined yet, or
+	// the gateway has not reported on it for more than three minutes.
+	PrivateNetworkStateConnecting PrivateNetworkState = "connecting"
+	// PrivateNetworkStateConnected means the device is in the tailnet.
+	PrivateNetworkStateConnected PrivateNetworkState = "connected"
+	// PrivateNetworkStateFailed means the device could not join; Message says why.
+	PrivateNetworkStateFailed PrivateNetworkState = "failed"
+)
+
+// PrivateNetworkView describes one private network: a device run9 runs in the
+// caller's network, through which matching managed Boxes reach private
+// addresses and names. It never includes the OAuth client secret.
+type PrivateNetworkView struct {
+	PrivateNetworkID string `json:"private_network_id"`
+	ProjectID        string `json:"project_id"`
+	Name             string `json:"name"`
+	// Hostname is the device name the network asks for in the tailnet.
+	Hostname  string                      `json:"hostname"`
+	Type      PrivateNetworkType          `json:"type"`
+	Tailscale PrivateNetworkTailscaleView `json:"tailscale"`
+	// BoxLabel is set when the network only applies to Boxes carrying this label.
+	BoxLabel  *BoxLabel                `json:"box_label,omitempty"`
+	Status    PrivateNetworkStatusView `json:"status"`
+	CreatedAt time.Time                `json:"created_at"`
+	UpdatedAt time.Time                `json:"updated_at"`
+}
+
+// PrivateNetworkTailscaleView is the Tailscale configuration of a private
+// network, without its write-only OAuth client secret.
+type PrivateNetworkTailscaleView struct {
+	// Tags are the device's tags.
+	Tags []string `json:"tags"`
+}
+
+// PrivateNetworkStatusView is the latest report on a private network's device.
+type PrivateNetworkStatusView struct {
+	State PrivateNetworkState `json:"state"`
+	// Message says why State is failed.
+	Message string `json:"message,omitempty"`
+	// Hostname is the device's full name in the tailnet; it may carry a
+	// suffix when the requested hostname was taken.
+	Hostname string `json:"hostname,omitempty"`
+	// DNSDomains are the domains whose names the network answers.
+	DNSDomains []string `json:"dns_domains"`
+	// Routes are the address ranges the network reaches.
+	Routes []string `json:"routes"`
+	// UpdatedAt is when the device was last reported on; nil before the first report.
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+}
+
+// CreatePrivateNetworkRequest creates a private network.
+type CreatePrivateNetworkRequest struct {
+	// Name is unique in the project and cannot change: 1-63 lowercase letters,
+	// digits or hyphens, starting and ending with a letter or digit.
+	Name string `json:"name"`
+	// Hostname is the device name in the tailnet, under the same rule as Name.
+	// Empty uses Name.
+	Hostname string             `json:"hostname,omitempty"`
+	Type     PrivateNetworkType `json:"type"`
+	// Tailscale configures the device when Type is PrivateNetworkTypeTailscale.
+	Tailscale CreatePrivateNetworkTailscaleRequest `json:"tailscale"`
+	// BoxLabel limits the network to managed Boxes carrying this label. Nil
+	// applies it to every managed Box in the project. It cannot be changed later.
+	BoxLabel *BoxLabel `json:"box_label,omitempty"`
+}
+
+// CreatePrivateNetworkTailscaleRequest is the Tailscale configuration of a new
+// private network.
+type CreatePrivateNetworkTailscaleRequest struct {
+	// OAuthClientSecret is a "tskey-client-..." secret of an OAuth client with
+	// Auth Keys write scope that may create devices with Tags. It is write-only.
+	OAuthClientSecret string `json:"oauth_client_secret"`
+	// Tags are the device's tags, at least one, each "tag:name".
+	Tags []string `json:"tags"`
+}
+
+// UpdatePrivateNetworkRequest changes one private network. Changing Hostname
+// or tags makes its device rejoin, dropping connections through it; changing
+// only the secret keeps the device.
+type UpdatePrivateNetworkRequest struct {
+	// Hostname replaces the device name when non-nil.
+	Hostname *string `json:"hostname,omitempty"`
+	// Tailscale changes the set Tailscale fields when non-nil.
+	Tailscale *UpdatePrivateNetworkTailscaleRequest `json:"tailscale,omitempty"`
+}
+
+// UpdatePrivateNetworkTailscaleRequest changes the Tailscale configuration of
+// a private network.
+type UpdatePrivateNetworkTailscaleRequest struct {
+	// OAuthClientSecret replaces the OAuth client secret when non-nil.
+	OAuthClientSecret *string `json:"oauth_client_secret,omitempty"`
+	// Tags replaces the full tag set when non-nil.
+	Tags *[]string `json:"tags,omitempty"`
+}
+
 // ListBoxesRequest describes optional filters for ListBoxes.
 type ListBoxesRequest struct {
 	// Creator filters by the creator identifier.
@@ -320,6 +429,10 @@ type BoxView struct {
 	// PendingOutboundIPChange reports that the Box moves from
 	// CurrentRuntimeOutboundIP to OutboundIP when it next starts.
 	PendingOutboundIPChange bool `json:"pending_outbound_ip_change"`
+	// PrivateNetwork is the PrivateNetworkID of the private network the
+	// running Box uses; empty when it is not running, uses none, or started
+	// before private networks existed.
+	PrivateNetwork string `json:"private_network,omitempty"`
 	// CurrentRuntimeCPU is the CPU time of the Box's running VM instance. It
 	// is nil when the Box has no running instance or its host cannot measure
 	// it; nil never means zero.

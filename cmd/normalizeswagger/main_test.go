@@ -28,11 +28,28 @@ func TestNormalizePatchPayloads(t *testing.T) {
 						},
 					},
 				},
+				"api.UpdatePrivateNetworkTailscalePayload": {
+					SchemaProps: spec.SchemaProps{
+						Properties: map[string]spec.Schema{
+							"tags": {
+								SchemaProps: spec.SchemaProps{
+									Type: []string{"array"},
+									Items: &spec.SchemaOrArray{
+										Schema: &spec.Schema{SchemaProps: spec.SchemaProps{Type: []string{"string"}}},
+									},
+								},
+								VendorExtensible: spec.VendorExtensible{
+									Extensions: spec.Extensions{"x-nullable": true},
+								},
+							},
+						},
+					},
+				},
 				"UpdateBoxPayload": {
 					SchemaProps: spec.SchemaProps{
 						Properties: map[string]spec.Schema{
 							"initial_permissions": {
-								SchemaProps: spec.SchemaProps{AllOf: []spec.Schema{{SchemaProps: spec.SchemaProps{Ref: spec.MustCreateRef("#/definitions/Permissions")}}}},
+								SchemaProps:      spec.SchemaProps{AllOf: []spec.Schema{{SchemaProps: spec.SchemaProps{Ref: spec.MustCreateRef("#/definitions/Permissions")}}}},
 								VendorExtensible: spec.VendorExtensible{Extensions: spec.Extensions{"x-nullable": true}},
 							},
 							"labels": {
@@ -59,6 +76,10 @@ func TestNormalizePatchPayloads(t *testing.T) {
 	allowedHosts := swagger.Definitions["UpdateProjectSecretPayload"].Properties["allowed_hosts"]
 	require.Equal(t, true, allowedHosts.Extensions["x-omitempty"])
 	require.Equal(t, "StringSlice", xGoTypeName(t, allowedHosts))
+
+	tags := swagger.Definitions["api.UpdatePrivateNetworkTailscalePayload"].Properties["tags"]
+	require.Equal(t, true, tags.Extensions["x-omitempty"])
+	require.Equal(t, "StringSlice", xGoTypeName(t, tags))
 
 	labels := swagger.Definitions["UpdateBoxPayload"].Properties["labels"]
 	require.Equal(t, true, labels.Extensions["x-omitempty"])

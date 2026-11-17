@@ -318,6 +318,25 @@ func ExampleClient_CreateProjectSecret() {
 	log.Printf("Boxes labeled team=web can use %s", secret.Placeholder)
 }
 
+func ExampleClient_CreatePrivateNetwork() {
+	client, err := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "ak", SK: "sk"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	network, err := client.WithProject("default").CreatePrivateNetwork(context.Background(), run9.CreatePrivateNetworkRequest{
+		Name: "corp",
+		Type: run9.PrivateNetworkTypeTailscale,
+		Tailscale: run9.CreatePrivateNetworkTailscaleRequest{
+			OAuthClientSecret: "tskey-client-example",
+			Tags:              []string{"tag:run9"},
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Private network %s is %s", network.Name, network.Status.State)
+}
+
 func ExampleClient_DownloadArchive() {
 	client, _ := run9.NewClient("https://api.run.sys9.ai", run9.Credentials{AK: "access-key", SK: "secret-key"})
 	reader, err := client.WithProject("default").DownloadArchive(context.Background(), "my-box", "/work/result.txt")

@@ -48,6 +48,11 @@ operations=(
   createProjectSecret
   updateProjectSecret
   deleteProjectSecret
+  listPrivateNetworks
+  getPrivateNetwork
+  createPrivateNetwork
+  updatePrivateNetwork
+  deletePrivateNetwork
   createBox
   listBoxes
   getBox

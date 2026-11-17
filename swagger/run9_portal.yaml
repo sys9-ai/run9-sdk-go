@@ -124,6 +124,29 @@ definitions:
       org_cid:
         type: string
     type: object
+  CreatePrivateNetworkPayload:
+    properties:
+      box_label:
+        allOf:
+        - $ref: '#/definitions/api.BoxLabel'
+        description: BoxLabel limits the network to Boxes carrying this label; it
+          cannot change.
+        x-nullable: true
+      hostname:
+        description: |-
+          Hostname is the device name in the tailnet, under the same rule as name.
+          Defaults to name.
+        type: string
+      name:
+        description: |-
+          Name is unique in the project and cannot change: 1-63 lowercase letters,
+          digits or hyphens, starting and ending with a letter or digit.
+        type: string
+      tailscale:
+        $ref: '#/definitions/api.CreatePrivateNetworkTailscalePayload'
+      type:
+        $ref: '#/definitions/api.PrivateNetworkType'
+    type: object
   CreateProjectPayload:
     properties:
       description:
@@ -201,8 +224,10 @@ definitions:
           Code is a stable name for a refusal that callers need to tell apart from
           others with the same status; most errors have none. Current codes:
           box_create_in_progress, box_already_exists, source_snap_unavailable (a
-          source Snap was deleted) and snap_error (source Snaps are in error;
-          only a request that sets restore_from_checkpoint can still use them).
+          source Snap was deleted), snap_error (source Snaps are in error; only a
+          request that sets restore_from_checkpoint can still use them) and
+          private_network_gateway_not_configured (the deployment cannot run
+          private networks).
         type: string
       error:
         description: Error is human-readable text; do not parse it.
@@ -360,6 +385,16 @@ definitions:
         type: string
       new_password:
         type: string
+    type: object
+  UpdatePrivateNetworkPayload:
+    properties:
+      hostname:
+        type: string
+        x-nullable: true
+      tailscale:
+        allOf:
+        - $ref: '#/definitions/api.UpdatePrivateNetworkTailscalePayload'
+        x-nullable: true
     type: object
   UpdateProjectMembershipPayload:
     properties:
@@ -623,6 +658,12 @@ definitions:
         type: boolean
       pending_shape_change:
         type: boolean
+      private_network:
+        description: |-
+          PrivateNetwork is the private network the running instance uses; absent
+          when the Box is not running, uses none, or its instance predates
+          private networks.
+        type: string
       project_id:
         type: string
       reason:
@@ -640,6 +681,19 @@ definitions:
           $ref: '#/definitions/api.VolumeView'
         type: array
         x-omitempty: true
+    type: object
+  api.CreatePrivateNetworkTailscalePayload:
+    properties:
+      oauth_client_secret:
+        description: |-
+          OAuthClientSecret is write-only: "tskey-client-..." of an OAuth client
+          with Auth Keys write scope that may create devices with tags.
+        type: string
+      tags:
+        description: Tags are the device's tags, at least one, each "tag:name".
+        items:
+          type: string
+        type: array
     type: object
   api.CreatedAPIKeyView:
     properties:
@@ -1204,6 +1258,80 @@ definitions:
           type: string
         type: array
     type: object
+  api.PrivateNetworkStatusView:
+    properties:
+      dns_domains:
+        description: DNSDomains are the domains whose names the network answers.
+        items:
+          type: string
+        type: array
+      hostname:
+        description: Hostname is the device's full name in the tailnet.
+        type: string
+      message:
+        description: Message says why the state is failed.
+        type: string
+      routes:
+        description: Routes are the address ranges the network reaches.
+        items:
+          type: string
+        type: array
+      state:
+        description: |-
+          State is connecting until the gateway reports, and again whenever its
+          latest report is more than three minutes old.
+        enum:
+        - connecting
+        - connected
+        - failed
+        type: string
+      updated_at:
+        description: UpdatedAt is when the gateway last reported; absent before its
+          first report.
+        type: string
+        x-nullable: true
+    type: object
+  api.PrivateNetworkTailscaleView:
+    properties:
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  api.PrivateNetworkType:
+    enum:
+    - tailscale
+    type: string
+    x-enum-varnames:
+    - PrivateNetworkTypeTailscale
+  api.PrivateNetworkView:
+    properties:
+      box_label:
+        allOf:
+        - $ref: '#/definitions/api.BoxLabel'
+        description: BoxLabel is set when the network only applies to Boxes carrying
+          this label.
+        x-nullable: true
+      created_at:
+        type: string
+      hostname:
+        description: Hostname is the device name the network asks for in the tailnet.
+        type: string
+      name:
+        type: string
+      private_network_id:
+        type: string
+      project_id:
+        type: string
+      status:
+        $ref: '#/definitions/api.PrivateNetworkStatusView'
+      tailscale:
+        $ref: '#/definitions/api.PrivateNetworkTailscaleView'
+      type:
+        $ref: '#/definitions/api.PrivateNetworkType'
+      updated_at:
+        type: string
+    type: object
   api.ProjectMembershipView:
     properties:
       created_at:
@@ -1682,6 +1810,17 @@ definitions:
     x-enum-varnames:
     - SubscriptionTierFree
     - SubscriptionTierStarter
+  api.UpdatePrivateNetworkTailscalePayload:
+    properties:
+      oauth_client_secret:
+        type: string
+        x-nullable: true
+      tags:
+        items:
+          type: string
+        type: array
+        x-nullable: true
+    type: object
   api.UsageReportPointView:
     properties:
       end_at:
@@ -3301,6 +3440,209 @@ paths:
       - BasicAuth: []
       - SessionToken: []
       summary: List a project's outbound IPs
+      tags:
+      - Projects
+  /projects/{project_cid}/private-networks:
+    get:
+      operationId: listPrivateNetworks
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The project's private networks, oldest first.
+          schema:
+            items:
+              $ref: '#/definitions/api.PrivateNetworkView'
+            type: array
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: List private networks
+      tags:
+      - Projects
+    post:
+      consumes:
+      - application/json
+      description: Requires project admin. Refused with code private_network_gateway_not_configured
+        when the deployment has no private network gateway.
+      operationId: createPrivateNetwork
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreatePrivateNetworkPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: The created private network.
+          schema:
+            $ref: '#/definitions/api.PrivateNetworkView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+        "409":
+          description: The name is taken, or the deployment has no private network
+            gateway.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Create a private network
+      tags:
+      - Projects
+  /projects/{project_cid}/private-networks/{private_network_id}:
+    delete:
+      description: Requires project admin. The network's device leaves the tailnet
+        and its Boxes stop using it within five seconds.
+      operationId: deletePrivateNetwork
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: private_network_id
+        in: path
+        name: private_network_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Private network removed.
+          schema:
+            $ref: '#/definitions/api.StatusResult'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: The private network does not exist in the project.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Delete a private network
+      tags:
+      - Projects
+    get:
+      operationId: getPrivateNetwork
+      parameters:
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: private_network_id
+        in: path
+        name: private_network_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The private network.
+          schema:
+            $ref: '#/definitions/api.PrivateNetworkView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: The private network does not exist in the project.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Get a private network
+      tags:
+      - Projects
+    patch:
+      consumes:
+      - application/json
+      description: Requires project admin. Changing hostname or tags makes the network's
+        device rejoin with them; changing only the secret keeps it.
+      operationId: updatePrivateNetwork
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdatePrivateNetworkPayload'
+      - description: Project handle (`project_cid`).
+        in: path
+        name: project_cid
+        required: true
+        type: string
+      - description: private_network_id
+        in: path
+        name: private_network_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The updated private network.
+          schema:
+            $ref: '#/definitions/api.PrivateNetworkView'
+        "400":
+          description: The request was invalid or could not be processed.
+          schema:
+            $ref: '#/definitions/Error'
+        "401":
+          description: Missing or invalid credentials.
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: The private network does not exist in the project.
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+      - BasicAuth: []
+      - SessionToken: []
+      summary: Update a private network
       tags:
       - Projects
   /projects/{project_cid}/secrets:

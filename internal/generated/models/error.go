@@ -17,8 +17,10 @@ type Error struct {
 	// Code is a stable name for a refusal that callers need to tell apart from
 	// others with the same status; most errors have none. Current codes:
 	// box_create_in_progress, box_already_exists, source_snap_unavailable (a
-	// source Snap was deleted) and snap_error (source Snaps are in error;
-	// only a request that sets restore_from_checkpoint can still use them).
+	// source Snap was deleted), snap_error (source Snaps are in error; only a
+	// request that sets restore_from_checkpoint can still use them) and
+	// private_network_gateway_not_configured (the deployment cannot run
+	// private networks).
 	Code string `json:"code,omitempty"`
 
 	// Error is human-readable text; do not parse it.

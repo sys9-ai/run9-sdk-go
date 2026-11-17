@@ -69,6 +69,9 @@ const (
 	// terminated the host that was writing the Snap. The same code is an
 	// ExecView failure code; see ExecView.ErrorSnapIDs.
 	ErrorCodeSnapError = "snap_error"
+	// ErrorCodePrivateNetworkGatewayNotConfigured means the deployment has no
+	// private network gateway, so CreatePrivateNetwork cannot add a network.
+	ErrorCodePrivateNetworkGatewayNotConfigured = "private_network_gateway_not_configured"
 )
 
 // Error returns the control-plane message when present.

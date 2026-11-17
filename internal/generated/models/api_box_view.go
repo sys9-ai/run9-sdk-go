@@ -101,6 +101,11 @@ type APIBoxView struct {
 	// pending shape change
 	PendingShapeChange bool `json:"pending_shape_change,omitempty"`
 
+	// PrivateNetwork is the private network the running instance uses; absent
+	// when the Box is not running, uses none, or its instance predates
+	// private networks.
+	PrivateNetwork string `json:"private_network,omitempty"`
+
 	// project id
 	ProjectID string `json:"project_id,omitempty"`
 

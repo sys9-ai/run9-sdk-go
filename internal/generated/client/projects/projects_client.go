@@ -58,6 +58,12 @@ type ClientOption func(*runtime.ClientOperation)
 // ClientService is the interface for Client methods.
 type ClientService interface {
 
+	// CreatePrivateNetwork create a private network.
+	CreatePrivateNetwork(params *CreatePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePrivateNetworkCreated, error)
+
+	// CreatePrivateNetworkContext create a private network.
+	CreatePrivateNetworkContext(ctx context.Context, params *CreatePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePrivateNetworkCreated, error)
+
 	// CreateProject create a project.
 	CreateProject(params *CreateProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateProjectCreated, error)
 
@@ -69,6 +75,12 @@ type ClientService interface {
 
 	// CreateProjectSecretContext create a project secret.
 	CreateProjectSecretContext(ctx context.Context, params *CreateProjectSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateProjectSecretCreated, error)
+
+	// DeletePrivateNetwork delete a private network.
+	DeletePrivateNetwork(params *DeletePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeletePrivateNetworkOK, error)
+
+	// DeletePrivateNetworkContext delete a private network.
+	DeletePrivateNetworkContext(ctx context.Context, params *DeletePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeletePrivateNetworkOK, error)
 
 	// DeleteProject delete a project.
 	DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProjectOK, error)
@@ -82,11 +94,23 @@ type ClientService interface {
 	// DeleteProjectSecretContext delete a project secret.
 	DeleteProjectSecretContext(ctx context.Context, params *DeleteProjectSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProjectSecretOK, error)
 
+	// GetPrivateNetwork get a private network.
+	GetPrivateNetwork(params *GetPrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPrivateNetworkOK, error)
+
+	// GetPrivateNetworkContext get a private network.
+	GetPrivateNetworkContext(ctx context.Context, params *GetPrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPrivateNetworkOK, error)
+
 	// GetProject get a project.
 	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error)
 
 	// GetProjectContext get a project.
 	GetProjectContext(ctx context.Context, params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error)
+
+	// ListPrivateNetworks list private networks.
+	ListPrivateNetworks(params *ListPrivateNetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPrivateNetworksOK, error)
+
+	// ListPrivateNetworksContext list private networks.
+	ListPrivateNetworksContext(ctx context.Context, params *ListPrivateNetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPrivateNetworksOK, error)
 
 	// ListProjectMembers list project members.
 	ListProjectMembers(params *ListProjectMembersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectMembersOK, error)
@@ -118,6 +142,12 @@ type ClientService interface {
 	// RemoveProjectMemberContext remove a project member.
 	RemoveProjectMemberContext(ctx context.Context, params *RemoveProjectMemberParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveProjectMemberOK, error)
 
+	// UpdatePrivateNetwork update a private network.
+	UpdatePrivateNetwork(params *UpdatePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePrivateNetworkOK, error)
+
+	// UpdatePrivateNetworkContext update a private network.
+	UpdatePrivateNetworkContext(ctx context.Context, params *UpdatePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePrivateNetworkOK, error)
+
 	// UpdateProject update a project.
 	UpdateProject(params *UpdateProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateProjectOK, error)
 
@@ -137,6 +167,77 @@ type ClientService interface {
 	UpdateProjectSecretContext(ctx context.Context, params *UpdateProjectSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateProjectSecretOK, error)
 
 	SetTransport(transport runtime.ContextualTransport)
+}
+
+/*
+CreatePrivateNetworkcreates a private network.
+
+Requires project admin. Refused with code private_network_gateway_not_configured when the deployment has no private network gateway..
+
+This method does not support injected context.
+However, timeout and opentracing contexts are honored whenever enabled.
+
+If you need to pass a specific context, use [Client.CreatePrivateNetworkContext] instead.
+*/
+func (a *Client) CreatePrivateNetwork(params *CreatePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePrivateNetworkCreated, error) {
+	var ctx context.Context
+	if params.inner.ctx != nil {
+		ctx = params.inner.ctx
+	} else {
+		ctx = context.Background()
+	}
+
+	return a.CreatePrivateNetworkContext(ctx, params, authInfo, opts...)
+}
+
+/*
+CreatePrivateNetworkContextcreates a private network.
+
+Requires project admin. Refused with code private_network_gateway_not_configured when the deployment has no private network gateway..
+
+Do not use the deprecated [CreatePrivateNetworkParams.Context] with this method: it would be ignored.
+*/
+func (a *Client) CreatePrivateNetworkContext(ctx context.Context, params *CreatePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePrivateNetworkCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreatePrivateNetworkParams()
+	}
+
+	op := &runtime.ClientOperation{
+		ID:                 "createPrivateNetwork",
+		Method:             "POST",
+		PathPattern:        "/projects/{project_cid}/private-networks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreatePrivateNetworkReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Client:             params.HTTPClient,
+	}
+
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.SubmitContext(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreatePrivateNetworkCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for createPrivateNetwork: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
@@ -270,6 +371,77 @@ func (a *Client) CreateProjectSecretContext(ctx context.Context, params *CreateP
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for createProjectSecret: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeletePrivateNetworkdeletes a private network.
+
+Requires project admin. The network's device leaves the tailnet and its Boxes stop using it within five seconds..
+
+This method does not support injected context.
+However, timeout and opentracing contexts are honored whenever enabled.
+
+If you need to pass a specific context, use [Client.DeletePrivateNetworkContext] instead.
+*/
+func (a *Client) DeletePrivateNetwork(params *DeletePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeletePrivateNetworkOK, error) {
+	var ctx context.Context
+	if params.inner.ctx != nil {
+		ctx = params.inner.ctx
+	} else {
+		ctx = context.Background()
+	}
+
+	return a.DeletePrivateNetworkContext(ctx, params, authInfo, opts...)
+}
+
+/*
+DeletePrivateNetworkContextdeletes a private network.
+
+Requires project admin. The network's device leaves the tailnet and its Boxes stop using it within five seconds..
+
+Do not use the deprecated [DeletePrivateNetworkParams.Context] with this method: it would be ignored.
+*/
+func (a *Client) DeletePrivateNetworkContext(ctx context.Context, params *DeletePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeletePrivateNetworkOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeletePrivateNetworkParams()
+	}
+
+	op := &runtime.ClientOperation{
+		ID:                 "deletePrivateNetwork",
+		Method:             "DELETE",
+		PathPattern:        "/projects/{project_cid}/private-networks/{private_network_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeletePrivateNetworkReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Client:             params.HTTPClient,
+	}
+
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.SubmitContext(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeletePrivateNetworkOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for deletePrivateNetwork: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -408,6 +580,73 @@ func (a *Client) DeleteProjectSecretContext(ctx context.Context, params *DeleteP
 }
 
 /*
+GetPrivateNetworkgets a private network.
+
+This method does not support injected context.
+However, timeout and opentracing contexts are honored whenever enabled.
+
+If you need to pass a specific context, use [Client.GetPrivateNetworkContext] instead.
+*/
+func (a *Client) GetPrivateNetwork(params *GetPrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPrivateNetworkOK, error) {
+	var ctx context.Context
+	if params.inner.ctx != nil {
+		ctx = params.inner.ctx
+	} else {
+		ctx = context.Background()
+	}
+
+	return a.GetPrivateNetworkContext(ctx, params, authInfo, opts...)
+}
+
+/*
+GetPrivateNetworkContextgets a private network.
+
+Do not use the deprecated [GetPrivateNetworkParams.Context] with this method: it would be ignored.
+*/
+func (a *Client) GetPrivateNetworkContext(ctx context.Context, params *GetPrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPrivateNetworkOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetPrivateNetworkParams()
+	}
+
+	op := &runtime.ClientOperation{
+		ID:                 "getPrivateNetwork",
+		Method:             "GET",
+		PathPattern:        "/projects/{project_cid}/private-networks/{private_network_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetPrivateNetworkReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Client:             params.HTTPClient,
+	}
+
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.SubmitContext(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetPrivateNetworkOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getPrivateNetwork: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetProjectgets a project.
 
 This method does not support injected context.
@@ -471,6 +710,73 @@ func (a *Client) GetProjectContext(ctx context.Context, params *GetProjectParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for getProject: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListPrivateNetworkslists private networks.
+
+This method does not support injected context.
+However, timeout and opentracing contexts are honored whenever enabled.
+
+If you need to pass a specific context, use [Client.ListPrivateNetworksContext] instead.
+*/
+func (a *Client) ListPrivateNetworks(params *ListPrivateNetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPrivateNetworksOK, error) {
+	var ctx context.Context
+	if params.inner.ctx != nil {
+		ctx = params.inner.ctx
+	} else {
+		ctx = context.Background()
+	}
+
+	return a.ListPrivateNetworksContext(ctx, params, authInfo, opts...)
+}
+
+/*
+ListPrivateNetworksContextlists private networks.
+
+Do not use the deprecated [ListPrivateNetworksParams.Context] with this method: it would be ignored.
+*/
+func (a *Client) ListPrivateNetworksContext(ctx context.Context, params *ListPrivateNetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPrivateNetworksOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListPrivateNetworksParams()
+	}
+
+	op := &runtime.ClientOperation{
+		ID:                 "listPrivateNetworks",
+		Method:             "GET",
+		PathPattern:        "/projects/{project_cid}/private-networks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListPrivateNetworksReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Client:             params.HTTPClient,
+	}
+
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.SubmitContext(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListPrivateNetworksOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listPrivateNetworks: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -810,6 +1116,77 @@ func (a *Client) RemoveProjectMemberContext(ctx context.Context, params *RemoveP
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for removeProjectMember: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdatePrivateNetworkupdates a private network.
+
+Requires project admin. Changing hostname or tags makes the network's device rejoin with them; changing only the secret keeps it..
+
+This method does not support injected context.
+However, timeout and opentracing contexts are honored whenever enabled.
+
+If you need to pass a specific context, use [Client.UpdatePrivateNetworkContext] instead.
+*/
+func (a *Client) UpdatePrivateNetwork(params *UpdatePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePrivateNetworkOK, error) {
+	var ctx context.Context
+	if params.inner.ctx != nil {
+		ctx = params.inner.ctx
+	} else {
+		ctx = context.Background()
+	}
+
+	return a.UpdatePrivateNetworkContext(ctx, params, authInfo, opts...)
+}
+
+/*
+UpdatePrivateNetworkContextupdates a private network.
+
+Requires project admin. Changing hostname or tags makes the network's device rejoin with them; changing only the secret keeps it..
+
+Do not use the deprecated [UpdatePrivateNetworkParams.Context] with this method: it would be ignored.
+*/
+func (a *Client) UpdatePrivateNetworkContext(ctx context.Context, params *UpdatePrivateNetworkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePrivateNetworkOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdatePrivateNetworkParams()
+	}
+
+	op := &runtime.ClientOperation{
+		ID:                 "updatePrivateNetwork",
+		Method:             "PATCH",
+		PathPattern:        "/projects/{project_cid}/private-networks/{private_network_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdatePrivateNetworkReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Client:             params.HTTPClient,
+	}
+
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.SubmitContext(ctx, op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdatePrivateNetworkOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for updatePrivateNetwork: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
