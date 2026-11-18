@@ -142,6 +142,12 @@ definitions:
           Name is unique in the project and cannot change: 1-63 lowercase letters,
           digits or hyphens, starting and ending with a letter or digit.
         type: string
+      priority:
+        description: |-
+          Priority picks the network a Box uses when several match it: the
+          highest wins, and ties go to the earliest created. 0-1000, default 0;
+          it cannot change.
+        type: integer
       tailscale:
         $ref: '#/definitions/api.CreatePrivateNetworkTailscalePayload'
       type:
@@ -1319,6 +1325,11 @@ definitions:
         type: string
       name:
         type: string
+      priority:
+        description: |-
+          Priority picks the network a Box uses when several match it: the
+          highest wins, and ties go to the earliest created.
+        type: integer
       private_network_id:
         type: string
       project_id:

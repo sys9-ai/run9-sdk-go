@@ -18,11 +18,11 @@ func TestClientCreatePrivateNetworkSendsTailscaleConfigAndDecodesStatus(t *testi
 
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		require.JSONEq(t, `{"name":"corp","type":"tailscale","tailscale":{"oauth_client_secret":"tskey-client-k1","tags":["tag:run9"]},"box_label":{"key":"team","value":"web"}}`, string(body))
+		require.JSONEq(t, `{"name":"corp","type":"tailscale","tailscale":{"oauth_client_secret":"tskey-client-k1","tags":["tag:run9"]},"box_label":{"key":"team","value":"web"},"priority":10}`, string(body))
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		_, err = io.WriteString(w, `{"private_network_id":"pnet1","project_id":"p1","name":"corp","hostname":"corp","type":"tailscale","tailscale":{"tags":["tag:run9"]},"box_label":{"key":"team","value":"web"},"status":{"state":"connected","hostname":"corp.example.ts.net","dns_domains":["example.ts.net"],"routes":["100.64.0.0/10"],"updated_at":"2026-11-17T10:00:00Z"}}`)
+		_, err = io.WriteString(w, `{"private_network_id":"pnet1","project_id":"p1","name":"corp","hostname":"corp","type":"tailscale","tailscale":{"tags":["tag:run9"]},"box_label":{"key":"team","value":"web"},"priority":10,"status":{"state":"connected","hostname":"corp.example.ts.net","dns_domains":["example.ts.net"],"routes":["100.64.0.0/10"],"updated_at":"2026-11-17T10:00:00Z"}}`)
 		require.NoError(t, err)
 	}))
 	defer server.Close()
@@ -35,6 +35,7 @@ func TestClientCreatePrivateNetworkSendsTailscaleConfigAndDecodesStatus(t *testi
 			Tags:              []string{"tag:run9"},
 		},
 		BoxLabel: &BoxLabel{Key: "team", Value: "web"},
+		Priority: 10,
 	})
 	require.NoError(t, err)
 	reportedAt := time.Date(2026, 11, 17, 10, 0, 0, 0, time.UTC)
@@ -46,6 +47,7 @@ func TestClientCreatePrivateNetworkSendsTailscaleConfigAndDecodesStatus(t *testi
 		Type:             PrivateNetworkTypeTailscale,
 		Tailscale:        PrivateNetworkTailscaleView{Tags: []string{"tag:run9"}},
 		BoxLabel:         &BoxLabel{Key: "team", Value: "web"},
+		Priority:         10,
 		Status: PrivateNetworkStatusView{
 			State:      PrivateNetworkStateConnected,
 			Hostname:   "corp.example.ts.net",

@@ -470,9 +470,11 @@ use labels to route secrets to boxes, not to isolate project members from each o
 A private network lets the project's managed Boxes reach the caller's own
 Tailscale tailnet, such as a company GitLab or database, without a VPN or any
 credential inside the Box. run9 joins the tailnet as one tagged device shared by
-every matching Box, and the tailnet's ACLs decide what Boxes can reach. A Box
-uses the oldest private network that matches it; `BoxLabel` limits a network to
-Boxes carrying that label and is fixed at creation.
+every matching Box, and the tailnet's ACLs decide what Boxes can reach.
+`BoxLabel` limits a network to Boxes carrying that label. A Box uses the
+matching network with the highest `Priority` (0-1000, default 0), the oldest
+among equals, so a narrower network with a higher priority layers over a
+broader one. Both are fixed at creation.
 
 ```go
 network, err := project.CreatePrivateNetwork(ctx, run9.CreatePrivateNetworkRequest{

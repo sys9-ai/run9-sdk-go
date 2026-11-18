@@ -28,6 +28,11 @@ type CreatePrivateNetworkPayload struct {
 	// digits or hyphens, starting and ending with a letter or digit.
 	Name string `json:"name,omitempty"`
 
+	// Priority picks the network a Box uses when several match it: the
+	// highest wins, and ties go to the earliest created. 0-1000, default 0;
+	// it cannot change.
+	Priority int64 `json:"priority,omitempty"`
+
 	// tailscale
 	Tailscale *APICreatePrivateNetworkTailscalePayload `json:"tailscale,omitempty"`
 

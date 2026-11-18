@@ -301,7 +301,10 @@ type PrivateNetworkView struct {
 	Type      PrivateNetworkType          `json:"type"`
 	Tailscale PrivateNetworkTailscaleView `json:"tailscale"`
 	// BoxLabel is set when the network only applies to Boxes carrying this label.
-	BoxLabel  *BoxLabel                `json:"box_label,omitempty"`
+	BoxLabel *BoxLabel `json:"box_label,omitempty"`
+	// Priority picks the network a managed Box uses when several match it:
+	// the highest wins, and ties go to the earliest created.
+	Priority  int                      `json:"priority"`
 	Status    PrivateNetworkStatusView `json:"status"`
 	CreatedAt time.Time                `json:"created_at"`
 	UpdatedAt time.Time                `json:"updated_at"`
@@ -344,6 +347,11 @@ type CreatePrivateNetworkRequest struct {
 	// BoxLabel limits the network to managed Boxes carrying this label. Nil
 	// applies it to every managed Box in the project. It cannot be changed later.
 	BoxLabel *BoxLabel `json:"box_label,omitempty"`
+	// Priority picks the network a managed Box uses when several match it:
+	// the highest wins, and ties go to the earliest created. 0-1000, default
+	// 0. Give a narrower network a higher priority to layer it over a broader
+	// one. It cannot be changed later.
+	Priority int `json:"priority,omitempty"`
 }
 
 // CreatePrivateNetworkTailscaleRequest is the Tailscale configuration of a new

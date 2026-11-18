@@ -29,6 +29,10 @@ type APIPrivateNetworkView struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// Priority picks the network a Box uses when several match it: the
+	// highest wins, and ties go to the earliest created.
+	Priority int64 `json:"priority,omitempty"`
+
 	// private network id
 	PrivateNetworkID string `json:"private_network_id,omitempty"`
 
