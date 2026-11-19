@@ -34,6 +34,10 @@ type APIProjectOutboundIPsView struct {
 
 	// next cursor
 	NextCursor string `json:"next_cursor,omitempty"`
+
+	// Slots is the size of the deployment's outbound IP pool: the valid
+	// outbound_ip_affinity values are 0 to Slots-1.
+	Slots int64 `json:"slots,omitempty"`
 }
 
 // Validate validates this api project outbound IPs view

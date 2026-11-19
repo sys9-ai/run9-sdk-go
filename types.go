@@ -1215,6 +1215,9 @@ type ProjectOutboundIPs struct {
 	// Available is false when the deployment has no outbound IPs; Boxes then
 	// reach the internet from addresses Run9 does not fix.
 	Available bool `json:"available"`
+	// Slots is the size of the deployment's outbound IP pool: the valid
+	// outbound IP affinity values are 0 to Slots-1.
+	Slots int `json:"slots"`
 	// Label is the project's outbound IP label; empty when every Box shares
 	// one address.
 	Label string `json:"label,omitempty"`

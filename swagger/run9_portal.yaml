@@ -1421,6 +1421,11 @@ definitions:
         type: string
       next_cursor:
         type: string
+      slots:
+        description: |-
+          Slots is the size of the deployment's outbound IP pool: the valid
+          outbound_ip_affinity values are 0 to Slots-1.
+        type: integer
     type: object
   api.ProjectRole:
     enum:

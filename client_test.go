@@ -653,7 +653,7 @@ func TestClientListOutboundIPsSendsFiltersAndDecodesGroups(t *testing.T) {
 		require.Equal(t, "10", r.URL.Query().Get("limit"))
 		require.Equal(t, "c1", r.URL.Query().Get("cursor"))
 		w.Header().Set("Content-Type", "application/json")
-		_, err := io.WriteString(w, `{"available":true,"label":"tenant","addresses":[{"address":"52.0.0.1","slot":0,"label_values":1,"unlabeled":true},{"address":"52.0.0.3","slot":2,"affinity_boxes":4}],"groups":[{"boxes":2,"address":"52.0.0.1"},{"label_value":"acme","address":"52.0.0.1","boxes":1}],"next_cursor":"c2"}`)
+		_, err := io.WriteString(w, `{"available":true,"slots":3,"label":"tenant","addresses":[{"address":"52.0.0.1","slot":0,"label_values":1,"unlabeled":true},{"address":"52.0.0.3","slot":2,"affinity_boxes":4}],"groups":[{"boxes":2,"address":"52.0.0.1"},{"label_value":"acme","address":"52.0.0.1","boxes":1}],"next_cursor":"c2"}`)
 		require.NoError(t, err)
 	}))
 	defer server.Close()
@@ -661,6 +661,7 @@ func TestClientListOutboundIPsSendsFiltersAndDecodesGroups(t *testing.T) {
 	ips, err := newProjectTestClient(t, server.URL, "default").ListOutboundIPs(context.Background(), ListOutboundIPsRequest{LabelValue: "acme", Limit: 10, Cursor: "c1"})
 	require.NoError(t, err)
 	require.True(t, ips.Available)
+	require.Equal(t, 3, ips.Slots)
 	require.Equal(t, []OutboundIPAddress{
 		{Address: "52.0.0.1", Slot: 0, LabelValues: 1, Unlabeled: true},
 		{Address: "52.0.0.3", Slot: 2, AffinityBoxes: 4},
