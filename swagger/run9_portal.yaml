@@ -40,6 +40,12 @@ definitions:
         type: object
       network_mode:
         $ref: '#/definitions/api.BoxNetworkMode'
+      outbound_ip_affinity:
+        description: |-
+          OutboundIPAffinity picks the egress pool slot whose outbound IP the Box uses, taking precedence over
+          the project's outbound IP label. Slots count from 0. Omit to leave the Box to its outbound IP group.
+        type: integer
+        x-nullable: true
       version:
         type: integer
         x-nullable: true
@@ -84,6 +90,12 @@ definitions:
         type: object
       network_mode:
         $ref: '#/definitions/api.BoxNetworkMode'
+      outbound_ip_affinity:
+        description: |-
+          OutboundIPAffinity picks the egress pool slot whose outbound IP the Box uses, taking precedence over
+          the project's outbound IP label. Slots count from 0. Omit to leave the Box to its outbound IP group.
+        type: integer
+        x-nullable: true
       restore_from_checkpoint:
         description: |-
           RestoreFromCheckpoint copies a root or Volume source in error from its last durable checkpoint, once
@@ -363,6 +375,12 @@ definitions:
         - normal
         - managed
         type: string
+        x-nullable: true
+      outbound_ip_affinity:
+        description: |-
+          OutboundIPAffinity sets the egress pool slot whose outbound IP the Box uses from its next start,
+          taking precedence over the project's outbound IP label; -1 removes it. Omit or null to keep it.
+        type: integer
         x-nullable: true
     type: object
   UpdateMePayload:
@@ -658,6 +676,12 @@ definitions:
           OutboundIP is the public address the Box reaches the internet from
           once it next starts; empty when the deployment has no outbound IPs.
         type: string
+      outbound_ip_affinity:
+        description: |-
+          OutboundIPAffinity is the outbound IP pool slot the Box prefers over its
+          outbound IP group; absent when it has none.
+        type: integer
+        x-nullable: true
       pending_network_mode_change:
         type: boolean
       pending_outbound_ip_change:
@@ -1155,11 +1179,24 @@ definitions:
     properties:
       address:
         type: string
+      affinity_boxes:
+        description: |-
+          AffinityBoxes counts the Boxes using this address through their
+          outbound_ip_affinity.
+        type: integer
       label_values:
         description: LabelValues counts the label values assigned this address.
         type: integer
+      slot:
+        description: |-
+          Slot is the address's position in the deployment's outbound IP pool,
+          the value a Box's outbound_ip_affinity names.
+        type: integer
       unlabeled:
-        description: Unlabeled is true when Boxes without the label use this address.
+        description: |-
+          Unlabeled is true when Boxes in the project group use this address:
+          Boxes without the label, or every Box when the project has no label,
+          apart from Boxes using their outbound_ip_affinity.
         type: boolean
     type: object
   api.OutboundIPGroupView:

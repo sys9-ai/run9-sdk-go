@@ -92,6 +92,10 @@ type APIBoxView struct {
 	// once it next starts; empty when the deployment has no outbound IPs.
 	OutboundIP string `json:"outbound_ip,omitempty"`
 
+	// OutboundIPAffinity is the outbound IP pool slot the Box prefers over its
+	// outbound IP group; absent when it has none.
+	OutboundIPAffinity *int64 `json:"outbound_ip_affinity,omitempty"`
+
 	// pending network mode change
 	PendingNetworkModeChange bool `json:"pending_network_mode_change,omitempty"`
 

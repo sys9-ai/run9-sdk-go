@@ -516,6 +516,21 @@ for _, group := range ips.Groups {
 }
 ```
 
+To choose a Box's address directly, set its outbound IP affinity to a pool
+slot, counted from 0. It takes precedence over the project's label and applies
+from the Box's next start. `OutboundIPAddress.Slot` gives each listed
+address's slot. Run9 may replace the address of a slot, and a Box whose slot
+the pool no longer has uses its group's address; no address is guaranteed or
+reserved.
+
+```go
+slot := 2
+box, err := project.UpdateBox(ctx, boxID, run9.UpdateBoxRequest{OutboundIPAffinity: &slot})
+
+clear := run9.ClearOutboundIPAffinity
+box, err = project.UpdateBox(ctx, boxID, run9.UpdateBoxRequest{OutboundIPAffinity: &clear})
+```
+
 `BoxView.OutboundIP` is the address a Box uses once it next starts;
 `CurrentRuntimeOutboundIP` is the one a running Box uses now. When
 `ProjectOutboundIPs.Available` is false, the deployment has no fixed addresses.

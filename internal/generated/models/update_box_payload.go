@@ -31,6 +31,10 @@ type UpdateBoxPayload struct {
 	// network mode
 	// Enum: ["normal","managed"]
 	NetworkMode *string `json:"network_mode,omitempty"`
+
+	// OutboundIPAffinity sets the egress pool slot whose outbound IP the Box uses from its next start,
+	// taking precedence over the project's outbound IP label; -1 removes it. Omit or null to keep it.
+	OutboundIPAffinity *int64 `json:"outbound_ip_affinity,omitempty"`
 }
 
 // Validate validates this update box payload

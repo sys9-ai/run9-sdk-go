@@ -34,6 +34,10 @@ type CreateBoxPayload struct {
 	// network mode
 	NetworkMode APIBoxNetworkMode `json:"network_mode,omitempty"`
 
+	// OutboundIPAffinity picks the egress pool slot whose outbound IP the Box uses, taking precedence over
+	// the project's outbound IP label. Slots count from 0. Omit to leave the Box to its outbound IP group.
+	OutboundIPAffinity *int64 `json:"outbound_ip_affinity,omitempty"`
+
 	// RestoreFromCheckpoint copies a root or Volume source in error from its last durable checkpoint, once
 	// run9 proves terminated the host that was writing it. Changes made after that checkpoint are lost;
 	// restored_from_checkpoint_at on the new disk says when it was saved. Healthy sources are unaffected.

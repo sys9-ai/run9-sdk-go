@@ -17,10 +17,20 @@ type APIOutboundIPAddressView struct {
 	// address
 	Address string `json:"address,omitempty"`
 
+	// AffinityBoxes counts the Boxes using this address through their
+	// outbound_ip_affinity.
+	AffinityBoxes int64 `json:"affinity_boxes,omitempty"`
+
 	// LabelValues counts the label values assigned this address.
 	LabelValues int64 `json:"label_values,omitempty"`
 
-	// Unlabeled is true when Boxes without the label use this address.
+	// Slot is the address's position in the deployment's outbound IP pool,
+	// the value a Box's outbound_ip_affinity names.
+	Slot int64 `json:"slot,omitempty"`
+
+	// Unlabeled is true when Boxes in the project group use this address:
+	// Boxes without the label, or every Box when the project has no label,
+	// apart from Boxes using their outbound_ip_affinity.
 	Unlabeled bool `json:"unlabeled,omitempty"`
 }
 

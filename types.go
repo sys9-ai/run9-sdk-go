@@ -428,6 +428,10 @@ type BoxView struct {
 	CurrentRuntimeNetworkMode BoxNetworkMode `json:"current_runtime_network_mode,omitempty"`
 	PendingShapeChange        bool           `json:"pending_shape_change"`
 	PendingNetworkModeChange  bool           `json:"pending_network_mode_change"`
+	// OutboundIPAffinity is the outbound IP pool slot the Box prefers over its
+	// outbound IP group; nil when it has none. When the pool no longer has the
+	// slot, the Box uses its group and OutboundIP shows that address.
+	OutboundIPAffinity *int `json:"outbound_ip_affinity,omitempty"`
 	// OutboundIP is the public address the Box reaches the internet from once
 	// it next starts; empty when the deployment has no outbound IPs.
 	OutboundIP string `json:"outbound_ip,omitempty"`
@@ -813,6 +817,11 @@ type CreateBoxRequest struct {
 	DesiredShape string `json:"desired_shape,omitempty"`
 	// NetworkMode requests the durable network mode for the box.
 	NetworkMode BoxNetworkMode `json:"network_mode,omitempty"`
+	// OutboundIPAffinity picks the outbound IP pool slot, counted from 0, whose
+	// address the box uses, taking precedence over the project's outbound IP
+	// label. Nil leaves the box to its outbound IP group. Slots are listed by
+	// [Client.ListOutboundIPs].
+	OutboundIPAffinity *int `json:"outbound_ip_affinity,omitempty"`
 	// Description is optional free-form box text.
 	Description string `json:"description,omitempty"`
 	// Labels sets durable box labels.
@@ -844,6 +853,11 @@ type CreateBoxFromSharedSnapRequest struct {
 	DesiredShape string `json:"desired_shape,omitempty"`
 	// NetworkMode requests the durable network mode for the box.
 	NetworkMode BoxNetworkMode `json:"network_mode,omitempty"`
+	// OutboundIPAffinity picks the outbound IP pool slot, counted from 0, whose
+	// address the box uses, taking precedence over the project's outbound IP
+	// label. Nil leaves the box to its outbound IP group. Slots are listed by
+	// [Client.ListOutboundIPs].
+	OutboundIPAffinity *int `json:"outbound_ip_affinity,omitempty"`
 	// Description is optional free-form box text.
 	Description string `json:"description,omitempty"`
 	// Labels sets durable box labels.
@@ -942,7 +956,15 @@ type UpdateBoxRequest struct {
 	DesiredShape *string `json:"desired_shape,omitempty"`
 	// NetworkMode replaces the durable network mode when non-nil.
 	NetworkMode *BoxNetworkMode `json:"network_mode,omitempty"`
+	// OutboundIPAffinity replaces the box's outbound IP pool slot from its
+	// next start when non-nil; [ClearOutboundIPAffinity] removes it.
+	OutboundIPAffinity *int `json:"outbound_ip_affinity,omitempty"`
 }
+
+// ClearOutboundIPAffinity is the [UpdateBoxRequest.OutboundIPAffinity] value
+// that removes a box's outbound IP affinity, returning it to its outbound IP
+// group.
+const ClearOutboundIPAffinity = -1
 
 // PublishSharedSnapRequest publishes one snap into the shared snap catalog.
 type PublishSharedSnapRequest struct {
@@ -1207,10 +1229,18 @@ type ProjectOutboundIPs struct {
 // OutboundIPAddress is one address a project's Boxes use.
 type OutboundIPAddress struct {
 	Address string `json:"address"`
+	// Slot is the address's position in the deployment's outbound IP pool,
+	// the value [CreateBoxRequest.OutboundIPAffinity] names.
+	Slot int `json:"slot"`
 	// LabelValues counts the label values assigned this address.
 	LabelValues int `json:"label_values,omitempty"`
-	// Unlabeled reports that Boxes without the label use this address.
+	// Unlabeled reports that Boxes in the project group use this address:
+	// Boxes without the label, or every Box when the project has no label,
+	// apart from Boxes using their outbound IP affinity.
 	Unlabeled bool `json:"unlabeled,omitempty"`
+	// AffinityBoxes counts the Boxes using this address through their
+	// outbound IP affinity.
+	AffinityBoxes int `json:"affinity_boxes,omitempty"`
 }
 
 // OutboundIPGroup is one label value and the address its Boxes use.

@@ -34,6 +34,10 @@ type ConsumeSharedSnapToBoxPayload struct {
 	// network mode
 	NetworkMode APIBoxNetworkMode `json:"network_mode,omitempty"`
 
+	// OutboundIPAffinity picks the egress pool slot whose outbound IP the Box uses, taking precedence over
+	// the project's outbound IP label. Slots count from 0. Omit to leave the Box to its outbound IP group.
+	OutboundIPAffinity *int64 `json:"outbound_ip_affinity,omitempty"`
+
 	// version
 	Version *int64 `json:"version,omitempty"`
 

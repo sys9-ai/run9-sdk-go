@@ -653,7 +653,7 @@ func TestClientListOutboundIPsSendsFiltersAndDecodesGroups(t *testing.T) {
 		require.Equal(t, "10", r.URL.Query().Get("limit"))
 		require.Equal(t, "c1", r.URL.Query().Get("cursor"))
 		w.Header().Set("Content-Type", "application/json")
-		_, err := io.WriteString(w, `{"available":true,"label":"tenant","addresses":[{"address":"52.0.0.1","label_values":1,"unlabeled":true}],"groups":[{"boxes":2,"address":"52.0.0.1"},{"label_value":"acme","address":"52.0.0.1","boxes":1}],"next_cursor":"c2"}`)
+		_, err := io.WriteString(w, `{"available":true,"label":"tenant","addresses":[{"address":"52.0.0.1","slot":0,"label_values":1,"unlabeled":true},{"address":"52.0.0.3","slot":2,"affinity_boxes":4}],"groups":[{"boxes":2,"address":"52.0.0.1"},{"label_value":"acme","address":"52.0.0.1","boxes":1}],"next_cursor":"c2"}`)
 		require.NoError(t, err)
 	}))
 	defer server.Close()
@@ -661,7 +661,10 @@ func TestClientListOutboundIPsSendsFiltersAndDecodesGroups(t *testing.T) {
 	ips, err := newProjectTestClient(t, server.URL, "default").ListOutboundIPs(context.Background(), ListOutboundIPsRequest{LabelValue: "acme", Limit: 10, Cursor: "c1"})
 	require.NoError(t, err)
 	require.True(t, ips.Available)
-	require.Equal(t, []OutboundIPAddress{{Address: "52.0.0.1", LabelValues: 1, Unlabeled: true}}, ips.Addresses)
+	require.Equal(t, []OutboundIPAddress{
+		{Address: "52.0.0.1", Slot: 0, LabelValues: 1, Unlabeled: true},
+		{Address: "52.0.0.3", Slot: 2, AffinityBoxes: 4},
+	}, ips.Addresses)
 	require.Len(t, ips.Groups, 2)
 	require.Nil(t, ips.Groups[0].LabelValue)
 	require.Equal(t, "acme", *ips.Groups[1].LabelValue)
@@ -710,6 +713,38 @@ func TestClientUpdateProjectCanClearOutboundIPLabel(t *testing.T) {
 	view, err := newProjectTestClient(t, server.URL, "default").UpdateProject(context.Background(), UpdateProjectRequest{OutboundIPLabel: &empty})
 	require.NoError(t, err)
 	require.Empty(t, view.OutboundIPLabel)
+}
+
+func TestClientSetsAndClearsOutboundIPAffinity(t *testing.T) {
+	var bodies []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		bodies = append(bodies, string(body))
+		status := http.StatusOK
+		if r.Method == http.MethodPost {
+			status = http.StatusCreated
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		_, err = io.WriteString(w, `{"box_id":"box-a","outbound_ip_affinity":2,"outbound_ip":"52.0.0.3"}`)
+		require.NoError(t, err)
+	}))
+	defer server.Close()
+	client := newProjectTestClient(t, server.URL, "default")
+
+	slot := 2
+	box, err := client.CreateBox(context.Background(), CreateBoxRequest{OutboundIPAffinity: &slot})
+	require.NoError(t, err)
+	require.Equal(t, 2, *box.OutboundIPAffinity)
+	require.Equal(t, "52.0.0.3", box.OutboundIP)
+
+	clear := ClearOutboundIPAffinity
+	_, err = client.UpdateBox(context.Background(), "box-a", UpdateBoxRequest{OutboundIPAffinity: &clear})
+	require.NoError(t, err)
+
+	require.JSONEq(t, `{"outbound_ip_affinity":2}`, bodies[0])
+	require.JSONEq(t, `{"outbound_ip_affinity":-1}`, bodies[1])
 }
 
 func TestClientReportsEveryFailureStatusAsAPIError(t *testing.T) {
