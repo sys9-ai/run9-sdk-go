@@ -125,6 +125,22 @@ application-private buffers and does not guarantee application-level transaction
 Parent lifecycle hooks do not run. New boxes start fresh processes from the saved
 files. `CreateBox` with a source Snap uses the same online capture behavior.
 
+To run a fork next to its source, set `PreferSourceHost`. The new Box's first
+start then prefers the host of the Box that `SourceSnapID` is attached to (the
+host it runs on, or last ran on while stopped), which already caches the data
+the fork reads first. It is only a preference: when that host is not ready or
+has no room, the start is placed as usual and never waits or fails for it. A
+source that is not attached to a Box is refused with HTTP 400. Compare the
+`CurrentHostID` of both Boxes to see where the fork started.
+
+```go
+fork, err := project.CreateBox(ctx, run9.CreateBoxRequest{
+    SourceSnapID:     parent.BoxSnapID,
+    DesiredShape:     "4c8g",
+    PreferSourceHost: true,
+})
+```
+
 `ListSnaps` defaults to detached Snaps; set `Attached` to a pointer to `true` to
 list the original Attached Snaps and Volumes instead.
 

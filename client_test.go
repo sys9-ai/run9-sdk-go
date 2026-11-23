@@ -822,6 +822,22 @@ func TestClientAsksForCheckpointRestore(t *testing.T) {
 	require.Equal(t, savedAt, *snap.RestoredFromCheckpointAt)
 }
 
+func TestClientAsksToPreferTheSourceHost(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		require.Equal(t, "/projects/default/workspace/boxes", r.URL.Path)
+		require.JSONEq(t, `{"source_snap_id":"sroot","desired_shape":"4c8g","prefer_source_host":true}`, string(body))
+		writeJSONResponse(t, w, http.StatusCreated, BoxView{BoxID: "fork"})
+	}))
+	defer server.Close()
+	client := newProjectTestClient(t, server.URL, "default")
+
+	box, err := client.CreateBox(t.Context(), CreateBoxRequest{SourceSnapID: "sroot", DesiredShape: "4c8g", PreferSourceHost: true})
+	require.NoError(t, err)
+	require.Equal(t, "fork", box.BoxID)
+}
+
 func TestClientReportsRestoredVolumesAndErrorSnaps(t *testing.T) {
 	savedAt := time.Date(2026, 11, 9, 7, 0, 0, 0, time.UTC)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

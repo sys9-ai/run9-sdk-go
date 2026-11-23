@@ -38,6 +38,12 @@ type CreateBoxPayload struct {
 	// the project's outbound IP label. Slots count from 0. Omit to leave the Box to its outbound IP group.
 	OutboundIPAffinity *int64 `json:"outbound_ip_affinity,omitempty"`
 
+	// PreferSourceHost makes the new Box's first start prefer the host of the Box that `source_snap_id` is
+	// attached to (its current host, or its last host while stopped), when that host is ready and has room.
+	// Otherwise the start is placed as usual; it never waits or fails for this. `source_snap_id` must be
+	// attached to a Box, or the request is refused with 400.
+	PreferSourceHost bool `json:"prefer_source_host,omitempty"`
+
 	// RestoreFromCheckpoint copies a root or Volume source in error from its last durable checkpoint, once
 	// run9 proves terminated the host that was writing it. Changes made after that checkpoint are lost;
 	// restored_from_checkpoint_at on the new disk says when it was saved. Healthy sources are unaffected.

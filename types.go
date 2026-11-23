@@ -838,6 +838,14 @@ type CreateBoxRequest struct {
 	// sources are unaffected. Without it, sources in error are refused with
 	// ErrorCodeSnapError. Set it only when the caller means to accept that loss.
 	RestoreFromCheckpoint bool `json:"restore_from_checkpoint,omitempty"`
+	// PreferSourceHost makes the new box's first start prefer the host of the
+	// box that SourceSnapID is attached to: the host it runs on, or the host it
+	// last ran on while it is stopped. That host already caches the data the
+	// new box reads first. When the host is not ready or has no room, the
+	// start is placed as usual; it never waits or fails for this. The request
+	// is refused with HTTP 400 unless SourceSnapID is attached to a box.
+	// Compare BoxView.CurrentHostID of both boxes to see where it started.
+	PreferSourceHost bool `json:"prefer_source_host,omitempty"`
 }
 
 // CreateBoxFromSharedSnapRequest creates a box from a published shared snap.
