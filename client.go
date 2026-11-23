@@ -275,8 +275,13 @@ func (c *Client) DeleteSnap(ctx context.Context, snapID string) (SnapView, error
 	})
 }
 
+var errForegroundExecIdleLease = errors.New("idle lease is only supported for background exec")
+
 // StartExecStream starts a streaming exec and returns one event reader.
 func (c *Client) StartExecStream(ctx context.Context, boxID string, req ExecRequest) (*ExecStream, error) {
+	if req.IdleLease != 0 {
+		return nil, errForegroundExecIdleLease
+	}
 	cleanBoxID := strings.TrimSpace(boxID)
 	resp, err := c.doWorkspaceRaw(ctx, http.MethodPost, "/boxes/"+url.PathEscape(cleanBoxID)+"/execs/stream", requestOptions{
 		body: req,
@@ -303,6 +308,9 @@ func (c *Client) RunExec(ctx context.Context, boxID string, req ExecRequest, wri
 
 // StartExec starts one foreground exec and returns its initial view.
 func (c *Client) StartExec(ctx context.Context, boxID string, req ExecRequest) (ExecView, error) {
+	if req.IdleLease != 0 {
+		return ExecView{}, errForegroundExecIdleLease
+	}
 	payload, err := remarshalJSON[*genmodels.ExecBoxPayload](req)
 	if err != nil {
 		return ExecView{}, err

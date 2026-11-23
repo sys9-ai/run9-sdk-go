@@ -102,6 +102,59 @@ func TestClientStartBackgroundExecGeneratesIdempotencyKey(t *testing.T) {
 	require.NotEqual(t, keys[0], keys[1])
 }
 
+func TestClientStartBackgroundExecSendsIdleLease(t *testing.T) {
+	var bodies []map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		bodies = append(bodies, body)
+		writeJSONResponse(t, w, http.StatusCreated, map[string]any{
+			"exec_id":            "exec-1",
+			"box_id":             "box-1",
+			"state":              "pending",
+			"mode":               "background",
+			"idle_lease_seconds": 600,
+		})
+	}))
+	defer server.Close()
+	client := newProjectTestClient(t, server.URL, "default")
+
+	view, err := client.StartBackgroundExec(context.Background(), "box-1", ExecRequest{
+		Command:   []string{"echo", "hi"},
+		IdleLease: 10 * time.Minute,
+	})
+	require.NoError(t, err)
+	require.Equal(t, int64(600), view.IdleLeaseSeconds)
+	_, err = client.StartBackgroundExec(context.Background(), "box-1", ExecRequest{Command: []string{"echo", "hi"}})
+	require.NoError(t, err)
+
+	require.Len(t, bodies, 2)
+	require.EqualValues(t, 600, bodies[0]["idle_lease_seconds"])
+	require.NotContains(t, bodies[1], "idle_lease_seconds")
+}
+
+func TestClientExecRejectsInvalidIdleLease(t *testing.T) {
+	client := newProjectTestClient(t, "http://127.0.0.1:1", "default")
+
+	_, err := client.StartBackgroundExec(context.Background(), "box-1", ExecRequest{
+		Command:   []string{"echo", "hi"},
+		IdleLease: 90500 * time.Millisecond,
+	})
+	require.EqualError(t, err, "background exec idle lease must be whole seconds")
+
+	_, err = client.StartExecStream(context.Background(), "box-1", ExecRequest{
+		Command:   []string{"echo", "hi"},
+		IdleLease: time.Minute,
+	})
+	require.EqualError(t, err, "idle lease is only supported for background exec")
+
+	_, err = client.StartExec(context.Background(), "box-1", ExecRequest{
+		Command:   []string{"echo", "hi"},
+		IdleLease: time.Minute,
+	})
+	require.EqualError(t, err, "idle lease is only supported for background exec")
+}
+
 func TestClientStartBackgroundExecReturnsIdempotencyConflict(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "daemon-generation-1", r.Header.Get("Idempotency-Key"))

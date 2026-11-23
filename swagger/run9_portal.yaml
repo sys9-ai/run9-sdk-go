@@ -12,6 +12,12 @@ definitions:
         additionalProperties:
           type: string
         type: object
+      idle_lease_seconds:
+        description: |-
+          IdleLeaseSeconds is how far each successful pull-output or write-stdin
+          moves the idle deadline, from 60 to 3600; omitted or 0 selects 3600. The
+          hard deadline still caps the idle deadline.
+        type: integer
       stdin_enabled:
         type: boolean
       user:
@@ -904,6 +910,11 @@ definitions:
         type: string
       idle_deadline_at:
         type: string
+      idle_lease_seconds:
+        description: |-
+          IdleLeaseSeconds is how far each successful pull-output or write-stdin
+          moves a background exec's idle deadline. Absent for foreground execs.
+        type: integer
       mode:
         $ref: '#/definitions/api.ExecMode'
       org_id:

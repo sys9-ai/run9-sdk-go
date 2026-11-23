@@ -585,25 +585,28 @@ type RuntimeRequestView struct {
 
 // ExecView describes one exec request and its current state.
 type ExecView struct {
-	ExecID         string         `json:"exec_id"`
-	BoxID          string         `json:"box_id"`
-	OrgID          string         `json:"org_id"`
-	ProjectID      string         `json:"project_id"`
-	Creator        string         `json:"creator"`
-	AcceptedAt     time.Time      `json:"accepted_at"`
-	Source         string         `json:"source"`
-	CommandSummary string         `json:"command_summary"`
-	ShapeSnapshot  string         `json:"shape_snapshot"`
-	Mode           string         `json:"mode,omitempty"`
-	State          string         `json:"state"`
-	ExitCode       *int           `json:"exit_code,omitempty"`
-	OutputSummary  string         `json:"output_summary,omitempty"`
-	Reason         string         `json:"reason,omitempty"`
-	HardDeadlineAt *time.Time     `json:"hard_deadline_at,omitempty"`
-	IdleDeadlineAt *time.Time     `json:"idle_deadline_at,omitempty"`
-	StdinEnabled   bool           `json:"stdin_enabled,omitempty"`
-	AttachURL      string         `json:"attach_url,omitempty"`
-	Diagnostics    map[string]any `json:"diagnostics,omitempty"`
+	ExecID         string     `json:"exec_id"`
+	BoxID          string     `json:"box_id"`
+	OrgID          string     `json:"org_id"`
+	ProjectID      string     `json:"project_id"`
+	Creator        string     `json:"creator"`
+	AcceptedAt     time.Time  `json:"accepted_at"`
+	Source         string     `json:"source"`
+	CommandSummary string     `json:"command_summary"`
+	ShapeSnapshot  string     `json:"shape_snapshot"`
+	Mode           string     `json:"mode,omitempty"`
+	State          string     `json:"state"`
+	ExitCode       *int       `json:"exit_code,omitempty"`
+	OutputSummary  string     `json:"output_summary,omitempty"`
+	Reason         string     `json:"reason,omitempty"`
+	HardDeadlineAt *time.Time `json:"hard_deadline_at,omitempty"`
+	IdleDeadlineAt *time.Time `json:"idle_deadline_at,omitempty"`
+	// IdleLeaseSeconds is how far each successful pull-output or write-stdin
+	// moves a background exec's idle deadline. It is zero for foreground execs.
+	IdleLeaseSeconds int64          `json:"idle_lease_seconds,omitempty"`
+	StdinEnabled     bool           `json:"stdin_enabled,omitempty"`
+	AttachURL        string         `json:"attach_url,omitempty"`
+	Diagnostics      map[string]any `json:"diagnostics,omitempty"`
 }
 
 // ErrorSnapIDs names every Snap of the Box that kept this exec from starting
@@ -1012,6 +1015,11 @@ type ExecRequest struct {
 	TTY bool `json:"tty,omitempty"`
 	// TTYSize provides the initial PTY size when TTY is true.
 	TTYSize *TTYSize `json:"tty_size,omitempty"`
+	// IdleLease is for background execs only: each successful pull-output or
+	// write-stdin moves the idle deadline this far ahead, never past the hard
+	// deadline. The service accepts whole seconds from one minute to one hour;
+	// zero selects one hour. Foreground exec calls reject a non-zero value.
+	IdleLease time.Duration `json:"-"`
 }
 
 // ExecStreamEvent describes one event emitted by exec streaming APIs.

@@ -47,6 +47,10 @@ type APIExecView struct {
 	// idle deadline at
 	IdleDeadlineAt string `json:"idle_deadline_at,omitempty"`
 
+	// IdleLeaseSeconds is how far each successful pull-output or write-stdin
+	// moves a background exec's idle deadline. Absent for foreground execs.
+	IdleLeaseSeconds int64 `json:"idle_lease_seconds,omitempty"`
+
 	// mode
 	Mode APIExecMode `json:"mode,omitempty"`
 

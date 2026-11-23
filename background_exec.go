@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -32,10 +33,14 @@ func (c *Client) StartBackgroundExec(ctx context.Context, boxID string, req Exec
 		}
 		idempotencyKey = "bgexec-" + base64.RawURLEncoding.EncodeToString(randomBytes[:])
 	}
+	if req.IdleLease%time.Second != 0 {
+		return ExecView{}, errors.New("background exec idle lease must be whole seconds")
+	}
 	payload, err := remarshalJSON[*genmodels.BackgroundExecBoxPayload](req)
 	if err != nil {
 		return ExecView{}, err
 	}
+	payload.IdleLeaseSeconds = int64(req.IdleLease / time.Second)
 
 	return projectGeneratedResult[ExecView](c, func(projectCID string) (any, error) {
 		return c.portal.Execs.BackgroundExecBoxContext(ctx, &execs.BackgroundExecBoxParams{

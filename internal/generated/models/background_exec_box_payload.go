@@ -23,6 +23,11 @@ type BackgroundExecBoxPayload struct {
 	// env overrides
 	EnvOverrides map[string]string `json:"env_overrides,omitempty"`
 
+	// IdleLeaseSeconds is how far each successful pull-output or write-stdin
+	// moves the idle deadline, from 60 to 3600; omitted or 0 selects 3600. The
+	// hard deadline still caps the idle deadline.
+	IdleLeaseSeconds int64 `json:"idle_lease_seconds,omitempty"`
+
 	// stdin enabled
 	StdinEnabled bool `json:"stdin_enabled,omitempty"`
 

@@ -250,6 +250,7 @@ func ExampleClient_StartBackgroundExec() {
 	_, err = project.StartBackgroundExec(context.Background(), "devbox", run9.ExecRequest{
 		Command:        []string{"/bin/sh", "-lc", "long task"},
 		IdempotencyKey: "daemon-generation-42",
+		IdleLease:      10 * time.Minute,
 	})
 	if err != nil {
 		panic(err)

@@ -306,6 +306,7 @@ execView, err := project.StartBackgroundExec(ctx, "devbox", run9.ExecRequest{
 	Command:        []string{"/bin/sh", "-lc", "long task"},
 	StdinEnabled:   true,
 	IdempotencyKey: "daemon-generation-42",
+	IdleLease:      10 * time.Minute,
 })
 if err != nil {
 	return err
@@ -317,6 +318,8 @@ result, err := follower.Pump(ctx, 2*time.Second, run9.ExecOutputWriters{
 	Stderr: os.Stderr,
 })
 ```
+
+A background exec runs until it ends, is killed, reaches its optional hard deadline (`DeadlineAt`), or nobody reads it for one idle lease. Each successful pull-output or stdin write renews the lease. `IdleLease` sets its length in whole seconds from one minute to one hour; zero selects one hour. `ExecView.IdleLeaseSeconds` reports the chosen length.
 
 Persist one stable `IdempotencyKey` for each logical daemon generation and reuse it when retrying after an uncertain response. The same key and request return the original exec; changing the request while reusing the key returns a conflict. If omitted, the SDK generates a new key for that `StartBackgroundExec` call.
 
