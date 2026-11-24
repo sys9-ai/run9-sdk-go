@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -159,6 +160,72 @@ func TestSnapFileSystemStatAndReadDir(t *testing.T) {
 	require.Len(t, page.Entries, 1)
 	require.Equal(t, "index.html", page.Entries[0].Name)
 	require.Equal(t, "next-b", page.Cursor)
+}
+
+func TestFileSystemReportsGuestMode(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/access/bin":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"entries":[` +
+				`{"name":"setuid","type":"file","size":1,"mod_time":"2026-07-20T12:00:00Z","mode":2541},` +
+				`{"name":"plain","type":"file","size":1,"mod_time":"2026-07-20T12:00:00Z","mode":420},` +
+				`{"name":"older-gateway","type":"file","size":1,"mod_time":"2026-07-20T12:00:00Z"}]}`))
+		case "/access/bin/tool":
+			w.Header().Set(fileModeHeader, "0755")
+			_, _ = w.Write([]byte("tool"))
+		case "/access/tmp":
+			w.Header().Set(fileModeHeader, "1777")
+		case "/access/older-gateway":
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	files, err := resolveFileSystem(context.Background(), server.Client(), fixedFileAccessURL(server.URL+"/access/"))
+	require.NoError(t, err)
+
+	page, err := files.ReadDir(context.Background(), "/bin", ReadDirRequest{})
+	require.NoError(t, err)
+	require.Len(t, page.Entries, 3)
+	require.Equal(t, os.ModeSetuid|0o755, page.Entries[0].Mode)
+	require.Equal(t, os.FileMode(0o644), page.Entries[1].Mode)
+	require.Equal(t, os.FileMode(0), page.Entries[2].Mode)
+
+	tool, err := files.Open(context.Background(), "/bin/tool", OpenFileOptions{})
+	require.NoError(t, err)
+	require.NoError(t, tool.Close())
+	require.Equal(t, os.FileMode(0o755), tool.Info().Mode)
+	tmp, err := files.Stat(context.Background(), "/tmp")
+	require.NoError(t, err)
+	require.Equal(t, os.ModeSticky|0o777, tmp.Mode)
+	older, err := files.Stat(context.Background(), "/older-gateway")
+	require.NoError(t, err)
+	require.Equal(t, os.FileMode(0), older.Mode)
+}
+
+func TestFileModeJSONUsesUnixBits(t *testing.T) {
+	modified := time.Date(2026, 7, 20, 12, 0, 0, 0, time.UTC)
+	// 2541 is 04755 and 1023 is 01777, as the gateway sends them.
+	entry := FileEntry{Name: "tool", Type: FileTypeFile, Size: 4, ModTime: modified, Mode: os.ModeSetuid | 0o755}
+	encoded, err := json.Marshal(entry)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"name":"tool","type":"file","size":4,"mod_time":"2026-07-20T12:00:00Z","mode":2541}`, string(encoded))
+	var decodedEntry FileEntry
+	require.NoError(t, json.Unmarshal(encoded, &decodedEntry))
+	require.Equal(t, entry, decodedEntry)
+
+	info := FileInfo{Path: "/tmp", Type: FileTypeDirectory, ModTime: modified, Mode: os.ModeSticky | 0o777}
+	encoded, err = json.Marshal(info)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"path":"/tmp","type":"directory","size":0,"mod_time":"2026-07-20T12:00:00Z","mode":1023}`, string(encoded))
+	var decodedInfo FileInfo
+	require.NoError(t, json.Unmarshal(encoded, &decodedInfo))
+	require.Equal(t, info, decodedInfo)
+
+	encoded, err = json.Marshal(FileEntry{Name: "older-gateway", Type: FileTypeFile, ModTime: modified})
+	require.NoError(t, err)
+	require.NotContains(t, string(encoded), "mode", "an unknown mode is omitted")
 }
 
 func TestFileSystemGlobFilesUsesOneBoundedServerRequest(t *testing.T) {

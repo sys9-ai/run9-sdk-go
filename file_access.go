@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -16,7 +17,10 @@ import (
 	"time"
 )
 
-const fileRootHeader = "X-Run9-File-Root"
+const (
+	fileRootHeader = "X-Run9-File-Root"
+	fileModeHeader = "X-Run9-File-Mode"
+)
 
 // FileType identifies the kind of one filesystem entry.
 type FileType string
@@ -38,6 +42,11 @@ type FileInfo struct {
 	ModTime     time.Time `json:"mod_time,omitempty"`
 	ETag        string    `json:"etag,omitempty"`
 	ContentType string    `json:"content_type,omitempty"`
+	// Mode holds the permission bits the guest sees: Perm plus ModeSetuid,
+	// ModeSetgid and ModeSticky, never type bits. Zero means unknown: gateways
+	// older than this field do not report it, so a mode of 000 also reads as 0.
+	// JSON carries it as Unix permission bits, as the gateway does.
+	Mode os.FileMode `json:"-"`
 }
 
 // FileEntry describes one child returned by FileSystem.ReadDir.
@@ -47,6 +56,58 @@ type FileEntry struct {
 	Size    int64     `json:"size"`
 	ModTime time.Time `json:"mod_time"`
 	ETag    string    `json:"etag,omitempty"`
+	// Mode holds the guest permission bits, with the same meaning and JSON
+	// encoding as FileInfo.Mode. A symlink reports its own mode, not its target's.
+	Mode os.FileMode `json:"-"`
+}
+
+// MarshalJSON encodes Mode as Unix permission bits, whose set-ID and sticky
+// bits differ from os.FileMode's, so the JSON matches the gateway's.
+func (info FileInfo) MarshalJSON() ([]byte, error) {
+	type plain FileInfo
+	return json.Marshal(struct {
+		plain
+		UnixMode uint32 `json:"mode,omitempty"`
+	}{plain(info), unixFileMode(info.Mode)})
+}
+
+// UnmarshalJSON decodes Mode from Unix permission bits.
+func (info *FileInfo) UnmarshalJSON(data []byte) error {
+	type plain FileInfo
+	var wire struct {
+		*plain
+		UnixMode uint32 `json:"mode"`
+	}
+	wire.plain = (*plain)(info)
+	if err := json.Unmarshal(data, &wire); err != nil {
+		return err
+	}
+	info.Mode = fileModeFromUnix(wire.UnixMode)
+	return nil
+}
+
+// MarshalJSON encodes Mode as Unix permission bits.
+func (entry FileEntry) MarshalJSON() ([]byte, error) {
+	type plain FileEntry
+	return json.Marshal(struct {
+		plain
+		UnixMode uint32 `json:"mode,omitempty"`
+	}{plain(entry), unixFileMode(entry.Mode)})
+}
+
+// UnmarshalJSON decodes Mode from Unix permission bits.
+func (entry *FileEntry) UnmarshalJSON(data []byte) error {
+	type plain FileEntry
+	var wire struct {
+		*plain
+		UnixMode uint32 `json:"mode"`
+	}
+	wire.plain = (*plain)(entry)
+	if err := json.Unmarshal(data, &wire); err != nil {
+		return err
+	}
+	entry.Mode = fileModeFromUnix(wire.UnixMode)
+	return nil
 }
 
 // ReadDirRequest controls one bounded directory page.
@@ -409,6 +470,7 @@ func fileInfoFromResponse(filePath string, response *http.Response) FileInfo {
 		size = 0
 	}
 	modTime, _ := http.ParseTime(response.Header.Get("Last-Modified"))
+	mode, _ := strconv.ParseUint(response.Header.Get(fileModeHeader), 8, 32)
 	return FileInfo{
 		Path:        filePath,
 		Type:        FileType(response.Header.Get("X-Run9-File-Type")),
@@ -416,5 +478,37 @@ func fileInfoFromResponse(filePath string, response *http.Response) FileInfo {
 		ModTime:     modTime,
 		ETag:        response.Header.Get("ETag"),
 		ContentType: response.Header.Get("Content-Type"),
+		Mode:        fileModeFromUnix(uint32(mode)),
 	}
+}
+
+// fileModeFromUnix converts Unix permission bits, including setuid, setgid
+// and sticky, to os.FileMode so os.Chmod applies them unchanged.
+func fileModeFromUnix(bits uint32) os.FileMode {
+	mode := os.FileMode(bits & 0o777)
+	if bits&0o4000 != 0 {
+		mode |= os.ModeSetuid
+	}
+	if bits&0o2000 != 0 {
+		mode |= os.ModeSetgid
+	}
+	if bits&0o1000 != 0 {
+		mode |= os.ModeSticky
+	}
+	return mode
+}
+
+// unixFileMode is the inverse of fileModeFromUnix.
+func unixFileMode(mode os.FileMode) uint32 {
+	bits := uint32(mode.Perm())
+	if mode&os.ModeSetuid != 0 {
+		bits |= 0o4000
+	}
+	if mode&os.ModeSetgid != 0 {
+		bits |= 0o2000
+	}
+	if mode&os.ModeSticky != 0 {
+		bits |= 0o1000
+	}
+	return bits
 }

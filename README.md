@@ -269,6 +269,8 @@ _, err = io.Copy(os.Stdout, reader)
 
 Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; a Volume reads only its own filesystem, excluding other mounts. The original root Attached Snap retains its owning Box's composed view. `RootedAt` makes the selected directory the filesystem root, including for symlink resolution. Resolve `FileSystem` once and reuse it for concurrent `Open`, `Stat`, `GlobFiles`, and paginated `ReadDir` calls; when its URL expires, the next call loads a new one with the client's credentials. `GlobFiles` applies one case-sensitive doublestar pattern to regular-file paths relative to the requested directory; brace alternatives are not supported. Results are lexically ordered by default. `RankingQuery` instead applies VS Code File Quick Open-style relevance before the limit. `RespectGitIgnore` applies the requested directory's root and nested `.gitignore` files before matching, ranking, and limiting. Both options keep the operation to one bounded request rather than recursively listing remote directories.
 
+`FileEntry.Mode` and `FileInfo.Mode` report the permission bits the guest sees, including a `chmod` made inside the Box, as an `os.FileMode` that `os.Chmod` applies unchanged; preserve them when copying files out, for example to keep build outputs executable. Zero means the gateway did not report a mode.
+
 Run one foreground exec and stream its output:
 
 ```go
