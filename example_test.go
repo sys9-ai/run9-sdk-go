@@ -1,6 +1,7 @@
 package run9_test
 
 import (
+	"archive/tar"
 	"context"
 	"fmt"
 	"io"
@@ -194,6 +195,24 @@ func ExampleClient_BoxFileSystem() {
 	}
 	defer reader.Close()
 	_, _ = io.Copy(io.Discard, reader)
+
+	// Copy a whole directory as one tar stream, even from a stopped Box.
+	archive, err := files.OpenArchive(context.Background(), "/site")
+	if err != nil {
+		panic(err)
+	}
+	defer archive.Close()
+	tarReader := tar.NewReader(archive)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			panic(err)
+		}
+		_ = header.Name
+	}
 }
 
 func ExampleClient_RunExecCapture() {

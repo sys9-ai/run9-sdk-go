@@ -119,6 +119,66 @@ func TestFileSystemReportsURLThatStaysExpired(t *testing.T) {
 	require.Equal(t, http.StatusGone, apiErr.StatusCode)
 }
 
+func TestFileSystemOpenArchiveStreamsOneTarRequest(t *testing.T) {
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/access/work/out", r.URL.Path)
+		require.Equal(t, "archive=tar", r.URL.RawQuery)
+		require.Equal(t, "/workspace", r.Header.Get(fileRootHeader))
+		w.Header().Set("Content-Type", "application/x-tar")
+		_, _ = w.Write(testTarArchive(t))
+	}))
+	defer server.Close()
+	files, err := resolveFileSystem(context.Background(), server.Client(), fixedFileAccessURL(server.URL+"/access/"))
+	require.NoError(t, err)
+	files, err = files.RootedAt("/workspace")
+	require.NoError(t, err)
+
+	archive, err := files.OpenArchive(context.Background(), "/work/out")
+	require.NoError(t, err)
+	data, err := io.ReadAll(archive)
+	require.NoError(t, err)
+	require.NoError(t, archive.Close())
+	require.Equal(t, testTarArchive(t), data)
+
+	_, err = files.OpenArchive(context.Background(), "../out")
+	require.EqualError(t, err, "file path must be canonical")
+}
+
+func TestFileSystemOpenArchiveReportsMissingPathAndAbortedStream(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/access/missing" {
+			http.NotFound(w, r)
+			return
+		}
+		if r.URL.Path == "/access/plain" {
+			_, _ = w.Write([]byte("a file, as a gateway without archives serves it"))
+			return
+		}
+		w.Header().Set("Content-Type", "application/x-tar")
+		_, _ = w.Write([]byte("partial"))
+		w.(http.Flusher).Flush()
+		panic(http.ErrAbortHandler)
+	}))
+	defer server.Close()
+	files, err := resolveFileSystem(context.Background(), server.Client(), fixedFileAccessURL(server.URL+"/access/"))
+	require.NoError(t, err)
+
+	_, err = files.OpenArchive(context.Background(), "/missing")
+	var apiErr *Error
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, http.StatusNotFound, apiErr.StatusCode)
+
+	_, err = files.OpenArchive(context.Background(), "/plain")
+	require.EqualError(t, err, `file gateway answered the archive request with "text/plain; charset=utf-8", not a tar archive`)
+
+	archive, err := files.OpenArchive(context.Background(), "/out")
+	require.NoError(t, err)
+	defer archive.Close()
+	_, err = io.ReadAll(archive)
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+}
+
 func TestSnapFileSystemStatAndReadDir(t *testing.T) {
 	modified := time.Date(2026, 7, 20, 12, 0, 0, 0, time.UTC)
 	var server *httptest.Server
