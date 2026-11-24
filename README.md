@@ -265,9 +265,28 @@ if err != nil {
 }
 defer reader.Close()
 _, err = io.Copy(os.Stdout, reader)
+
+archive, err := files.OpenArchive(ctx, "/site")
+if err != nil {
+	return err
+}
+defer archive.Close()
+entries := tar.NewReader(archive)
+for {
+	header, err := entries.Next()
+	if err == io.EOF {
+		break
+	}
+	if err != nil {
+		return err
+	}
+	_ = header // create header.Name locally, reading file content from entries
+}
 ```
 
-Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; a Volume reads only its own filesystem, excluding other mounts. The original root Attached Snap retains its owning Box's composed view. `RootedAt` makes the selected directory the filesystem root, including for symlink resolution. Resolve `FileSystem` once and reuse it for concurrent `Open`, `Stat`, `GlobFiles`, and paginated `ReadDir` calls; when its URL expires, the next call loads a new one with the client's credentials. `GlobFiles` applies one case-sensitive doublestar pattern to regular-file paths relative to the requested directory; brace alternatives are not supported. Results are lexically ordered by default. `RankingQuery` instead applies VS Code File Quick Open-style relevance before the limit. `RespectGitIgnore` applies the requested directory's root and nested `.gitignore` files before matching, ranking, and limiting. Both options keep the operation to one bounded request rather than recursively listing remote directories.
+Use `project.SnapFileSystem(ctx, snapID)` for the same operations on a snap. A detached snap reads its immutable settled generation; a Volume reads only its own filesystem, excluding other mounts. The original root Attached Snap retains its owning Box's composed view. `RootedAt` makes the selected directory the filesystem root, including for symlink resolution. Resolve `FileSystem` once and reuse it for concurrent `Open`, `OpenArchive`, `Stat`, `GlobFiles`, and paginated `ReadDir` calls; when its URL expires, the next call loads a new one with the client's credentials. `GlobFiles` applies one case-sensitive doublestar pattern to regular-file paths relative to the requested directory; brace alternatives are not supported. Results are lexically ordered by default. `RankingQuery` instead applies VS Code File Quick Open-style relevance before the limit. `RespectGitIgnore` applies the requested directory's root and nested `.gitignore` files before matching, ranking, and limiting. Both options keep the operation to one bounded request rather than recursively listing remote directories.
+
+`OpenArchive` copies a file or a whole directory out in one request, like `docker cp`: the gateway builds a tar stream next to the data and reads many files, and large files as parallel ranges, ahead of the stream. It works on a stopped Box without starting it. A file becomes one entry named by its base name; a directory becomes `<base>/` and everything below it, and `/` becomes `./` and its contents. A symlink named by the path is followed; symlinks below it stay symlinks. Entries keep their type (directories, regular files, symlinks, hard links within the archive, FIFOs and devices; sockets are omitted) and the guest's mode, owner and nanosecond modification time. Read until `io.EOF`: the reader checks for tar's end-of-archive marker, which the gateway writes only after a complete archive, so a stream cut anywhere, even cleanly at an entry boundary by a failing proxy, returns `io.ErrUnexpectedEOF` instead of reading as a complete archive. `archive/tar` alone accepts a stream that ends after an entry. The gateway aborts a response whose client accepts no data for a minute, and answers 503 when too many archives run at once; retry later. An archive of a running Box is not a snapshot: stop the Box for a consistent copy.
 
 `FileEntry.Mode` and `FileInfo.Mode` report the permission bits the guest sees, including a `chmod` made inside the Box, as an `os.FileMode` that `os.Chmod` applies unchanged; preserve them when copying files out, for example to keep build outputs executable. Zero means the gateway did not report a mode.
 

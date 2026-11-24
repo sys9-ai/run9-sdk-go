@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -277,6 +278,32 @@ func (fileSystem *FileSystem) Open(ctx context.Context, filePath string, options
 		return nil, err
 	}
 	return &FileReader{body: response.Body, info: fileInfoFromResponse(canonicalPath, response)}, nil
+}
+
+// OpenArchive streams archivePath and everything below it as one tar archive,
+// built next to the data in a single request. A file becomes one entry named
+// by its base name; a directory becomes "<base>/" followed by its descendants,
+// and "/" becomes "./" followed by its contents. A symbolic link named by
+// archivePath is followed; links below it stay links. Entries keep their type,
+// including hard links between names in the archive, FIFOs and devices, and
+// the mode, owner and modification time the guest sees. Sockets are omitted.
+//
+// Reading a stopped Box does not start it. The archive is complete only when a
+// read returns io.EOF: a stream that ends before tar's end-of-archive marker,
+// however it was cut, fails with io.ErrUnexpectedEOF, so a short archive never
+// reads as complete. Close releases the response.
+func (fileSystem *FileSystem) OpenArchive(ctx context.Context, archivePath string) (io.ReadCloser, error) {
+	response, _, err := fileSystem.send(ctx, http.MethodGet, archivePath, url.Values{"archive": []string{"tar"}}, "")
+	if err != nil {
+		return nil, err
+	}
+	// A gateway that predates archives ignores the parameter and serves the
+	// file itself.
+	if mediaType, _, err := mime.ParseMediaType(response.Header.Get("Content-Type")); err != nil || mediaType != "application/x-tar" {
+		_ = response.Body.Close()
+		return nil, fmt.Errorf("file gateway answered the archive request with %q, not a tar archive", response.Header.Get("Content-Type"))
+	}
+	return newFileArchiveReader(response.Body), nil
 }
 
 // Stat loads metadata for one file or directory without reading its content.
