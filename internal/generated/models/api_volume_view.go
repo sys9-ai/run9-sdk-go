@@ -4,9 +4,13 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/jsonutils"
+	"github.com/go-openapi/swag/typeutils"
+	"github.com/go-openapi/validate"
 )
 
 // APIVolumeView api volume view
@@ -28,10 +32,65 @@ type APIVolumeView struct {
 	// It cannot be deleted independently. A Fork result survives deletion of this Box.
 	// Example: s12345678
 	SnapID string `json:"snap_id,omitempty"`
+
+	// StorageGeneration identifies this disk's immutable storage format.
+	// Enum: ["gen1","gen2"]
+	StorageGeneration string `json:"storage_generation,omitempty"`
 }
 
 // Validate validates this api volume view
 func (m *APIVolumeView) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateStorageGeneration(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+var apiVolumeViewTypeStorageGenerationPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["gen1","gen2"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		apiVolumeViewTypeStorageGenerationPropEnum = append(apiVolumeViewTypeStorageGenerationPropEnum, v)
+	}
+}
+
+const (
+
+	// APIVolumeViewStorageGenerationGen1 captures enum value "gen1"
+	APIVolumeViewStorageGenerationGen1 string = "gen1"
+
+	// APIVolumeViewStorageGenerationGen2 captures enum value "gen2"
+	APIVolumeViewStorageGenerationGen2 string = "gen2"
+)
+
+// prop value enum
+func (m *APIVolumeView) validateStorageGenerationEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, apiVolumeViewTypeStorageGenerationPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *APIVolumeView) validateStorageGeneration(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.StorageGeneration) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateStorageGenerationEnum("storage_generation", "body", m.StorageGeneration); err != nil {
+		return err
+	}
+
 	return nil
 }
 

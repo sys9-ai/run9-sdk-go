@@ -4,12 +4,14 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/jsonutils"
 	"github.com/go-openapi/swag/typeutils"
+	"github.com/go-openapi/validate"
 )
 
 // APISnapView api snap view
@@ -97,6 +99,10 @@ type APISnapView struct {
 
 	// state
 	State APISnapState `json:"state,omitempty"`
+
+	// StorageGeneration identifies this disk's immutable storage format.
+	// Enum: ["gen1","gen2"]
+	StorageGeneration string `json:"storage_generation,omitempty"`
 }
 
 // Validate validates this api snap view
@@ -116,6 +122,10 @@ func (m *APISnapView) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateState(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStorageGeneration(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -207,6 +217,48 @@ func (m *APISnapView) validateState(formats strfmt.Registry) error {
 			return ce.ValidateName("state")
 		}
 
+		return err
+	}
+
+	return nil
+}
+
+var apiSnapViewTypeStorageGenerationPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["gen1","gen2"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		apiSnapViewTypeStorageGenerationPropEnum = append(apiSnapViewTypeStorageGenerationPropEnum, v)
+	}
+}
+
+const (
+
+	// APISnapViewStorageGenerationGen1 captures enum value "gen1"
+	APISnapViewStorageGenerationGen1 string = "gen1"
+
+	// APISnapViewStorageGenerationGen2 captures enum value "gen2"
+	APISnapViewStorageGenerationGen2 string = "gen2"
+)
+
+// prop value enum
+func (m *APISnapView) validateStorageGenerationEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, apiSnapViewTypeStorageGenerationPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *APISnapView) validateStorageGeneration(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.StorageGeneration) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateStorageGenerationEnum("storage_generation", "body", m.StorageGeneration); err != nil {
 		return err
 	}
 

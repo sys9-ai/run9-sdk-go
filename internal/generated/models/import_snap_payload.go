@@ -4,9 +4,13 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/jsonutils"
+	"github.com/go-openapi/swag/typeutils"
+	"github.com/go-openapi/validate"
 )
 
 // ImportSnapPayload import snap payload
@@ -22,10 +26,65 @@ type ImportSnapPayload struct {
 
 	// image ref
 	ImageRef string `json:"image_ref,omitempty"`
+
+	// StorageGeneration selects storage for a new disk. A source Snap fixes its generation.
+	// Enum: ["gen1","gen2"]
+	StorageGeneration string `json:"storage_generation,omitempty"`
 }
 
 // Validate validates this import snap payload
 func (m *ImportSnapPayload) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateStorageGeneration(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+var importSnapPayloadTypeStorageGenerationPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["gen1","gen2"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		importSnapPayloadTypeStorageGenerationPropEnum = append(importSnapPayloadTypeStorageGenerationPropEnum, v)
+	}
+}
+
+const (
+
+	// ImportSnapPayloadStorageGenerationGen1 captures enum value "gen1"
+	ImportSnapPayloadStorageGenerationGen1 string = "gen1"
+
+	// ImportSnapPayloadStorageGenerationGen2 captures enum value "gen2"
+	ImportSnapPayloadStorageGenerationGen2 string = "gen2"
+)
+
+// prop value enum
+func (m *ImportSnapPayload) validateStorageGenerationEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, importSnapPayloadTypeStorageGenerationPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ImportSnapPayload) validateStorageGeneration(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.StorageGeneration) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateStorageGenerationEnum("storage_generation", "body", m.StorageGeneration); err != nil {
+		return err
+	}
+
 	return nil
 }
 

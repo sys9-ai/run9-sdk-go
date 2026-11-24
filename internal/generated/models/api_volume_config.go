@@ -4,12 +4,14 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/jsonutils"
 	"github.com/go-openapi/swag/typeutils"
+	"github.com/go-openapi/validate"
 )
 
 // APIVolumeConfig api volume config
@@ -31,6 +33,10 @@ type APIVolumeConfig struct {
 	// A creation can use at most one online source Box; captures are per disk.
 	// Omit for an empty volume. Mutually exclusive with InitialPermissions.
 	SourceSnapID string `json:"source_snap_id,omitempty"`
+
+	// StorageGeneration selects storage for a new disk. A source Snap fixes its generation.
+	// Enum: ["gen1","gen2"]
+	StorageGeneration string `json:"storage_generation,omitempty"`
 }
 
 // Validate validates this api volume config
@@ -38,6 +44,10 @@ func (m *APIVolumeConfig) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateInitialPermissions(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStorageGeneration(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -65,6 +75,48 @@ func (m *APIVolumeConfig) validateInitialPermissions(formats strfmt.Registry) er
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+var apiVolumeConfigTypeStorageGenerationPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["gen1","gen2"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		apiVolumeConfigTypeStorageGenerationPropEnum = append(apiVolumeConfigTypeStorageGenerationPropEnum, v)
+	}
+}
+
+const (
+
+	// APIVolumeConfigStorageGenerationGen1 captures enum value "gen1"
+	APIVolumeConfigStorageGenerationGen1 string = "gen1"
+
+	// APIVolumeConfigStorageGenerationGen2 captures enum value "gen2"
+	APIVolumeConfigStorageGenerationGen2 string = "gen2"
+)
+
+// prop value enum
+func (m *APIVolumeConfig) validateStorageGenerationEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, apiVolumeConfigTypeStorageGenerationPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *APIVolumeConfig) validateStorageGeneration(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.StorageGeneration) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateStorageGenerationEnum("storage_generation", "body", m.StorageGeneration); err != nil {
+		return err
 	}
 
 	return nil

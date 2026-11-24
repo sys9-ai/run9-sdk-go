@@ -4,6 +4,7 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
 	"strconv"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/jsonutils"
 	"github.com/go-openapi/swag/typeutils"
+	"github.com/go-openapi/validate"
 )
 
 // APIBoxView api box view
@@ -122,6 +124,10 @@ type APIBoxView struct {
 	// storage
 	Storage *APIBoxStorage `json:"storage,omitempty"`
 
+	// StorageGeneration identifies this disk's immutable storage format.
+	// Enum: ["gen1","gen2"]
+	StorageGeneration string `json:"storage_generation,omitempty"`
+
 	// DataVolumes describes the fixed Box-owned volumes; omitted when disabled.
 	// This is configuration, not runtime mount readiness. Stop retains every disk;
 	// deleting the Box deletes them. Root Snap forks exclude data and configuration.
@@ -153,6 +159,10 @@ func (m *APIBoxView) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateStorage(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStorageGeneration(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -293,6 +303,48 @@ func (m *APIBoxView) validateStorage(formats strfmt.Registry) error {
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+var apiBoxViewTypeStorageGenerationPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["gen1","gen2"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		apiBoxViewTypeStorageGenerationPropEnum = append(apiBoxViewTypeStorageGenerationPropEnum, v)
+	}
+}
+
+const (
+
+	// APIBoxViewStorageGenerationGen1 captures enum value "gen1"
+	APIBoxViewStorageGenerationGen1 string = "gen1"
+
+	// APIBoxViewStorageGenerationGen2 captures enum value "gen2"
+	APIBoxViewStorageGenerationGen2 string = "gen2"
+)
+
+// prop value enum
+func (m *APIBoxView) validateStorageGenerationEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, apiBoxViewTypeStorageGenerationPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *APIBoxView) validateStorageGeneration(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.StorageGeneration) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateStorageGenerationEnum("storage_generation", "body", m.StorageGeneration); err != nil {
+		return err
 	}
 
 	return nil

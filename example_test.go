@@ -16,7 +16,8 @@ func ExampleClient_CreateBox() {
 		log.Fatal(err)
 	}
 	box, err := client.WithProject("default").CreateBox(context.Background(), run9.CreateBoxRequest{
-		SourceImageRef: "alpine:3.20",
+		SourceImageRef:    "alpine:3.20",
+		StorageGeneration: run9.StorageGeneration2,
 		Volumes: []run9.VolumeConfig{{
 			MountPath:          "/state",
 			InitialPermissions: &run9.VolumeInitialPermissions{UID: 1000, GID: 1000, Mode: "0700"},

@@ -63,6 +63,13 @@ This SDK is intentionally opinionated. It uses one stable calling style across t
 
 The SDK models the public control-plane contract. It does not include local config persistence, terminal rendering, shell completion, or local cursor persistence.
 
+An image import or an image-backed Box uses Generation 1 (JuiceFS) by default.
+Set `StorageGeneration: run9.StorageGeneration2` to create block-backed ext4
+storage in a region that supports it. An empty volume inherits the root format
+unless `VolumeConfig.StorageGeneration` selects another. Every fork inherits
+its source Snap's storage generation, including volumes and shared Snaps.
+`BoxView`, `SnapView`, and `VolumeView` report the resulting generation.
+
 ## Common Workflows
 
 Create a Box with independent persistent Volumes:

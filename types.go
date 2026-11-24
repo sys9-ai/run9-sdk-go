@@ -50,6 +50,16 @@ const (
 	BoxNetworkModeManaged BoxNetworkMode = "managed"
 )
 
+// StorageGeneration identifies a Snap's storage format, inherited by its forks.
+type StorageGeneration string
+
+const (
+	// StorageGeneration1 selects JuiceFS storage.
+	StorageGeneration1 StorageGeneration = "gen1"
+	// StorageGeneration2 selects block-backed ext4 storage.
+	StorageGeneration2 StorageGeneration = "gen2"
+)
+
 // SnapState represents the current snap state.
 type SnapState string
 
@@ -397,16 +407,18 @@ type ListBoxesRequest struct {
 // credentials and expires one hour after this view was loaded; BoxFileSystem
 // renews it automatically.
 type BoxView struct {
-	BoxID       string            `json:"box_id"`
-	OrgID       string            `json:"org_id"`
-	ProjectID   string            `json:"project_id"`
-	Creator     string            `json:"creator"`
-	CreatedAt   time.Time         `json:"created_at"`
-	LastUsedAt  time.Time         `json:"last_used_at"`
-	Description string            `json:"description,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	State       BoxState          `json:"state"`
-	Reason      string            `json:"reason,omitempty"`
+	// StorageGeneration identifies the root Snap's storage format.
+	StorageGeneration StorageGeneration `json:"storage_generation,omitempty"`
+	BoxID             string            `json:"box_id"`
+	OrgID             string            `json:"org_id"`
+	ProjectID         string            `json:"project_id"`
+	Creator           string            `json:"creator"`
+	CreatedAt         time.Time         `json:"created_at"`
+	LastUsedAt        time.Time         `json:"last_used_at"`
+	Description       string            `json:"description,omitempty"`
+	Labels            map[string]string `json:"labels,omitempty"`
+	State             BoxState          `json:"state"`
+	Reason            string            `json:"reason,omitempty"`
 	// BoxSnapID identifies this Box's writable Attached Snap, not its source.
 	BoxSnapID string `json:"box_snap_id"`
 	// BoxSnapRestoredFromCheckpointAt is set when BoxSnapID was copied from
@@ -496,6 +508,8 @@ type BoxRuntimeCPU struct {
 // retains the owning Box's composed filesystem view. Like BoxView's, the URL
 // expires one hour after this view was loaded; SnapFileSystem renews it.
 type SnapView struct {
+	// StorageGeneration identifies this Snap's storage format.
+	StorageGeneration StorageGeneration `json:"storage_generation,omitempty"`
 	// Labels is mutable metadata belonging only to this Snap.
 	Labels map[string]string `json:"labels,omitempty"`
 	// PrewarmProfileID and PrewarmProfileName identify the profile blocking base deletion.
@@ -769,8 +783,10 @@ type TTYSize struct {
 // Stop preserves it; deleting the Box deletes it. ForkSnap saves an independent
 // detached Snap while the Box is stopped and storage has settled.
 type VolumeView struct {
-	SnapID    string `json:"snap_id"`
-	MountPath string `json:"mount_path"`
+	// StorageGeneration identifies this volume Snap's storage format.
+	StorageGeneration StorageGeneration `json:"storage_generation,omitempty"`
+	SnapID            string            `json:"snap_id"`
+	MountPath         string            `json:"mount_path"`
 	// RestoredFromCheckpointAt is set when this Volume was copied from the
 	// last durable checkpoint of a source whose host was terminated while
 	// writing it: the time that checkpoint was saved. Later source changes
@@ -780,6 +796,9 @@ type VolumeView struct {
 
 // VolumeConfig creates one independent Box-owned persistent Snap.
 type VolumeConfig struct {
+	// StorageGeneration selects the format of an empty volume, defaulting to Root's format.
+	// A volume fork inherits its source and rejects a conflicting value.
+	StorageGeneration StorageGeneration `json:"storage_generation,omitempty"`
 	// SourceSnapID forks settled or healthy online storage into an independent volume.
 	// One creation can use at most one online source Box; captures are per disk.
 	// Omit for an empty volume; cannot be combined with InitialPermissions.
@@ -811,6 +830,9 @@ type VolumeInitialPermissions struct {
 
 // CreateBoxRequest creates a new box from an image or snap.
 type CreateBoxRequest struct {
+	// StorageGeneration selects the format of an image-backed Root, defaulting to gen1.
+	// A Snap-backed Root inherits its source and rejects a conflicting value.
+	StorageGeneration StorageGeneration `json:"storage_generation,omitempty"`
 	// Volumes creates up to nine independent empty Volumes. Omit to create none.
 	// Mount paths must not overlap, including ancestor/descendant paths.
 	Volumes []VolumeConfig `json:"volumes,omitempty"`
@@ -877,6 +899,8 @@ type CreateBoxFromSharedSnapRequest struct {
 
 // ImportSnapRequest imports a snap from an image reference.
 type ImportSnapRequest struct {
+	// StorageGeneration selects the new Snap's format. The default is gen1.
+	StorageGeneration StorageGeneration `json:"storage_generation,omitempty"`
 	// ImageRef is the OCI-style image reference to import.
 	ImageRef string `json:"image_ref"`
 }

@@ -4,6 +4,7 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
 	"strconv"
 
@@ -62,6 +63,10 @@ type CreateBoxPayload struct {
 	// source snap id
 	SourceSnapID string `json:"source_snap_id,omitempty"`
 
+	// StorageGeneration selects storage for a new disk. A source Snap fixes its generation.
+	// Enum: ["gen1","gen2"]
+	StorageGeneration string `json:"storage_generation,omitempty"`
+
 	// DataVolumes creates independent empty Box-owned volumes. Omit or use an empty list to disable them.
 	// Each mount is fixed at creation. Data survives Stop and runtime replacement, is deleted with the Box,
 	// and is never inherited from or included in Root Snap forks. Mount paths cannot overlap.
@@ -74,6 +79,10 @@ func (m *CreateBoxPayload) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateNetworkMode(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStorageGeneration(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -102,6 +111,48 @@ func (m *CreateBoxPayload) validateNetworkMode(formats strfmt.Registry) error {
 			return ce.ValidateName("network_mode")
 		}
 
+		return err
+	}
+
+	return nil
+}
+
+var createBoxPayloadTypeStorageGenerationPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["gen1","gen2"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		createBoxPayloadTypeStorageGenerationPropEnum = append(createBoxPayloadTypeStorageGenerationPropEnum, v)
+	}
+}
+
+const (
+
+	// CreateBoxPayloadStorageGenerationGen1 captures enum value "gen1"
+	CreateBoxPayloadStorageGenerationGen1 string = "gen1"
+
+	// CreateBoxPayloadStorageGenerationGen2 captures enum value "gen2"
+	CreateBoxPayloadStorageGenerationGen2 string = "gen2"
+)
+
+// prop value enum
+func (m *CreateBoxPayload) validateStorageGenerationEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, createBoxPayloadTypeStorageGenerationPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *CreateBoxPayload) validateStorageGeneration(formats strfmt.Registry) error {
+	if typeutils.IsZero(m.StorageGeneration) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateStorageGenerationEnum("storage_generation", "body", m.StorageGeneration); err != nil {
 		return err
 	}
 

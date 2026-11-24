@@ -124,6 +124,13 @@ definitions:
         type: string
       source_snap_id:
         type: string
+      storage_generation:
+        description: StorageGeneration selects storage for a new disk. A source Snap
+          fixes its generation.
+        enum:
+        - gen1
+        - gen2
+        type: string
       volumes:
         description: |-
           DataVolumes creates independent empty Box-owned volumes. Omit or use an empty list to disable them.
@@ -318,6 +325,13 @@ definitions:
       image_platform:
         type: string
       image_ref:
+        type: string
+      storage_generation:
+        description: StorageGeneration selects storage for a new disk. A source Snap
+          fixes its generation.
+        enum:
+        - gen1
+        - gen2
         type: string
     type: object
   LoginUserPayload:
@@ -715,6 +729,12 @@ definitions:
         $ref: '#/definitions/api.BoxState'
       storage:
         $ref: '#/definitions/api.BoxStorage'
+      storage_generation:
+        description: StorageGeneration identifies this disk's immutable storage format.
+        enum:
+        - gen1
+        - gen2
+        type: string
       volumes:
         description: |-
           DataVolumes describes the fixed Box-owned volumes; omitted when disabled.
@@ -1821,6 +1841,12 @@ definitions:
         type: string
       state:
         $ref: '#/definitions/api.SnapState'
+      storage_generation:
+        description: StorageGeneration identifies this disk's immutable storage format.
+        enum:
+        - gen1
+        - gen2
+        type: string
     type: object
   api.SocialAuthProvider:
     enum:
@@ -1994,6 +2020,13 @@ definitions:
           A creation can use at most one online source Box; captures are per disk.
           Omit for an empty volume. Mutually exclusive with InitialPermissions.
         type: string
+      storage_generation:
+        description: StorageGeneration selects storage for a new disk. A source Snap
+          fixes its generation.
+        enum:
+        - gen1
+        - gen2
+        type: string
     type: object
   api.VolumeInitialPermissions:
     properties:
@@ -2029,6 +2062,12 @@ definitions:
           SnapID is the owned Snap identity used by ordinary Snap query, file and Fork APIs.
           It cannot be deleted independently. A Fork result survives deletion of this Box.
         example: s12345678
+        type: string
+      storage_generation:
+        description: StorageGeneration identifies this disk's immutable storage format.
+        enum:
+        - gen1
+        - gen2
         type: string
     type: object
   api.elasticityDataTransfer:
