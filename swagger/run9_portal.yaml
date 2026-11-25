@@ -111,8 +111,8 @@ definitions:
         type: boolean
       restore_from_checkpoint:
         description: |-
-          RestoreFromCheckpoint copies a root or Volume source in error from its last durable checkpoint, once
-          run9 proves terminated the host that was writing it. Changes made after that checkpoint are lost;
+          RestoreFromCheckpoint copies a root or Volume source in error from its last durable checkpoint after Run9 verifies writer loss.
+          A Gen2 disk can recover a published background checkpoint after a local writer crash;
           restored_from_checkpoint_at on the new disk says when it was saved. Healthy sources are unaffected.
           Without it, a source in error is refused with `snap_error`.
         type: boolean
@@ -641,10 +641,8 @@ definitions:
         type: string
       box_snap_restored_from_checkpoint_at:
         description: |-
-          BoxSnapRestoredFromCheckpointAt is set when box_snap_id was copied from
-          the last durable checkpoint of a source in error whose host was
-          terminated while writing it: the time that checkpoint was saved. Later
-          source changes are lost. Volumes report their own.
+          BoxSnapRestoredFromCheckpointAt is the cut time of a recovered root disk.
+          Each Volume reports its own cut. Later writes may be missing.
         type: string
       created_at:
         type: string
@@ -1824,10 +1822,8 @@ definitions:
         type: string
       restored_from_checkpoint_at:
         description: |-
-          RestoredFromCheckpointAt is set when this Snap was copied from the last
-          durable checkpoint of a source whose host was terminated while writing
-          it: the time that checkpoint was saved. Changes the source made after
-          this time are not in this Snap.
+          RestoredFromCheckpointAt is the cut time of the checkpoint used to recover this Snap.
+          Later source writes may be missing.
         type: string
       size:
         $ref: '#/definitions/api.SnapSize'
@@ -2053,9 +2049,8 @@ definitions:
         type: string
       restored_from_checkpoint_at:
         description: |-
-          RestoredFromCheckpointAt is set when this Volume was copied from the last
-          durable checkpoint of a source whose host was terminated while writing
-          it: the time that checkpoint was saved. Later source changes are lost.
+          RestoredFromCheckpointAt is the cut time of the checkpoint used to recover this Volume.
+          Later source writes may be missing.
         type: string
       snap_id:
         description: |-
@@ -2089,8 +2084,8 @@ definitions:
         type: object
       restore_from_checkpoint:
         description: |-
-          RestoreFromCheckpoint copies a source in error from its last durable checkpoint, once run9 proves
-          terminated the host that was writing it. Changes made after that checkpoint are lost;
+          RestoreFromCheckpoint copies a source in error from its last durable checkpoint, after Run9 verifies writer loss.
+          A Gen2 disk can recover a published background checkpoint after a local writer crash;
           restored_from_checkpoint_at on the new Snap says when it was saved. Without it, a source in error
           is refused with `snap_error`.
         type: boolean
@@ -4043,7 +4038,7 @@ paths:
             (an earlier create of this box_id has not settled; retry later), `snap_error`
             (the root or volume source Snaps are in error; `snap_ids` names every
             one; the same request keeps failing unless it sets `restore_from_checkpoint`
-            and run9 has proven terminated the hosts that were writing them), `source_snap_unavailable`
+            and Run9 verifies the affected writers have lost ownership), `source_snap_unavailable`
             (the root or a volume source Snap was deleted).'
           schema:
             $ref: '#/definitions/Error'
@@ -5515,9 +5510,9 @@ paths:
         "409":
           description: 'The source cannot be forked now. `code`=`snap_error` means
             the source Snap is in error (`snap_ids` names it): the same request keeps
-            failing unless it sets `restore_from_checkpoint` and run9 has proven terminated
-            the host that was writing the source. `source_snap_unavailable` means
-            it was deleted.'
+            failing unless it sets `restore_from_checkpoint` and Run9 verifies the
+            source writer has lost ownership. `source_snap_unavailable` means it was
+            deleted.'
           schema:
             $ref: '#/definitions/Error'
       security:

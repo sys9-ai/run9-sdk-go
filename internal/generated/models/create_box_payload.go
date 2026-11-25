@@ -45,8 +45,8 @@ type CreateBoxPayload struct {
 	// attached to a Box, or the request is refused with 400.
 	PreferSourceHost bool `json:"prefer_source_host,omitempty"`
 
-	// RestoreFromCheckpoint copies a root or Volume source in error from its last durable checkpoint, once
-	// run9 proves terminated the host that was writing it. Changes made after that checkpoint are lost;
+	// RestoreFromCheckpoint copies a root or Volume source in error from its last durable checkpoint after Run9 verifies writer loss.
+	// A Gen2 disk can recover a published background checkpoint after a local writer crash;
 	// restored_from_checkpoint_at on the new disk says when it was saved. Healthy sources are unaffected.
 	// Without it, a source in error is refused with `snap_error`.
 	RestoreFromCheckpoint bool `json:"restore_from_checkpoint,omitempty"`

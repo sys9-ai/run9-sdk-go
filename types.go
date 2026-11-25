@@ -421,10 +421,8 @@ type BoxView struct {
 	Reason            string            `json:"reason,omitempty"`
 	// BoxSnapID identifies this Box's writable Attached Snap, not its source.
 	BoxSnapID string `json:"box_snap_id"`
-	// BoxSnapRestoredFromCheckpointAt is set when BoxSnapID was copied from
-	// the last durable checkpoint of a source in error whose host was
-	// terminated while writing it: the time that checkpoint was saved. Later
-	// source changes are lost. Each VolumeView reports its own.
+	// BoxSnapRestoredFromCheckpointAt is the cut time of a recovered root disk.
+	// Each Volume reports its own cut. Later writes may be missing.
 	BoxSnapRestoredFromCheckpointAt *time.Time `json:"box_snap_restored_from_checkpoint_at,omitempty"`
 	// Volumes lists the fixed Box-owned Snap mounts; empty means none.
 	// It describes configuration, not whether a runtime is currently mounted.
@@ -536,10 +534,8 @@ type SnapView struct {
 	FileAccessURL string            `json:"file_access_url,omitempty"`
 	Size          *SnapSize         `json:"size,omitempty"`
 	OwnedStorage  *SnapOwnedStorage `json:"owned_storage,omitempty"`
-	// RestoredFromCheckpointAt is set when this Snap was copied from the last
-	// durable checkpoint of a source whose host was terminated while writing
-	// it: the time that checkpoint was saved. Changes the source made after
-	// this time are not in this Snap.
+	// RestoredFromCheckpointAt is the cut time of the checkpoint used to recover this Snap.
+	// Later source writes may be missing.
 	RestoredFromCheckpointAt *time.Time `json:"restored_from_checkpoint_at,omitempty"`
 }
 
@@ -787,10 +783,8 @@ type VolumeView struct {
 	StorageGeneration StorageGeneration `json:"storage_generation,omitempty"`
 	SnapID            string            `json:"snap_id"`
 	MountPath         string            `json:"mount_path"`
-	// RestoredFromCheckpointAt is set when this Volume was copied from the
-	// last durable checkpoint of a source whose host was terminated while
-	// writing it: the time that checkpoint was saved. Later source changes
-	// are lost.
+	// RestoredFromCheckpointAt is the cut time of the checkpoint used to recover this Volume.
+	// Later source writes may be missing.
 	RestoredFromCheckpointAt *time.Time `json:"restored_from_checkpoint_at,omitempty"`
 }
 
@@ -856,9 +850,9 @@ type CreateBoxRequest struct {
 	// SourceImageRef imports directly from one image reference when non-empty.
 	SourceImageRef string `json:"source_image_ref,omitempty"`
 	// RestoreFromCheckpoint copies the root or Volume sources that are in
-	// error from their last durable checkpoint, once run9 has proven
-	// terminated the host that was writing them. Changes made after that
-	// checkpoint are lost; BoxView.BoxSnapRestoredFromCheckpointAt and
+	// error from their last durable checkpoint after Run9 verifies writer loss.
+	// Changes after the selected checkpoint may be missing.
+	// BoxView.BoxSnapRestoredFromCheckpointAt and
 	// VolumeView.RestoredFromCheckpointAt say when it was saved. Healthy
 	// sources are unaffected. Without it, sources in error are refused with
 	// ErrorCodeSnapError. Set it only when the caller means to accept that loss.

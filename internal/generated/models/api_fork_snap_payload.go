@@ -17,8 +17,8 @@ type APIForkSnapPayload struct {
 	// labels
 	Labels map[string]string `json:"labels,omitempty"`
 
-	// RestoreFromCheckpoint copies a source in error from its last durable checkpoint, once run9 proves
-	// terminated the host that was writing it. Changes made after that checkpoint are lost;
+	// RestoreFromCheckpoint copies a source in error from its last durable checkpoint, after Run9 verifies writer loss.
+	// A Gen2 disk can recover a published background checkpoint after a local writer crash;
 	// restored_from_checkpoint_at on the new Snap says when it was saved. Without it, a source in error
 	// is refused with `snap_error`.
 	RestoreFromCheckpoint bool `json:"restore_from_checkpoint,omitempty"`

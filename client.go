@@ -65,8 +65,8 @@ const (
 	// Error.SnapIDs names every one. Retrying the same request fails. To copy
 	// such a Snap's last durable checkpoint instead, the caller must ask for it
 	// with CreateBoxRequest.RestoreFromCheckpoint or
-	// ForkSnapRequest.RestoreFromCheckpoint; that succeeds once run9 proves
-	// terminated the host that was writing the Snap. The same code is an
+	// ForkSnapRequest.RestoreFromCheckpoint. The runtime must verify the
+	// source writer has lost ownership. The same code is an
 	// ExecView failure code; see ExecView.ErrorSnapIDs.
 	ErrorCodeSnapError = "snap_error"
 	// ErrorCodePrivateNetworkGatewayNotConfigured means the deployment has no
